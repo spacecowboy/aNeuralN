@@ -76,7 +76,7 @@ class network:
                 for node in self.output_nodes + self.hidden_nodes:
                     node.update_weights(weight_calculator, error_calculator)
             
-
+#Special type of node, since it is really just a scalar.
 class input_node:
     def __init__(self, value=1):
         self.value = value
