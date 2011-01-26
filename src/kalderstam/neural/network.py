@@ -1,6 +1,8 @@
 #Defines the node, and the network
-from math import exp
 from random import uniform
+from math import exp
+from collections import OrderedDict
+import matplotlib.pyplot as plt
 
 class network:
     #Single hidden layer ANN. Weights and bias are initialized to random numbers between -1 and 1
@@ -27,12 +29,14 @@ class network:
             self.output_nodes.append(output)
             
     def get_all_nodes(self):
+        """Returns all nodes except the input nodes."""
         result_set = []
         result_set += self.hidden_nodes
         result_set += self.output_nodes
         return result_set
             
     def __len__(self):
+        """The length of the network is defined as: input nodes + hidden nodes + output nodes."""
         return len(self.input_nodes) + len(self.hidden_nodes) + len(self.output_nodes)
             
     #inputs is a list that must match in length with the number of input nodes
@@ -88,8 +92,7 @@ class input_node:
 class node:
     #default function is F(x) = x
     def __init__(self, func=lambda x: x):
-        self.weights = dict()
-        self.connected_nodes = []
+        self.weights = OrderedDict()
         self.activation_function = func
         #initialize the bias
         self.bias = uniform(-1, 1)
@@ -97,13 +100,13 @@ class node:
         self.error = 0
         
     def connect_nodes(self, nodes):
-        self.connected_nodes += nodes
         for node in nodes:
             self.weights[node] = uniform(-1, 1)
             
-    #The weight calculator must take the arguments (input, weight)
-    #The error calculator must take the arguments (weight, error)
     def update_weights(self, weight_calculator, error_calculator):
+        """The weight calculator must take the arguments (input, weight).
+        The error calculator must take the arguments (weight, error)."""
+        
         for node, weight in self.weights.iteritems():
             #print 'Weight correction = ' + str((weight - weight_calculator(node.output(), weight)))
             node.error += error_calculator(weight, self.error)
@@ -111,8 +114,8 @@ class node:
         
     def output(self):
         self.input_sum = self.bias
-        for node in self.connected_nodes:
-            self.input_sum += node.output()*self.weights[node]
+        for node, weight in self.weights.iteritems():
+            self.input_sum += node.output()*weight
         
         return self.activation_function(self.input_sum)
 
