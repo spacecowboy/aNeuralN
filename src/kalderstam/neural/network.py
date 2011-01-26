@@ -141,6 +141,19 @@ class node:
             self.input_sum += node.output()*weight
         
         return self.activation_function(self.input_sum)
+    
+def plot2d2c(net, P, T):
+    if not len(P) > 0 and not len(P[0]) == 2:
+        print 'Error: Input is not of dimension 2 or is empty'
+    else:
+        for num in range(0, len(T)):
+            results = net.update(P[num])
+            
+            if (T[num][0] == results[0]):
+                plt.plot(P[num][0], P[num][1], 'bo')
+            else:
+                plt.plot(P[num][0], P[num][1], 'ro')
+        plt.show()
 
 if __name__ == '__main__':
     #Binary activation function
@@ -165,15 +178,5 @@ if __name__ == '__main__':
     
     net.traingd(P, T)
     
-    for num in range(0, len(T)):
-        results = net.update(P[num])
-        
-        print "Input: " + str(P[num]) + ", Output: " + str(results[0]) + " Correct: " + str(T[num][0]) + "\n"
-        
-        if (T[num][0] == results[0]):
-            plt.plot(P1[num], P2[num], 'bo')
-        else:
-            print "T: " + str(T[num]) + ", Y: " + str(results[0])
-            plt.plot(P1[num], P2[num], 'ro')
-    plt.show()
+    plot2d2c(net, P, T)
     
