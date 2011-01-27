@@ -79,11 +79,11 @@ def loadsyn3(n = 100):
     
     return (P, T)
 
-def plot2d2c(net, P, T):
+def plot2d2c(net, P, T, figure=1):
     if len(P) != 2:
         print 'Error: Input is not of dimension 2'
     else:
-        plt.figure(1)
+        plt.figure(figure)
         plt.title("Blue are correctly classified, while Red are incorrectly classified.")
         type1 = T[0][0]
         for num in range(0, len(T)):
@@ -149,12 +149,15 @@ if __name__ == '__main__':
             return 1
         else:
             return 0
+    #logsig(n) = 1 / (1 + exp(-n))
+    #tansig(n) = 2/(1+exp(-2*n))-1 = tanh(n)
+    #net = newff(P,T,nodes,{'tansig' 'logsig'},[method]);
         
     P, T = loadsyn3(100)
                 
     net = network()
     net.build_feedforward(2, 5, 1, output_function = activation_function)
     
-    net.traingd(P, T, 50, 0.5)
+    net.traingd(P, T, 300, 0.1)
     
     plot2d2c(net, P, T)
