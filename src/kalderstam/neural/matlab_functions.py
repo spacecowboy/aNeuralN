@@ -149,6 +149,7 @@ if __name__ == '__main__':
             return 1
         else:
             return 0
+        
     #logsig(n) = 1 / (1 + exp(-n))
     #tansig(n) = 2/(1+exp(-2*n))-1 = tanh(n)
     #net = newff(P,T,nodes,{'tansig' 'logsig'},[method]);
