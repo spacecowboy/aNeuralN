@@ -56,7 +56,7 @@ def loadsyn3(n = 100):
     half = n/2
     
     Rpos = 0.6
-    Rneg = 0.9
+    Rneg = 1.3
     
     P = numpy.zeros([2, n])
     
