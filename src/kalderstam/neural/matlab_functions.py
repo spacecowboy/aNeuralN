@@ -137,6 +137,43 @@ def boundary(net, P):
             x1 += x1_inc
         
         plt.plot(coords[0], coords[1], 'g--')
+        
+def stat(Y, T):
+    """ Calculates the results for a single output classification
+     problem. Y is the network output and T is the target output.
+
+     The results are returned as
+     num_correct_first = number of class 0 targets that were correctly classified
+     num_correct_second = number of class 1 targets that were correctly classified
+     tot = total performance
+     None = number of class 1 in T
+     Nzero = number of class 0 in T
+     miss = number of missclassified targets"""
+    Y = Y.flatten()
+    T = T.flatten()
+    
+    if len(Y) != len(T):
+        print "Y and T are not the same length!"
+    else:
+        num_second = max(1,len(T.compress((T<0.5).flat)))
+        num_first = max(1,len(T.compress((T>0.5).flat)))
+        
+        num_correct_firsterr = len(T.compress(((T-Y)<-0.5).flat))
+        num_correct_first = 100.0*(num_second-num_correct_firsterr)/num_second
+        
+        num_correct_seconderr = len(T.compress(((T-Y)>0.5).flat))
+        num_correct_second = 100.0*(num_first-num_correct_seconderr)/num_first
+        
+        missed = sum(abs(numpy.round(Y)-T))
+        total_performance = 100.0*(len(T)-missed)/len(T)
+        
+        print("\nResults for the training:\n")
+        print("Total number of data: " + str(len(T)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
+        print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
+        print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
+        print("Specificity: " + str(num_correct_second) + "% (Success for class 1)")
+        
+        return [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed]
     
 if __name__ == '__main__':
     
@@ -147,13 +184,16 @@ if __name__ == '__main__':
         else:
             return 0
         
-    #net = newff(P,T,nodes,{'tansig' 'logsig'},[method]);
-        
     P, T = loadsyn2(100)
                 
     net = network()
     net.build_feedforward(2, 1, 1, output_function = activation_function)
     
     net.traingd(P, T, 300, 0.1)
+    
+    Y = net.sim(P)
+    #Y = Y.flat
+    
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     
     plot2d2c(net, P, T)

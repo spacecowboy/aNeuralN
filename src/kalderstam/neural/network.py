@@ -2,6 +2,7 @@
 from random import uniform
 from math import exp
 from math import tanh
+import numpy
 
 #A few activation functions
 def logsig(x):
@@ -44,10 +45,17 @@ class network:
     def __len__(self):
         """The length of the network is defined as: input nodes + hidden nodes + output nodes."""
         return len(self.input_nodes) + len(self.hidden_nodes) + len(self.output_nodes)
+    
+    def sim(self, input_array):
+        results = numpy.array([])
+        for i in range(0, len(input_array[0,:])):
+            input = [input_array[0,i], input_array[1,i]]
+            results = numpy.append(results, self.update(input))
+        return results
             
     #inputs is a list that must match in length with the number of input nodes
     def update(self, inputs):
-        if not len(self.input_nodes) == len(inputs):
+        if len(self.input_nodes) != len(inputs):
             print 'Incorrect number of inputs(' + str(len(inputs)) + '), correct number is', len(self.input_nodes)
         else:
             results = []
