@@ -1,10 +1,18 @@
 #Defines the node, and the network
 from random import uniform
-#from math import exp
+from math import exp
+from math import tanh
+
+#A few activation functions
+def logsig(x):
+    return 1 / (1 + exp(-x))
+
+def linear(x):
+    return x
 
 class network:
     #Single hidden layer ANN. Weights and bias are initialized to random numbers between -1 and 1
-    def build_feedforward(self, input_number=2, hidden_number=5, output_number=1, hidden_function=lambda x: x, output_function=lambda x: x):
+    def build_feedforward(self, input_number=2, hidden_number=5, output_number=1, hidden_function=tanh, output_function=logsig):
         self.input_nodes = []
         self.hidden_nodes = []
         self.output_nodes = []
@@ -141,7 +149,6 @@ class node:
         
         return self.activation_function(self.input_sum)
                 
-            
 
 #if __name__ == '__main__':
 #    #Binary activation function

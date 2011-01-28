@@ -147,14 +147,12 @@ if __name__ == '__main__':
         else:
             return 0
         
-    #logsig(n) = 1 / (1 + exp(-n))
-    #tansig(n) = 2/(1+exp(-2*n))-1 = tanh(n)
     #net = newff(P,T,nodes,{'tansig' 'logsig'},[method]);
         
     P, T = loadsyn2(100)
                 
     net = network()
-    net.build_feedforward(2, 5, 1, output_function = activation_function)
+    net.build_feedforward(2, 1, 1, output_function = activation_function)
     
     net.traingd(P, T, 300, 0.1)
     
