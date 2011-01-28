@@ -1,6 +1,4 @@
-from random import uniform
-from random import gauss
-from random import random
+
 import numpy
 from kalderstam.neural.network import network
 import matplotlib.pyplot as plt
@@ -12,13 +10,15 @@ def loadsyn1(n = 100):
     half = n/2
     
     P = numpy.zeros([2, n])
-    for row in range(len(P)):
-        for col in range(len(P[row, :])):
-            if (col >= half):
-                P[row, col] = -0.5 + uniform(-1, 1)
-            else:
-                P[row, col] = 0.5 + uniform(-1, 1)
+                
+    # The positives
+    P[0, :half] = 0.5 + numpy.random.randn(half)
+    P[1, :half] = 0.5 + numpy.random.randn(half)
     
+    # The negatives
+    P[0, half:n] = -0.5 + numpy.random.randn(n-half)
+    P[1, half:n] = -0.5 + numpy.random.randn(n-half)
+        
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
     
@@ -28,24 +28,23 @@ def loadsyn2(n = 100):
     half = n/2
     
     P = numpy.zeros([2, n])
-    row = 0
-    for col in range(len(P[row, :])):
-        if (col >= half):
-            P[row, col] = 10+2*uniform(-1, 1)
-        else:
-            P[row, col] = -10+2*uniform(-1, 1)
-            
-    row = 1
-    for col in range(len(P[row, :])):
-        P[row, col] = 10*uniform(-1, 1)
+    
+    # The positives
+    P[0, :half] = 10 + 2.0*numpy.random.randn(half)
+    P[1, :half] = 10*numpy.random.randn(half)
+    
+    # The negatives
+    P[0, half:n] = -10 + 2.0*numpy.random.randn(n-half)
+    P[1, half:n] = 10*numpy.random.randn(n-half)
+    
         
     #Rotate it to make it interesting
-    #R = numpy.array([[sqrt(2), sqrt(2)], [sqrt(2), sqrt(2)]])
-    #P = dot(R, P)
+    R = numpy.array([sqrt(2), sqrt(2), -sqrt(2), sqrt(2)]).reshape([2, 2])
+    P = dot(R, P)
     
     #And normalize
-    #P[0,:] = P[0,:]/numpy.std(P[0,:])
-    #P[1,:] = P[1,:]/numpy.std(P[1,:])
+    P[0,:] = P[0,:]/numpy.std(P[0,:])
+    P[1,:] = P[1,:]/numpy.std(P[1,:])
     
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
@@ -56,23 +55,21 @@ def loadsyn3(n = 100):
     half = n/2
     
     Rpos = 0.6
-    Rneg = 1.3
+    Rneg = 0.9
     
     P = numpy.zeros([2, n])
     
-    row = 0
-    for col in range(len(P[row, :])):
-        if (col < half):
-            P[row, col] = Rpos*gauss(0, 1)*math.cos((2.0)*math.pi*random())
-        else:
-            P[row, col] = (random() + Rneg)*math.cos((2.0)*math.pi*random())
-            
-    row = 1
-    for col in range(len(P[row, :])):
-        if (col < half):
-            P[row, col] = Rpos*gauss(0, 1)*math.sin((2.0)*math.pi*random())
-        else:
-            P[row, col] = (random() + Rneg)*math.sin((2.0)*math.pi*random())
+    # The positives
+    tmpang = 2.0*math.pi*numpy.random.rand(half)
+    tmpr = Rpos*numpy.random.randn(half)
+    P[0,:half] = tmpr*numpy.cos(tmpang)
+    P[1,:half] = tmpr*numpy.sin(tmpang)
+    
+    # The negatives
+    tmpang = 2.0*math.pi*numpy.random.rand(n-half)
+    tmpr = numpy.random.rand(n-half) + Rneg
+    P[0, half:n] = tmpr*numpy.cos(tmpang)
+    P[1, half:n] = tmpr*numpy.sin(tmpang)
     
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
@@ -154,7 +151,7 @@ if __name__ == '__main__':
     #tansig(n) = 2/(1+exp(-2*n))-1 = tanh(n)
     #net = newff(P,T,nodes,{'tansig' 'logsig'},[method]);
         
-    P, T = loadsyn3(100)
+    P, T = loadsyn2(100)
                 
     net = network()
     net.build_feedforward(2, 5, 1, output_function = activation_function)
