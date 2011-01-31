@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from math import sqrt
 from numpy.core.numeric import dot
 import math
+import logging
+
+logger = logging.getLogger('kalderstam.neural.matlab_functions')
 
 def loadsyn1(n = 100):
     half = n/2
@@ -87,7 +90,7 @@ def loadsyn3(n = 100):
 
 def plot2d2c(net, P, T, figure=1):
     if len(P[0]) != 2:
-        print 'Error: Input is not of dimension 2'
+        logger.error('Input is not of dimension 2')
     else:
         plt.figure(figure)
         plt.title("Blue are correctly classified, while Red are incorrectly classified.")
@@ -111,7 +114,7 @@ def plot2d2c(net, P, T, figure=1):
         
 def boundary(net, P):
     if len(P[0]) != 2:
-        print 'Error: Input is not of dimension 2'
+        logger.error('Error: Input is not of dimension 2')
     else:
         min_X1 = P[0, 0]
         max_X1 = P[0, 0]
@@ -172,7 +175,7 @@ def stat(Y, T):
     T = T.flatten()
     
     if len(Y) != len(T):
-        print "Y and T are not the same length!"
+        logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
     else:
         num_second = max(1,len(T.compress((T<0.5).flat)))
         num_first = max(1,len(T.compress((T>0.5).flat)))
@@ -195,6 +198,7 @@ def stat(Y, T):
         return [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed]
     
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     
     #Binary activation function
     def activation_function(x):

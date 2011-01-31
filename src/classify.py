@@ -2,8 +2,12 @@ import numpy
 from kalderstam.util.filehandling import read_data_file
 from kalderstam.neural.network import network
 from kalderstam.neural.matlab_functions import stat
+import logging
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    #logger = logging.getLogger('classify')
+    
     data = read_data_file('P:\My Dropbox\Ann-Survival-Phd\Ecg1664_trn.dat')
    
     inputs = numpy.array(data)
