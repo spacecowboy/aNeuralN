@@ -22,6 +22,9 @@ def loadsyn1(n = 100):
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
     
+    #Fix axes
+    P = P.swapaxes(0, 1)
+    
     return (P, T)
 
 def loadsyn2(n = 100):
@@ -49,6 +52,9 @@ def loadsyn2(n = 100):
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
     
+    #Fix axes
+    P = P.swapaxes(0, 1)
+    
     return (P, T)
 
 def loadsyn3(n = 100):
@@ -74,47 +80,52 @@ def loadsyn3(n = 100):
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
     
+    #Fix axes
+    P = P.swapaxes(0, 1)
+    
     return (P, T)
 
 def plot2d2c(net, P, T, figure=1):
-    if len(P) != 2:
+    if len(P[0]) != 2:
         print 'Error: Input is not of dimension 2'
     else:
         plt.figure(figure)
         plt.title("Blue are correctly classified, while Red are incorrectly classified.")
-        type1 = T[0][0]
         for num in range(0, len(T)):
-            results = net.update([P[0, num], P[1, num]])
+            results = net.update([P[num, 0], P[num, 1]])
             mark = ''
-            if (T[num][0] == type1):
+            if (T[num][0] - 1 < -0.5):
                 mark = 'o'
             else:
                 mark = '+'
             
-            if (T[num][0] == results[0]):
-                plt.plot(P[0, num], P[1, num], 'b' + mark)
+            color = ''
+            if (T[num][0] > 0.5 and results[0] > 0.5 or
+                T[num][0] <= 0.5 and results[0] <= 0.5):
+                color = 'b'
             else:
-                plt.plot(P[0, num], P[1, num], 'r' + mark)
+                color = 'r'   
+            plt.plot(P[num, 0], P[num, 1], color + mark)
         boundary(net, P)
         plt.show()
         
 def boundary(net, P):
-    if len(P) != 2:
+    if len(P[0]) != 2:
         print 'Error: Input is not of dimension 2'
     else:
         min_X1 = P[0, 0]
         max_X1 = P[0, 0]
-        min_X2 = P[1, 0]
-        max_X2 = P[1, 0]
-        for num in range(0, len(P[0, :])):
-            if (P[1, num] > max_X2):
-                max_X2 = P[1, num]
-            elif (P[1, num] < min_X2):
-                min_X2 = P[1, num]
-            if (P[0, num] > max_X1):
-                max_X1 = P[0, num]
-            elif (P[0, num] < min_X1):
-                min_X1 = P[0, num]
+        min_X2 = P[0, 1]
+        max_X2 = P[0, 1]
+        for num in range(0, len(P)):
+            if (P[num, 1] > max_X2):
+                max_X2 = P[num, 1]
+            elif (P[num, 1] < min_X2):
+                min_X2 = P[num, 1]
+            if (P[num, 0] > max_X1):
+                max_X1 = P[num, 0]
+            elif (P[num, 0] < min_X1):
+                min_X1 = P[num, 0]
         
         x1_inc = (max_X1 - min_X1)/100
         x2_inc = (max_X2 - min_X2)/100
@@ -127,8 +138,16 @@ def boundary(net, P):
             
             x2 = min_X2
             prev_val = net.update([x1, x2])
+            if prev_val > 0.5:
+                prev_val = 1
+            else:
+                prev_val = 0
             while (x2 < max_X2):
                 val = net.update([x1, x2])
+                if val > 0.5:
+                    val = 1
+                else:
+                    val = 0
                 if (val != prev_val):
                     coords[0].append(x1)
                     coords[1].append(x2)
@@ -184,15 +203,14 @@ if __name__ == '__main__':
         else:
             return 0
         
-    P, T = loadsyn2(100)
+    P, T = loadsyn3(100)
                 
     net = network()
-    net.build_feedforward(2, 1, 1, output_function = activation_function)
+    net.build_feedforward(2, 1, 1)
     
     net.traingd(P, T, 300, 0.1)
     
     Y = net.sim(P)
-    #Y = Y.flat
     
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     

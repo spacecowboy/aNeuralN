@@ -48,17 +48,19 @@ class network:
     
     def sim(self, input_array):
         results = numpy.array([])
-        for i in range(0, len(input_array[0,:])):
-            input = [input_array[0,i], input_array[1,i]]
+        for i in range(0, len(input_array)):
+            input = input_array[i]
             results = numpy.append(results, self.update(input))
+            #results = numpy.append(results, [self.update(input)], 0)
         return results
             
     #inputs is a list that must match in length with the number of input nodes
     def update(self, inputs):
+        """Returns a numpy array of output value arrays."""
         if len(self.input_nodes) != len(inputs):
             print 'Incorrect number of inputs(' + str(len(inputs)) + '), correct number is', len(self.input_nodes)
         else:
-            results = []
+            results = numpy.array([])
             #Update input nodes to the values
             index = 0
             for value in inputs:
@@ -66,18 +68,20 @@ class network:
                 index += 1
             
             for output_node in self.output_nodes:
-                results.append(output_node.output())
-                
+                results = numpy.append(results, output_node.output())
+            
             return results
         
     def traingd(self, input_array, output_array, epochs=300, learning_rate=0.1):
         """Train using Gradient Descent."""
         
-        for j in range(0, epochs):        
+        for j in range(0, epochs):
             #Iterate over training data
-            for i in range(0, len(input_array[0,:])):
-                input = [input_array[0,i], input_array[1,i]]
-                output = output_array[i]
+            print 'Epoch: ' + str(j)
+            for i in range(0, len(input_array)):
+                input = input_array[i]
+                # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
+                output = numpy.append(numpy.array([]), output_array[i])
                     
                 #Calc output
                 result = self.update(input)
