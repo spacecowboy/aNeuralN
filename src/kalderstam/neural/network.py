@@ -80,10 +80,10 @@ class network:
     def traingd(self, input_array, output_array, epochs=300, learning_rate=0.1):
         """Train using Gradient Descent."""
         
-        error_sum = 0
         for j in range(0, epochs):
             #Iterate over training data
             logger.debug('Epoch ' + str(j))
+            error_sum = 0
             for i in range(0, len(input_array)):
                 input = input_array[i]
                 # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
@@ -97,17 +97,17 @@ class network:
                     node.error = 0
                 
                 #Set errors on output nodes first
-                error_sum = 0
                 for output_index in range(0, len(self.output_nodes)):
                     self.output_nodes[output_index].set_error(output[output_index] - result[output_index])
                     error_sum += abs(output[output_index] - result[output_index])
-                    
+                
                 #Iterate over the nodes and correct the weights
                 for node in self.output_nodes + self.hidden_nodes:
                     for back_node, back_weight in node.weights.iteritems():
                         back_node.error += back_weight * node.error
                         node.weights[back_node] = back_weight + learning_rate * node.error * back_node.output()
-
+            #normalize error
+            error_sum /= len(self.output_nodes)
             logger.debug("Error = " + str(error_sum))
 
         

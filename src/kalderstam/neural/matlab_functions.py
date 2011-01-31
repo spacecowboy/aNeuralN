@@ -207,7 +207,7 @@ if __name__ == '__main__':
         else:
             return 0
         
-    P, T = loadsyn3(100)
+    P, T = loadsyn1(100)
                 
     net = network()
     net.build_feedforward(2, 1, 1)

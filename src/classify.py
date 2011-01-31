@@ -8,7 +8,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     #logger = logging.getLogger('classify')
     
-    data = read_data_file('P:\My Dropbox\Ann-Survival-Phd\Ecg1664_trn.dat')
+    #data = read_data_file('P:\My Dropbox\Ann-Survival-Phd\Ecg1664_trn.dat')
+    data = read_data_file('/export/home/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat')
    
     inputs = numpy.array(data)
     
