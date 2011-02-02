@@ -160,6 +160,38 @@ def boundary(net, P):
         
         plt.plot(coords[0], coords[1], 'g--')
         
+def plotroc(Y, T, points = 100):
+    
+    Y = Y.flatten()
+    T = T.flatten()
+    
+    if len(Y) != len(T):
+        logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
+    else:
+        x = numpy.array([])
+        y = numpy.array([])
+        for cut in numpy.linspace(0, 1, points):
+            num_first = max(0,len(T.compress((T>cut).flat)))
+            num_second = max(0,len(T.compress((T<cut).flat)))
+            
+            num_correct_firsterr = len(T.compress(((T-Y)<-cut).flat))
+            num_correct_first = 0
+            if num_first > 0:
+                num_correct_first = 100.0*(num_first-num_correct_firsterr)/num_first
+            
+            num_correct_seconderr = len(T.compress(((T-Y)>cut).flat))
+            num_correct_second = 0
+            if num_second > 0:
+                num_correct_second = 100.0*(num_second-num_correct_seconderr)/num_second
+            
+            x = numpy.append(x, 100 - num_correct_first)
+            y = numpy.append(y, num_correct_second)
+        plt.figure(2)
+        plt.title("ROC curve")
+        plt.axis([101, -1, -1, 101])
+        plt.plot(x, y, 'r-', x, y, 'ro')
+            
+        
 def stat(Y, T):
     """ Calculates the results for a single output classification
      problem. Y is the network output and T is the target output.
@@ -181,10 +213,10 @@ def stat(Y, T):
         num_first = max(1,len(T.compress((T>0.5).flat)))
         
         num_correct_firsterr = len(T.compress(((T-Y)<-0.5).flat))
-        num_correct_first = 100.0*(num_second-num_correct_firsterr)/num_second
+        num_correct_first = 100.0*(num_first-num_correct_firsterr)/num_first
         
         num_correct_seconderr = len(T.compress(((T-Y)>0.5).flat))
-        num_correct_second = 100.0*(num_first-num_correct_seconderr)/num_first
+        num_correct_second = 100.0*(num_second-num_correct_seconderr)/num_second
         
         missed = sum(abs(numpy.round(Y)-T))
         total_performance = 100.0*(len(T)-missed)/len(T)
@@ -193,7 +225,7 @@ def stat(Y, T):
         print("Total number of data: " + str(len(T)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
         print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
         print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
-        print("Specificity: " + str(num_correct_second) + "% (Success for class 1)")
+        print("Sensitivity: " + str(num_correct_second) + "% (Success for class 1)")
         
         return [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed]
     
@@ -218,4 +250,5 @@ if __name__ == '__main__':
     
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     
+    plotroc(Y, T)
     plot2d2c(net, P, T)
