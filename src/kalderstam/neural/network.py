@@ -1,44 +1,42 @@
 #Defines the node, and the network
 from random import uniform
-from math import exp
-from math import tanh
 import numpy
 import logging
 import matplotlib
 import matplotlib.pyplot as plt
+from kalderstam.neural.functions import linear, logsig, tanh
 
 logger = logging.getLogger('kalderstam.neural.network')
 
-#A few activation functions
-def logsig(x):
-    return 1 / (1 + exp(-x))
-
-def linear(x):
-    return x
+#Single hidden layer ANN. Weights and bias are initialized to random numbers between -1 and 1
+def build_feedforward(input_number=2, hidden_number=5, output_number=1, hidden_function=tanh(), output_function=logsig()):
+    net = network()
+    
+    #Input nodes
+    for i in range(int(input_number)):
+        input = input_node()
+        net.input_nodes.append(input)
+    
+    #Hidden layer
+    for i in range(int(hidden_number)):
+        hidden = node(hidden_function)
+        hidden.connect_nodes(net.input_nodes)
+        net.hidden_nodes.append(hidden)
+        
+    #Output nodes
+    for i in range(int(output_number)):
+        output = node(output_function)
+        output.connect_nodes(net.hidden_nodes)
+        net.output_nodes.append(output)
+    
+    return net
 
 class network:
-    #Single hidden layer ANN. Weights and bias are initialized to random numbers between -1 and 1
-    def build_feedforward(self, input_number=2, hidden_number=5, output_number=1, hidden_function=tanh, output_function=logsig):
+    
+    def __init__(self):
         self.input_nodes = []
         self.hidden_nodes = []
         self.output_nodes = []
-        
-        #Input nodes
-        for i in range(input_number):
-            input = input_node()
-            self.input_nodes.append(input)
-        
-        #Hidden layer
-        for i in range(hidden_number):
-            hidden = node(hidden_function)
-            hidden.connect_nodes(self.input_nodes)
-            self.hidden_nodes.append(hidden)
-            
-        #Output nodes
-        for i in range(output_number):
-            output = node(output_function)
-            output.connect_nodes(self.hidden_nodes)
-            self.output_nodes.append(output)
             
     def get_all_nodes(self):
         """Returns all nodes except the input nodes."""
@@ -80,7 +78,7 @@ class network:
     def traingd(self, input_array, output_array, epochs=300, learning_rate=0.1):
         """Train using Gradient Descent."""
         
-        for j in range(0, epochs):
+        for j in range(0, int(epochs)):
             #Iterate over training data
             logger.debug('Epoch ' + str(j))
             error_sum = 0
@@ -146,10 +144,10 @@ class input_node:
 
 class node:
     #default function is F(x) = x
-    def __init__(self, active=lambda x: x, active_prime=lambda x: 1):
+    def __init__(self, active=linear()):
         self.weights = dict()
-        self.activation_function = active
-        self.activation_derivative = active_prime
+        self.activation_function = active.function
+        self.activation_derivative = active.derivative
         #initialize the bias
         self.bias = uniform(-1, 1)
         #local error is zero to begin with

@@ -1,6 +1,6 @@
 
 import numpy
-from kalderstam.neural.network import network
+from kalderstam.neural.network import build_feedforward
 import matplotlib.pyplot as plt
 from math import sqrt
 from numpy.core.numeric import dot
@@ -110,7 +110,6 @@ def plot2d2c(net, P, T, figure=1):
                 color = 'r'   
             plt.plot(P[num, 0], P[num, 1], color + mark)
         boundary(net, P)
-        plt.show()
         
 def boundary(net, P):
     if len(P[0]) != 2:
@@ -241,8 +240,7 @@ if __name__ == '__main__':
         
     P, T = loadsyn1(100)
                 
-    net = network()
-    net.build_feedforward(2, 1, 1)
+    net = build_feedforward(2, 1, 1)
     
     net.traingd(P, T, 300, 0.1)
     
@@ -252,3 +250,4 @@ if __name__ == '__main__':
     
     plotroc(Y, T)
     plot2d2c(net, P, T)
+    plt.show()
