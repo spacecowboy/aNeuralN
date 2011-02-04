@@ -1,8 +1,9 @@
 import sys
 from kalderstam.neural.network import build_feedforward
-from kalderstam.neural.functions import linear, logsig, tanh
+from kalderstam.neural.functions.activation_functions import linear, logsig, tanh
 from kalderstam.neural.matlab_functions import loadsyn1, plotroc, plot2d2c, stat
 from kalderstam.util.filehandling import parse_file
+from kalderstam.neural.functions import training_functions
 try:
     import pygtk
     pygtk.require("2.0")
@@ -39,6 +40,7 @@ class NeuralUI():
         #default values
         self.hidden_activation_function = tanh()
         self.output_activation_function = logsig()
+        self.training_method = training_functions.traingd
         
         
     def on_startbutton_pressed(self, *args):
@@ -50,7 +52,7 @@ class NeuralUI():
         self.net = build_feedforward(self.input_number.get_value(), self.hidden_number.get_value(), self.output_number.get_value(), self.hidden_activation_function, self.output_activation_function)
         
         if self.trainingbox.props.sensitive:
-            self.net.traingd(P, T, self.epoch_number.get_value(), 0.1)
+            net = self.training_method(self.net, P, T, self.epoch_number.get_value())
         
         Y = self.net.sim(P)
         
@@ -69,9 +71,13 @@ class NeuralUI():
         else:
             self.trainingbox.props.sensitive = False
             
-    def set_traingd(self, radio_button):
+    def set_training_gradient(self, radio_button):
         if radio_button.props.active:
-            self.training_method = 'gd'
+            self.training_method = training_functions.traingd
+    
+    def set_training_genetic(self, radio_button):
+        if radio_button.props.active:
+            self.training_method = training_functions.train_evolutionary
     
     def set_weight_update_online(self, radio_button):
         if radio_button.props.active:

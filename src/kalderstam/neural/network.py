@@ -4,13 +4,13 @@ import numpy
 import logging
 import matplotlib
 import matplotlib.pyplot as plt
-from kalderstam.neural.functions import linear, logsig, tanh
+from kalderstam.neural.functions.activation_functions import linear, logsig, tanh
 
 logger = logging.getLogger('kalderstam.neural.network')
 
 #Single hidden layer ANN. Weights and bias are initialized to random numbers between -1 and 1
 def build_feedforward(input_number=2, hidden_number=5, output_number=1, hidden_function=tanh(), output_function=logsig()):
-    net = network()
+    net = network(hidden_function, output_function)
     
     #Input nodes
     for i in range(int(input_number)):
@@ -33,10 +33,12 @@ def build_feedforward(input_number=2, hidden_number=5, output_number=1, hidden_f
 
 class network:
     
-    def __init__(self):
+    def __init__(self, hidden_func, output_func):
         self.input_nodes = []
         self.hidden_nodes = []
         self.output_nodes = []
+        self.hidden_function = hidden_func
+        self.output_function = output_func
             
     def get_all_nodes(self):
         """Returns all nodes except the input nodes."""
@@ -144,18 +146,22 @@ class input_node:
 
 class node:
     #default function is F(x) = x
-    def __init__(self, active=linear()):
+    def __init__(self, active=linear(), random_range=1):
+        self.random_range = random_range
         self.weights = dict()
         self.activation_function = active.function
         self.activation_derivative = active.derivative
         #initialize the bias
-        self.bias = uniform(-1, 1)
+        self.bias = uniform(-self.random_range,self.random_range)
         #local error is zero to begin with
         self.error = 0
         
-    def connect_nodes(self, nodes):
+    def connect_nodes(self, nodes, weight_dict = None):
         for node in nodes:
-            self.weights[node] = uniform(-1, 1)
+            if not weight_dict:
+                self.weights[node] = uniform(-self.random_range,self.random_range)
+            else:
+                self.weights[node] = weight_dict[node]
             
     def set_error(self, delta):
         """Given a delta = (d_i(m) - y_i(m)), it is multiplied by the derivative of the activation function: Phi'(input_sum)"""

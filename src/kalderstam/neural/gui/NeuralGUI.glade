@@ -537,7 +537,7 @@
                                             <property name="use_action_appearance">False</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
-                                            <signal name="toggled" handler="set_traingd"/>
+                                            <signal name="toggled" handler="set_training_gradient"/>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -582,13 +582,13 @@
                                           <object class="GtkRadioButton" id="training_button4">
                                             <property name="label" translatable="yes">Evolutionary/Genetic</property>
                                             <property name="visible">True</property>
-                                            <property name="sensitive">False</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">False</property>
                                             <property name="use_action_appearance">False</property>
                                             <property name="active">True</property>
                                             <property name="draw_indicator">True</property>
                                             <property name="group">training_button1</property>
+                                            <signal name="toggled" handler="set_training_genetic"/>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
