@@ -1,10 +1,7 @@
 import logging
 import numpy
 from random import sample, random, uniform
-import matplotlib.pyplot as plt
 from kalderstam.neural.network import build_feedforward, input_node, node, network
-from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c,\
-    loadsyn2, loadsyn3
 
 logger = logging.getLogger('kalderstam.neural.network')
 
@@ -126,10 +123,19 @@ def train_evolutionary(net, input_array, output_array, epochs=300, mutation_chan
             
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
+    
+    try:
+        from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c,\
+        loadsyn2, loadsyn3
+        from kalderstam.util.filehandling import parse_file
+        import matplotlib.pyplot as plt
+    except:
+        pass
         
-    P, T = loadsyn3(100)
+    #P, T = loadsyn3(100)
+    P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
                 
-    net = build_feedforward(2, 4, 1)
+    net = build_feedforward(39, 2, 1)
     
     epochs = 10
     

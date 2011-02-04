@@ -1,6 +1,5 @@
 
 import numpy
-from kalderstam.neural.network import build_feedforward
 import matplotlib.pyplot as plt
 from math import sqrt
 from numpy.core.numeric import dot
@@ -231,6 +230,9 @@ def stat(Y, T):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     
+    from kalderstam.neural.functions.training_functions import traingd
+    from kalderstam.neural.network import build_feedforward
+    
     #Binary activation function
     def activation_function(x):
         if x > 0:
@@ -242,7 +244,7 @@ if __name__ == '__main__':
                 
     net = build_feedforward(2, 1, 1)
     
-    net.traingd(P, T, 300, 0.1)
+    net = traingd(net, P, T, 300, 0.1)
     
     Y = net.sim(P)
     

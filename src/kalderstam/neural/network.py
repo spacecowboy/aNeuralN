@@ -2,8 +2,6 @@
 from random import uniform
 import numpy
 import logging
-import matplotlib
-import matplotlib.pyplot as plt
 from kalderstam.neural.functions.activation_functions import linear, logsig, tanh
 
 logger = logging.getLogger('kalderstam.neural.network')
