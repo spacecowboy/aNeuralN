@@ -1,44 +1,42 @@
 #Defines the node, and the network
 from random import uniform
-from math import exp
-from math import tanh
 import numpy
 import logging
-import matplotlib
-import matplotlib.pyplot as plt
+from kalderstam.neural.functions.activation_functions import linear, logsig, tanh
 
 logger = logging.getLogger('kalderstam.neural.network')
 
-#A few activation functions
-def logsig(x):
-    return 1 / (1 + exp(-x))
-
-def linear(x):
-    return x
+#Single hidden layer ANN. Weights and bias are initialized to random numbers between -1 and 1
+def build_feedforward(input_number=2, hidden_number=5, output_number=1, hidden_function=tanh(), output_function=logsig()):
+    net = network(hidden_function, output_function)
+    
+    #Input nodes
+    for i in range(int(input_number)):
+        input = input_node()
+        net.input_nodes.append(input)
+    
+    #Hidden layer
+    for i in range(int(hidden_number)):
+        hidden = node(hidden_function)
+        hidden.connect_nodes(net.input_nodes)
+        net.hidden_nodes.append(hidden)
+        
+    #Output nodes
+    for i in range(int(output_number)):
+        output = node(output_function)
+        output.connect_nodes(net.hidden_nodes)
+        net.output_nodes.append(output)
+    
+    return net
 
 class network:
-    #Single hidden layer ANN. Weights and bias are initialized to random numbers between -1 and 1
-    def build_feedforward(self, input_number=2, hidden_number=5, output_number=1, hidden_function=tanh, output_function=logsig):
+    
+    def __init__(self, hidden_func, output_func):
         self.input_nodes = []
         self.hidden_nodes = []
         self.output_nodes = []
-        
-        #Input nodes
-        for i in range(input_number):
-            input = input_node()
-            self.input_nodes.append(input)
-        
-        #Hidden layer
-        for i in range(hidden_number):
-            hidden = node(hidden_function)
-            hidden.connect_nodes(self.input_nodes)
-            self.hidden_nodes.append(hidden)
-            
-        #Output nodes
-        for i in range(output_number):
-            output = node(output_function)
-            output.connect_nodes(self.hidden_nodes)
-            self.output_nodes.append(output)
+        self.hidden_function = hidden_func
+        self.output_function = output_func
             
     def get_all_nodes(self):
         """Returns all nodes except the input nodes."""
@@ -80,10 +78,10 @@ class network:
     def traingd(self, input_array, output_array, epochs=300, learning_rate=0.1):
         """Train using Gradient Descent."""
         
-        error_sum = 0
-        for j in range(0, epochs):
+        for j in range(0, int(epochs)):
             #Iterate over training data
             logger.debug('Epoch ' + str(j))
+            error_sum = 0
             for i in range(0, len(input_array)):
                 input = input_array[i]
                 # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
@@ -97,17 +95,17 @@ class network:
                     node.error = 0
                 
                 #Set errors on output nodes first
-                error_sum = 0
                 for output_index in range(0, len(self.output_nodes)):
                     self.output_nodes[output_index].set_error(output[output_index] - result[output_index])
                     error_sum += abs(output[output_index] - result[output_index])
-                    
+                
                 #Iterate over the nodes and correct the weights
                 for node in self.output_nodes + self.hidden_nodes:
                     for back_node, back_weight in node.weights.iteritems():
                         back_node.error += back_weight * node.error
                         node.weights[back_node] = back_weight + learning_rate * node.error * back_node.output()
-
+            #normalize error
+            error_sum /= len(self.output_nodes)
             logger.debug("Error = " + str(error_sum))
 
         
@@ -146,18 +144,22 @@ class input_node:
 
 class node:
     #default function is F(x) = x
-    def __init__(self, active=lambda x: x, active_prime=lambda x: 1):
+    def __init__(self, active=linear(), random_range=1):
+        self.random_range = random_range
         self.weights = dict()
-        self.activation_function = active
-        self.activation_derivative = active_prime
+        self.activation_function = active.function
+        self.activation_derivative = active.derivative
         #initialize the bias
-        self.bias = uniform(-1, 1)
+        self.bias = uniform(-self.random_range,self.random_range)
         #local error is zero to begin with
         self.error = 0
         
-    def connect_nodes(self, nodes):
+    def connect_nodes(self, nodes, weight_dict = None):
         for node in nodes:
-            self.weights[node] = uniform(-1, 1)
+            if not weight_dict:
+                self.weights[node] = uniform(-self.random_range,self.random_range)
+            else:
+                self.weights[node] = weight_dict[node]
             
     def set_error(self, delta):
         """Given a delta = (d_i(m) - y_i(m)), it is multiplied by the derivative of the activation function: Phi'(input_sum)"""
