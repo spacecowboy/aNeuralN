@@ -4,6 +4,7 @@ from kalderstam.neural.functions.activation_functions import linear, logsig, tan
 from kalderstam.neural.matlab_functions import loadsyn1, plotroc, plot2d2c, stat
 from kalderstam.util.filehandling import parse_file
 from kalderstam.neural.functions import training_functions
+from kalderstam.neural.trainer import Trainer
 try:
     import pygtk
     pygtk.require("2.0")
@@ -46,21 +47,22 @@ class NeuralUI():
     def on_startbutton_pressed(self, *args):
         logging.basicConfig(level=logging.DEBUG)
         
-        #P, T = loadsyn1(100)
-        P, T = parse_file(self.input_entry.get_text(), self.input_number.get_value(), self.output_number.get_value())
+        P, T = loadsyn1(100)
+        #P, T = parse_file(self.input_entry.get_text(), self.input_number.get_value(), self.output_number.get_value())
         
-        self.net = build_feedforward(self.input_number.get_value(), self.hidden_number.get_value(), self.output_number.get_value(), self.hidden_activation_function, self.output_activation_function)
+        trainer = Trainer()
+        trainer.input_number = self.input_number.get_value()
+        trainer.hidden_number = self.hidden_number.get_value()
+        trainer.output_number = self.output_number.get_value()
+        trainer.hidden_activation_function = self.hidden_activation_function
+        trainer.output_activation_function = self.output_activation_function
+        trainer.training_method = self.training_method
+        trainer.epochs = self.epoch_number.get_value()
+        trainer.inputs = P
+        trainer.outputs = T
         
-        if self.trainingbox.props.sensitive:
-            net = self.training_method(self.net, P, T, self.epoch_number.get_value())
+        trainer.start()
         
-        Y = self.net.sim(P)
-        
-        [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-        
-        plotroc(Y, T)
-        plot2d2c(self.net, P, T)
-        plt.show()
             
     def on_MainWindow_destroy(self, *args):
         gtk.main_quit()
