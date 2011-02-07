@@ -6,19 +6,15 @@ from kalderstam.neural.functions.activation_functions import linear, logsig, tan
 
 logger = logging.getLogger('kalderstam.neural.network')
 
-#Single hidden layer ANN. Weights and bias are initialized to random numbers between -1 and 1
-def build_feedforward(input_number=2, hidden_number=5, output_number=1, hidden_function=tanh(), output_function=logsig()):
+def build_feedforward(input_number=2, hidden_number=2, output_number=1, hidden_function=tanh(), output_function=logsig()):
     net = network(hidden_function, output_function)
-    
-    #Input nodes
-    for i in range(int(input_number)):
-        input = input_node()
-        net.input_nodes.append(input)
+    net.num_of_inputs = input_number
+    inputs = range(input_number)
     
     #Hidden layer
     for i in range(int(hidden_number)):
         hidden = node(hidden_function)
-        hidden.connect_nodes(net.input_nodes)
+        hidden.connect_nodes(inputs)
         net.hidden_nodes.append(hidden)
         
     #Output nodes
@@ -32,7 +28,7 @@ def build_feedforward(input_number=2, hidden_number=5, output_number=1, hidden_f
 class network:
     
     def __init__(self, hidden_func, output_func):
-        self.input_nodes = []
+        self.num_of_inputs = 0
         self.hidden_nodes = []
         self.output_nodes = []
         self.hidden_function = hidden_func
@@ -47,7 +43,7 @@ class network:
             
     def __len__(self):
         """The length of the network is defined as: input nodes + hidden nodes + output nodes."""
-        return len(self.input_nodes) + len(self.hidden_nodes) + len(self.output_nodes)
+        return self.num_of_inputs + len(self.hidden_nodes) + len(self.output_nodes)
     
     def sim(self, input_array):
         results = numpy.array([])
@@ -60,89 +56,25 @@ class network:
     #inputs is a list that must match in length with the number of input nodes
     def update(self, inputs):
         """Returns a numpy array of output value arrays."""
-        if len(self.input_nodes) != len(inputs):
-            logger.error('Incorrect number of inputs(' + str(len(inputs)) + '), correct number is', len(self.input_nodes))
+        if self.num_of_inputs != len(inputs):
+            logger.error('Incorrect number of inputs(' + str(len(inputs)) + '), correct number is ' + str(self.num_of_inputs))
         else:
             results = numpy.array([])
             #Update input nodes to the values
-            index = 0
-            for value in inputs:
-                self.input_nodes[index].value = value
-                index += 1
+            #index = 0
+            #for value in inputs:
+            #    self.input_nodes[index].value = value
+            #    index += 1
             
             for output_node in self.output_nodes:
-                results = numpy.append(results, output_node.output())
-            
-            return results
-        
-    def traingd(self, input_array, output_array, epochs=300, learning_rate=0.1):
-        """Train using Gradient Descent."""
-        
-        for j in range(0, int(epochs)):
-            #Iterate over training data
-            logger.debug('Epoch ' + str(j))
-            error_sum = 0
-            for i in range(0, len(input_array)):
-                input = input_array[i]
-                # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
-                output = numpy.append(numpy.array([]), output_array[i])
-                    
-                #Calc output
-                result = self.update(input)
-                    
-                #Set error to 0 on all nodes first
-                for node in self.get_all_nodes():
-                    node.error = 0
-                
-                #Set errors on output nodes first
-                for output_index in range(0, len(self.output_nodes)):
-                    self.output_nodes[output_index].set_error(output[output_index] - result[output_index])
-                    error_sum += abs(output[output_index] - result[output_index])
-                
-                #Iterate over the nodes and correct the weights
-                for node in self.output_nodes + self.hidden_nodes:
-                    for back_node, back_weight in node.weights.iteritems():
-                        back_node.error += back_weight * node.error
-                        node.weights[back_node] = back_weight + learning_rate * node.error * back_node.output()
-            #normalize error
-            error_sum /= len(self.output_nodes)
-            logger.debug("Error = " + str(error_sum))
+                results = numpy.append(results, output_node.output(inputs))
 
-        
-    def train(self, input_array, output_array, weight_calculator=lambda input_value, old_weight, error: old_weight + 0.1 * error * input_value, error_calculator=lambda weight, error: weight * error):
-        if not len(input_array) == len(output_array):
-            logger.error('Error: Length of input and output arrays do not match.')
-        else:
-            #Iterate over training data
-            for i in range(0, len(input_array)):
-                input = input_array[i]
-                output = output_array[i]
-                
-                #Calc output
-                result = self.update(input)
-                
-                #Set error to 0 on all nodes first
-                for node in self.get_all_nodes():
-                    node.error = 0
-                
-                #Set errors on output nodes first
-                for j in range(0, len(self.output_nodes)):
-                    self.output_nodes[j].set_error(output[j] - result[j])
-                
-                #Iterate over the nodes and correct the weights
-                #for node in self.output_nodes + self.hidden_nodes:
-                    #node.update_weights(weight_calculator, error_calculator)
-            
-#Special type of node, since it is really just a scalar.
-class input_node:
-    def __init__(self, value=1):
-        self.value = value
-        self.error = 0 #just here to make the back-propagation algorithm easy
-    
-    def output(self):
-        return self.value
+            return results
 
 class node:
+    def __int__(self):
+        raise ValueError
+    
     #default function is F(x) = x
     def __init__(self, active=linear(), random_range=1):
         self.random_range = random_range
@@ -165,24 +97,26 @@ class node:
         """Given a delta = (d_i(m) - y_i(m)), it is multiplied by the derivative of the activation function: Phi'(input_sum)"""
         self.error = delta * self.activation_derivative(self.input_sum)
         
-    def output(self):
+    def output(self, inputs):
         self.input_sum = self.bias
         for node, weight in self.weights.iteritems():
-            self.input_sum += node.output()*weight
+            try:
+                index = int(node)
+                self.input_sum += weight*inputs[index]
+                #print 'Input value used: ' + str(weight) + '*' + str(inputs[index])
+            except ValueError:
+                self.input_sum += node.output(inputs)*weight
+                #print 'ValueError, moving backwards: ' + str(weight)
         
         return self.activation_function(self.input_sum)
                 
 
-#if __name__ == '__main__':
-#    #Binary activation function
-#    def activation_function(x):
-#        if x > 0:
-#            return 1
-#        else:
-#            return 0
-#                
-#    net = network()
-#    net.build_feedforward(2, 1, 1, output_function = activation_function)
+if __name__ == '__main__': 
+     net = build_feedforward()
+     
+     results = net.update([1, 2])
+     
+     print results
 #    
 #    #T = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 #    #P1 = [2.04699421438210, 0.386227934213871, 0.366680687337705, 0.583651729841386, -0.646548113409711, 0.744485584959789, 0.800551621960988, -0.0655744844339043, 0.512110467987089, 1.44050697067342, 0.284789001890266, 1.59319716783919, 0.399996113789293, 2.39006664827929, 1.53791915841959, 0.953808369089956, 1.36045712873556, 0.797762159917227, 0.579996927509666, 0.440625861574360, 1.40507910582573, 1.07160956531203, 1.24576460068840, 0.121346362479676, 1.09664386091711, 0.0763973669460567, 0.323185050093574, 0.312906907310133, -0.438248158570272, 1.39019350492901, 1.60463537979849, 0.672222508659518, 0.844883271482691, 1.36204690575305, 1.31579887067303, 1.03140909309631, 0.908980229634832, 0.0575116830765665, 0.676192872233737, 2.13521286298613, 0.623494772409942, 2.12767265739104, 0.241280368088821, 0.383379239572360, 0.00827865053454496, 0.675635199879619, 0.494655090812019, 1.90370871908190, 0.511617475492609, -0.116268026118420, 0.458025969725571, -1.23334784533326, -1.17123009327634, 0.953004086148303, -1.44281910049472, -0.520502579866877, -0.153790049603719, -0.766751282914447, -0.0221207573206125, -0.277964987163300, -2.72162310943103, -1.53608543258090, -1.11745991714396, 0.139356042341599, -0.488729859598146, -0.00333603559073001, -0.623700921909197, -2.37102006934499, 0.593039819251113, 0.0269183512767745, -0.418822348000131, -0.219944189949409, 0.386019134699817, -0.885178791784036, -0.0883619278496028, -0.229674682850103, -0.461885038047083, -1.42335625158464, -1.61425689688991, -0.691661369921274, 0.966939332851572, -0.0442941913626650, -1.22734940941890, -1.17612514969461, 0.0215015059821598, 0.345947398081640, -0.639812149086709, -0.442502695478462, 0.481846105000130, -0.236208219961442, 1.02951264872338, -1.24025119439177, -0.627288271112161, -1.44138479635650, -0.567295209615143, -0.123756016046696, -1.25889421832114, -1.16182194445294, -0.740062469645386, -0.525200244124737]

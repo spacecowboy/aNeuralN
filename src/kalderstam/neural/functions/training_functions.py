@@ -1,7 +1,7 @@
 import logging
 import numpy
 from random import sample, random, uniform
-from kalderstam.neural.network import build_feedforward, input_node, node, network
+from kalderstam.neural.network import build_feedforward, node, network
 
 logger = logging.getLogger('kalderstam.neural.network')
 
@@ -32,21 +32,26 @@ def traingd(net, input_array, output_array, epochs=300, learning_rate=0.1):
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
                 for back_node, back_weight in node.weights.iteritems():
-                    back_node.error += back_weight * node.error
-                    node.weights[back_node] = back_weight + learning_rate * node.error * back_node.output()
+                    try:
+                        index = int(back_node)
+                        node.weights[back_node] = back_weight + learning_rate * node.error * input[index]
+                        #print 'Input value used: ' + str(weight) + '*' + str(inputs[index])
+                    except ValueError:
+                        back_node.error += back_weight * node.error
+                        node.weights[back_node] = back_weight + learning_rate * node.error * back_node.output(input)
         #normalize error
         error_sum /= len(net.output_nodes)
         logger.debug("Error = " + str(error_sum))
     return net
             
-def train_evolutionary(net, input_array, output_array, epochs=300, mutation_chance = 0.05, random_range=3):
+def train_evolutionary(net, input_array, output_array, epochs=300, population_size = 50, mutation_chance = 0.05, random_range=3):
     """Creates more networks and evolves the best it can."""
     #Create a population of 50 networks
     population = list()
     best = None
     best_error = None
-    for index in range(50):
-        population.append(build_feedforward(len(net.input_nodes), len(net.hidden_nodes), len(net.output_nodes), net.hidden_function, net.output_function))
+    for index in range(population_size):
+        population.append(build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes), net.hidden_function, net.output_function))
     #For each generation
     for generation in range(int(epochs)):
         error = dict() #reset errors
@@ -62,6 +67,7 @@ def train_evolutionary(net, input_array, output_array, epochs=300, mutation_chan
                 result = member.update(input)
                 #calc sum-square error
                 error[member] += ((output - result)**2).sum()
+                
             #compare with best
             if not best or error[member] < best_error:
                 best = member
@@ -82,24 +88,25 @@ def train_evolutionary(net, input_array, output_array, epochs=300, mutation_chan
             [mother, father] = sample(best_five, 2)
             
             population[child_index] = network(mother.hidden_function, mother.output_function)
+            population[child_index].num_of_inputs = mother.num_of_inputs
     
             #Input nodes
-            for i in range(len(mother.input_nodes)):
-                input = input_node()
-                population[child_index].input_nodes.append(input)
-            input_nodes = population[child_index].input_nodes
+            #for i in range(len(mother.input_nodes)):
+            #    input = input_node()
+            #    population[child_index].input_nodes.append(input)
+            #input_nodes = population[child_index].input_nodes
             
             #Hidden layer
             for i in range(len(mother.hidden_nodes)):
                 hidden = node(mother.hidden_function, random_range)
                 weights = dict()
-                for j in range(len(mother.input_nodes)):
+                for j in range(mother.num_of_inputs):
                     choice = sample([mother, father], 1)[0]
-                    weights[input_nodes[j]] = choice.hidden_nodes[i].weights[choice.input_nodes[j]]
+                    weights[j] = choice.hidden_nodes[i].weights[j]
                     if (random() < mutation_chance): # mutation chance
-                        weights[input_nodes[j]] += uniform(-random_range, random_range)
+                        weights[j] += uniform(-random_range, random_range)
                 
-                hidden.connect_nodes(input_nodes, weights)
+                hidden.connect_nodes(range(mother.num_of_inputs), weights)
                 population[child_index].hidden_nodes.append(hidden)
             hidden_nodes = population[child_index].hidden_nodes
                 
@@ -132,10 +139,10 @@ if __name__ == '__main__':
     except:
         pass
         
-    #P, T = loadsyn3(100)
-    P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
+    P, T = loadsyn3(100)
+    #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
                 
-    net = build_feedforward(39, 2, 1)
+    net = build_feedforward(2, 2, 1)
     
     epochs = 10
     
