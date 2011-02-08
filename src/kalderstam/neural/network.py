@@ -92,23 +92,20 @@ class node:
                 self.weights[node] = uniform(-self.random_range,self.random_range)
             else:
                 self.weights[node] = weight_dict[node]
-            
-    def set_error(self, delta):
-        """Given a delta = (d_i(m) - y_i(m)), it is multiplied by the derivative of the activation function: Phi'(input_sum)"""
-        self.error = delta * self.activation_derivative(self.input_sum)
-        
-    def output(self, inputs):
-        self.input_sum = self.bias
+                
+    def input_sum(self, inputs):
+        input_sum = self.bias
         for node, weight in self.weights.iteritems():
             try:
                 index = int(node)
-                self.input_sum += weight*inputs[index]
-                #print 'Input value used: ' + str(weight) + '*' + str(inputs[index])
+                input_sum += weight*inputs[index]
             except ValueError:
-                self.input_sum += node.output(inputs)*weight
-                #print 'ValueError, moving backwards: ' + str(weight)
+                input_sum += node.output(inputs)*weight
+                
+        return input_sum
         
-        return self.activation_function(self.input_sum)
+    def output(self, inputs):
+        return self.activation_function(self.input_sum(inputs))
                 
 
 if __name__ == '__main__': 

@@ -12,7 +12,8 @@ def traingd(net, input_array, output_array, epochs=300, learning_rate=0.1):
         #Iterate over training data
         logger.debug('Epoch ' + str(j))
         error_sum = 0
-        for i in range(0, len(input_array)):
+        #Train in random order
+        for i in sample(range(len(input_array)), len(input_array)):
             input = input_array[i]
             # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
             output = numpy.append(numpy.array([]), output_array[i])
@@ -22,23 +23,71 @@ def traingd(net, input_array, output_array, epochs=300, learning_rate=0.1):
                 
             #Set error to 0 on all nodes first
             for node in net.get_all_nodes():
-                node.error = 0
+                node.error_gradient = 0
             
             #Set errors on output nodes first
             for output_index in range(0, len(net.output_nodes)):
-                net.output_nodes[output_index].set_error(output[output_index] - result[output_index])
+                node = net.output_nodes[output_index]
+                node.error_gradient = output[output_index] - result[output_index]
                 error_sum += ((output - result)**2).sum()
             
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
+                #Calculate local error gradient
+                node.error_gradient *= node.activation_derivative(node.input_sum(input))
+                #Propagate the error backwards and then update the weight
                 for back_node, back_weight in node.weights.iteritems():
                     try:
                         index = int(back_node)
-                        node.weights[back_node] = back_weight + learning_rate * node.error * input[index]
+                        node.weights[back_node] = back_weight + learning_rate * node.error_gradient * input[index]
                         #print 'Input value used: ' + str(weight) + '*' + str(inputs[index])
                     except ValueError:
-                        back_node.error += back_weight * node.error
-                        node.weights[back_node] = back_weight + learning_rate * node.error * back_node.output(input)
+                        back_node.error_gradient += back_weight * node.error_gradient
+                        node.weights[back_node] = back_weight + learning_rate * node.error_gradient * back_node.output(input)
+        #normalize error
+        error_sum /= len(net.output_nodes)
+        logger.debug("Error = " + str(error_sum))
+    return net
+
+def traingd_batch(net, input_array, output_array, epochs=300, learning_rate=0.1):
+    """Train using Gradient Descent."""
+    
+    for j in range(0, int(epochs)):
+        #Iterate over training data
+        logger.debug('Epoch ' + str(j))
+        error_sum = 0
+        #Train in random order
+        for i in sample(range(len(input_array)), len(input_array)):
+            input = input_array[i]
+            # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
+            output = numpy.append(numpy.array([]), output_array[i])
+                
+            #Calc output
+            result = net.update(input)
+                
+            #Set error to 0 on all nodes first
+            for node in net.get_all_nodes():
+                node.error_gradient = 0
+            
+            #Set errors on output nodes first
+            for output_index in range(0, len(net.output_nodes)):
+                node = net.output_nodes[output_index]
+                node.error_gradient = output[output_index] - result[output_index]
+                error_sum += ((output - result)**2).sum()
+            
+            #Iterate over the nodes and correct the weights
+            for node in net.output_nodes + net.hidden_nodes:
+                #Calculate local error gradient
+                node.error_gradient *= node.activation_derivative(node.input_sum(input))
+                #Propagate the error backwards and then update the weight
+                for back_node, back_weight in node.weights.iteritems():
+                    try:
+                        index = int(back_node)
+                        node.weights[back_node] = back_weight + learning_rate * node.error_gradient * input[index]
+                        #print 'Input value used: ' + str(weight) + '*' + str(inputs[index])
+                    except ValueError:
+                        back_node.error_gradient += back_weight * node.error_gradient
+                        node.weights[back_node] = back_weight + learning_rate * node.error_gradient * back_node.output(input)
         #normalize error
         error_sum /= len(net.output_nodes)
         logger.debug("Error = " + str(error_sum))
@@ -144,7 +193,7 @@ if __name__ == '__main__':
                 
     net = build_feedforward(2, 2, 1)
     
-    epochs = 10
+    epochs = 100
     
     best = traingd(net, P, T, epochs)
     Y = best.sim(P)
@@ -152,7 +201,7 @@ if __name__ == '__main__':
     plot2d2c(best, P, T, 1)
     plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
     
-    best = train_evolutionary(net, P, T, epochs*2, random_range=5)
+    best = train_evolutionary(net, P, T, epochs/5, random_range=5)
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plot2d2c(best, P, T, 2)
