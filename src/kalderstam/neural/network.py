@@ -83,8 +83,6 @@ class node:
         self.activation_derivative = active.derivative
         #initialize the bias
         self.bias = uniform(-self.random_range,self.random_range)
-        #local error is zero to begin with
-        self.error = 0
         
     def connect_nodes(self, nodes, weight_dict = None):
         for node in nodes:

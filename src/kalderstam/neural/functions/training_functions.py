@@ -2,6 +2,8 @@ import logging
 import numpy
 from random import sample, random, uniform
 from kalderstam.neural.network import build_feedforward, node, network
+from multiprocessing.process import Process
+from multiprocessing import Queue
 
 logger = logging.getLogger('kalderstam.neural.network')
 
@@ -49,49 +51,102 @@ def traingd(net, input_array, output_array, epochs=300, learning_rate=0.1):
         logger.debug("Error = " + str(error_sum))
     return net
 
-def traingd_batch(net, input_array, output_array, epochs=300, learning_rate=0.1):
+def traingd_block(net, input_array, output_array, epochs=300, learning_rate=50, block_size=0):
     """Train using Gradient Descent."""
+    
+    input_avg = input_array.mean(axis=0)
     
     for j in range(0, int(epochs)):
         #Iterate over training data
         logger.debug('Epoch ' + str(j))
         error_sum = 0
-        #Train in random order
-        for i in sample(range(len(input_array)), len(input_array)):
-            input = input_array[i]
-            # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
-            output = numpy.append(numpy.array([]), output_array[i])
-                
-            #Calc output
-            result = net.update(input)
-                
-            #Set error to 0 on all nodes first
-            for node in net.get_all_nodes():
-                node.error_gradient = 0
+        if block_size < 1 or block_size > len(input_array): #if 0, then equivalent to batch
+            block_size = len(input_array)
+        
+        for blocks in range(int(len(input_array)/block_size)):
             
-            #Set errors on output nodes first
-            for output_index in range(0, len(net.output_nodes)):
-                node = net.output_nodes[output_index]
-                node.error_gradient = output[output_index] - result[output_index]
-                error_sum += ((output - result)**2).sum()
+            #Clear values on all nodes first
+            for node in net.get_all_nodes():
+                node.gradient_values = numpy.array([])
+                node.output_values = numpy.array([])
+            
+            #Train in random order
+            for i in sample(range(len(input_array)), block_size):
+                input = input_array[i]
+                # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
+                answer = numpy.append(numpy.array([]), output_array[i])
+                    
+                #Calc output
+                result = net.update(input)
+                    
+                #Set error to 0 on all nodes first
+                for node in net.get_all_nodes():
+                    node.error_gradient = 0
+                    node.output_values = numpy.append(node.output_values, node.output(input))
+                
+                #Set errors on output nodes first
+                for output_index in range(0, len(net.output_nodes)):
+                    node = net.output_nodes[output_index]
+                    node.error_gradient = answer[output_index] - result[output_index]
+                    error_sum += ((answer - result)**2).sum()
+                
+                #Iterate over the nodes and calculate error gradients
+                for node in net.output_nodes + net.hidden_nodes:
+                    #Calculate local error gradient
+                    node.error_gradient *= node.activation_derivative(node.input_sum(input))
+                    node.gradient_values = numpy.append(node.gradient_values, node.error_gradient)
+                    #Propagate the error backwards
+                    for back_node, back_weight in node.weights.iteritems():
+                        try:
+                            index = int(back_node)
+                            #node.weights[back_node] = back_weight + learning_rate * node.error_gradient * input[index]
+                            #print 'Input value used: ' + str(weight) + '*' + str(inputs[index])
+                        except ValueError:
+                            back_node.error_gradient += back_weight * node.error_gradient
+                            #node.weights[back_node] = back_weight + learning_rate * node.error_gradient * back_node.output(input)
+            
             
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
-                #Calculate local error gradient
-                node.error_gradient *= node.activation_derivative(node.input_sum(input))
-                #Propagate the error backwards and then update the weight
+                #avg all the error gradients
+                error_gradient = node.gradient_values.mean()
+                #Calculate weight update
                 for back_node, back_weight in node.weights.iteritems():
                     try:
                         index = int(back_node)
-                        node.weights[back_node] = back_weight + learning_rate * node.error_gradient * input[index]
+                        node.weights[back_node] = back_weight + learning_rate * error_gradient * input_avg[index]
                         #print 'Input value used: ' + str(weight) + '*' + str(inputs[index])
                     except ValueError:
-                        back_node.error_gradient += back_weight * node.error_gradient
-                        node.weights[back_node] = back_weight + learning_rate * node.error_gradient * back_node.output(input)
+                        #avg all the output values
+                        back_output = back_node.output_values.mean()
+                        node.weights[back_node] = back_weight + learning_rate * error_gradient * back_output
         #normalize error
         error_sum /= len(net.output_nodes)
         logger.debug("Error = " + str(error_sum))
     return net
+
+class Evaluator(Process):
+    def __init__(self, queue, error, nets):
+        Process.__init__(self)
+        self.queue = queue
+        self.error = error
+        self.nets = nets
+    
+    def run(self):
+        while not self.queue.empty():
+            # get a task
+            try:
+                [input, answer] = self.work_queue.get_nowait()
+            except: #Queue.Empty
+                break
+            for member in self.nets:
+                # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
+                output = numpy.append(numpy.array([]), answer)
+                #Calc output
+                result = member.update(input)
+                #calc sum-square error
+                error_sum = ((output - result)**2).sum()
+                self.error[member] += error_sum
             
 def train_evolutionary(net, input_array, output_array, epochs=300, population_size = 50, mutation_chance = 0.05, random_range=3):
     """Creates more networks and evolves the best it can."""
@@ -188,10 +243,10 @@ if __name__ == '__main__':
     except:
         pass
         
-    P, T = loadsyn3(100)
-    #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
+    #P, T = loadsyn3(100)
+    P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
                 
-    net = build_feedforward(2, 2, 1)
+    net = build_feedforward(39, 2, 1)
     
     epochs = 100
     
@@ -212,14 +267,6 @@ if __name__ == '__main__':
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plot2d2c(best, P, T, 3)
     plt.title("Genetic followed by Gradient Descent\n Total performance = " + str(total_performance) + "%")
-    
-    #net.traingd(P, T, 300, 0.1)
-    
-    #Y = net.sim(P)
-    #Y2 = best.sim(P)
-    
-    #[num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    #[num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y2, T)
     
     #plotroc(Y, T)
     plt.show()
