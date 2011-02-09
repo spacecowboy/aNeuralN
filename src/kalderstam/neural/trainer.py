@@ -6,7 +6,7 @@ from kalderstam.neural.network import build_feedforward
 from kalderstam.neural.matlab_functions import plotroc, plot2d2c, stat
 import matplotlib.pyplot as plt
 
-class Trainer(Process):
+class Builder(Process):
     def __init__(self):
         Process.__init__(self)
         

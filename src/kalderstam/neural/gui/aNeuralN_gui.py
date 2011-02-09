@@ -4,7 +4,7 @@ from kalderstam.neural.functions.activation_functions import linear, logsig, tan
 from kalderstam.neural.matlab_functions import loadsyn1, plotroc, plot2d2c, stat
 from kalderstam.util.filehandling import parse_file
 from kalderstam.neural.functions import training_functions
-from kalderstam.neural.trainer import Trainer
+from kalderstam.neural.trainer import Builder
 try:
     import pygtk
     pygtk.require("2.0")
@@ -50,7 +50,7 @@ class NeuralUI():
         P, T = loadsyn1(100)
         #P, T = parse_file(self.input_entry.get_text(), self.input_number.get_value(), self.output_number.get_value())
         
-        trainer = Trainer()
+        trainer = Builder()
         trainer.input_number = self.input_number.get_value()
         trainer.hidden_number = self.hidden_number.get_value()
         trainer.output_number = self.output_number.get_value()
