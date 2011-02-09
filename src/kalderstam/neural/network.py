@@ -35,7 +35,7 @@ class network:
         self.output_function = output_func
             
     def get_all_nodes(self):
-        """Returns all nodes except the input nodes."""
+        """Returns all nodes."""
         result_set = []
         result_set += self.hidden_nodes
         result_set += self.output_nodes

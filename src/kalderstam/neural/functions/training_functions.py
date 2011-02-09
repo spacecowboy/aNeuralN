@@ -5,9 +5,14 @@ from kalderstam.neural.network import build_feedforward, node, network
 from multiprocessing.process import Process
 import multiprocessing as mul
 import sys
+import time
 
 logger = logging.getLogger('kalderstam.neural.network')
-queue = mul.Queue()
+data_queue = mul.Queue()
+weight_correction_queue =mul.Queue()
+#weight_corrections = dict() #[node][back_node] = list of weight_corrections for that
+manager = mul.Manager()
+skit_dict = manager.dict()
 
 def traingd(net, input_array, output_array, epochs=300, learning_rate=0.1):
     """Train using Gradient Descent."""
@@ -58,6 +63,8 @@ class Gradient_Trainer(Process):
         Process.__init__(self)
         
         self.block_size = 1
+        #have to store this locally
+        #self.weight_corrections = dict()
         
     def run(self):
         logger.debug("Starting")
@@ -67,82 +74,98 @@ class Gradient_Trainer(Process):
             logger.error("No net specified to Gradient Trainer!")
         
     def traingd_block(self):
-        logger.debug("Entering training with queue.empty() = " + str(queue.empty()))
-        while not queue.empty():
+        weight_corrections = dict()
+        while not data_queue.empty():
             try:
-                logger.debug("Getting data from queue")
-                [input, output] = queue.get_no_wait()
-                logger.debug("Data retrieved: " + str(output))
+                [input, output] = data_queue.get()
+
                 # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
                 answer = numpy.append(numpy.array([]), output)
-                    
+
                 #Calc output
                 result = self.net.update(input)
-                
+
                 #have to store this locally
                 error_gradients = dict()
-                
+
                 #Set errors on output nodes first
                 for output_index in range(0, len(net.output_nodes)):
                     node = net.output_nodes[output_index]
+
                     error_gradients[node] = answer[output_index] - result[output_index]
+
                 
                 #Iterate over the nodes and correct the weights
                 for node in net.output_nodes + net.hidden_nodes:
                     #Calculate local error gradient
                     error_gradients[node] *= node.activation_derivative(node.input_sum(input))
                     
-                    #Propagate the error backwards and then update the weight
+                    #Create if necessary
+                    if hash(node) not in weight_corrections:
+                        weight_corrections[hash(node)] = dict()
+                        skit_dict[hash(node)] = manager.dict()
+
+                    #Propagate the error backwards and then update the weights
                     for back_node, back_weight in node.weights.iteritems():
                         try:
                             index = int(back_node)
+
                             #store final value in node
-                            if not node.weight_corrections[back_node]:
-                                node.weight_corrections[back_node] = []
-                            node.weight_corrections[back_node].append(error_gradients[node]*input[index])
+                            if hash(back_node) not in weight_corrections[hash(node)]:
+                                (weight_corrections[hash(node)])[hash(back_node)] = []
+                                (skit_dict[hash(node)])[hash(back_node)] = []
+                            (weight_corrections[hash(node)])[hash(back_node)].append(error_gradients[node]*input[index])
+                            (skit_dict[hash(node)])[hash(back_node)].append(error_gradients[node]*input[index])
                             #node.weights[back_node] = back_weight + learning_rate * node.error_gradient * input[index]
                         except ValueError:
                             #back_node.error_gradient += back_weight * node.error_gradient
-                            if not error_gradients[back_node]:
+                            if back_node not in error_gradients:
                                 error_gradients[back_node] = 0
                             error_gradients[back_node] += back_weight * error_gradients[node]
-                            if not node.weight_corrections[back_node]:
-                                node.weight_corrections[back_node] = []
-                            node.weight_corrections[back_node].append(error_gradients[node] * back_node.output(input))
-                
+
+                            if back_node not in weight_corrections[hash(node)]:
+                                (weight_corrections[hash(node)])[hash(back_node)] = []
+                                (skit_dict[hash(node)])[hash(back_node)] = manager.list()
+                            (weight_corrections[hash(node)])[hash(back_node)].append(error_gradients[node] * back_node.output(input))
+                            (skit_dict[hash(node)])[hash(back_node)].append(error_gradients[node] * back_node.output(input))
+            
+            except AttributeError:
+                logger.debug("Exception AttributeError!")
+                break
             except:
                 logger.debug("Exception occured! " + str(sys.exc_info()[0]))
                 break
                 #all done
+        logger.debug("pwned")
+        logger.debug("putting weight_corrections to queue: " + str(weight_corrections))
+        weight_correction_queue.put_nowait(weight_corrections)
 
-def traingd_block(net, input_array, output_array, epochs=300, learning_rate=50, block_size=0):
+def traingd_block(net, input_array, output_array, epochs=300, learning_rate=50, block_size=2):
     """Train using Gradient Descent."""
-    
-    """Create processes"""
-    processes = []
-    for bah in range(1):
-    #for bah in range(mul.cpu_count()):
-        p = Gradient_Trainer()
-        p.net = net
-        processes.append(p)
     
     for j in range(0, int(epochs)):
         #Iterate over training data
         logger.debug('Epoch ' + str(j))
         #error_sum = 0
-        if block_size < 1 or block_size > len(input_array): #if 0, then equivalent to batch
+        if block_size < 1 or block_size > len(input_array): #if 0, then equivalent to batch. 1 is equivalent to online
             block_size = len(input_array)
         
+        print ("blocks : " + str(range(int(len(input_array)/block_size))))
         for blocks in range(int(len(input_array)/block_size)):
             
-            #Clear values on all nodes first
-            for node in net.get_all_nodes():
-                node.weight_corrections = dict()
+            """Create processes"""
+            processes = []
+            for _ in range(1):
+            #for _ in range(mul.cpu_count()):
+                p = Gradient_Trainer()
+                p.net = net
+                processes.append(p)
             
             #Train in random order
             for i in sample(range(len(input_array)), block_size):
-                """Add to queue here!"""
-                queue.put_nowait([input_array[i], output_array[i]])
+                """Add to data_queue here!"""
+                logger.debug("Adding to data_queue: index " + str(i) + ", " + str([input_array[i], output_array[i]]))
+                data_queue.put_nowait([input_array[i], output_array[i]])
             
             """Start processes here"""
             for p in processes:
@@ -151,12 +174,43 @@ def traingd_block(net, input_array, output_array, epochs=300, learning_rate=50, 
             """wait for join"""
             for p in processes:
                 p.join()
+             
+            weight_corrections = dict()
+            #Get all corrections, will be as many as the number of inputs we put in the queue
+#            for _ in range(block_size):
+#                corrections = weight_correction_queue.get(timeout=5)
+#                for hnode in corrections:
+#                    if hnode not in weight_corrections:
+#                        weight_corrections[hnode] = dict()
+#                    for hback_node in corrections[hnode]:
+#                        if hback_node not in weight_corrections[hnode]:
+#                            (weight_corrections[hnode])[hback_node] = []
+#                        ((weight_corrections[hnode])[hback_node]).extend((corrections[hnode])[hback_node])
             
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
+                
+                
+#                if node not in weight_corrections:
+#                    weight_corrections[node] = dict()
+#                    #Retrieve corrections for this node
+#                    for p in processes:
+#                        node_corrections = p.weight_corrections[node]
+#                        
+#                        for key_node in node_corrections:
+#                            if key_node not in weight_corrections[node]:
+#                                (weight_corrections[node])[key_node] = []
+#                            (weight_corrections[node])[key_node].append(node_corrections[key_node])
+                        
+                        
+                        
                 #Calculate weight update
                 for back_node, back_weight in node.weights.iteritems():
-                    node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node])/len(node.weight_corrections[back_node])
+                    #if hash(back_node) not in weight_corrections[hash(node)]:
+                    #    logger.debug("Not there!: " + str(back_node) + " in node.weight_corrections for: " + str(node) + " / " + str(node.weight_corrections))
+                    #node.weights[back_node] = back_weight + learning_rate * sum(weight_corrections[hash(node)][hash(back_node)])/len(weight_corrections[hash(node)][hash(back_node)])
+                    node.weights[back_node] = back_weight + learning_rate * sum((skit_dict[hash(node)])[hash(back_node)])/len((skit_dict[hash(node)])[hash(back_node)])
+                    
 
         #normalize error
         #error_sum = sum()/len(net.output_nodes)
@@ -164,9 +218,9 @@ def traingd_block(net, input_array, output_array, epochs=300, learning_rate=50, 
     return net
 
 class Evaluator(Process):
-    def __init__(self, queue, error, nets):
+    def __init__(self, data_queue, error, nets):
         Process.__init__(self)
-        self.queue = queue
+        self.queue = data_queue
         self.error = error
         self.nets = nets
     
@@ -281,12 +335,12 @@ if __name__ == '__main__':
     except:
         pass
         
-    #P, T = loadsyn3(100)
-    P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
+    P, T = loadsyn3(100)
+    #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
                 
-    net = build_feedforward(39, 2, 1)
+    net = build_feedforward(2, 2, 1)
     
-    epochs = 100
+    epochs = 300
     
     best = traingd_block(net, P, T, epochs)
     Y = best.sim(P)
