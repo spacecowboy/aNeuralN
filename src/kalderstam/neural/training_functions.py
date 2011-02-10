@@ -3,7 +3,7 @@ import numpy
 from random import sample, random, uniform
 from kalderstam.neural.network import build_feedforward, node, network
 
-logger = logging.getLogger('kalderstam.neural.network')
+logger = logging.getLogger('kalderstam.neural.training_functions')
 
 def traingd(net, input_array, output_array, epochs=300, learning_rate=0.1):
     """Train using Gradient Descent."""
