@@ -156,7 +156,7 @@ def boundary(net, P):
                 x2 += x2_inc
             x1 += x1_inc
         
-        plt.plot(coords[0], coords[1], 'g--')
+        plt.plot(coords[0], coords[1], 'g.')
         
 def plotroc(Y, T, points = 100):
     
