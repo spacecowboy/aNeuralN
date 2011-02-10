@@ -60,7 +60,10 @@ def traingd_block(net, input_array, output_array, epochs=300, learning_rate=0.1,
             block_size = len(input_array)
         
         for _ in range(int(len(input_array)/block_size)):
-            weight_corrections = {}
+            
+            #Set error to 0 on all nodes first
+            for node in net.get_all_nodes():
+                node.weight_corrections = {}
             
             #Train in random order
             for i in sample(range(len(input_array)), block_size):
@@ -73,47 +76,39 @@ def traingd_block(net, input_array, output_array, epochs=300, learning_rate=0.1,
                 #Calc output
                 result = net.update(input)
 
-                #have to store this locally
-                error_gradients = {}
+                #Set error to 0 on all nodes first
+                for node in net.get_all_nodes():
+                    node.error_gradient = 0
 
                 #Set errors on output nodes first
                 for output_index in range(0, len(net.output_nodes)):
                     node = net.output_nodes[output_index]
-                    error_gradients[node] = answer[output_index] - result[output_index]
+                    node.error_gradient = answer[output_index] - result[output_index]
 
                 
                 #Iterate over the nodes and correct the weights
                 for node in net.output_nodes + net.hidden_nodes:
                     #Calculate local error gradient
-                    error_gradients[node] *= node.activation_derivative(node.input_sum(input))
-                    
-                    #Create if necessary
-                    if node not in weight_corrections:
-                        weight_corrections[node] = {}
+                    node.error_gradient *= node.activation_derivative(node.input_sum(input))
 
                     #Propagate the error backwards and then update the weights
                     for back_node, back_weight in node.weights.iteritems():
+                        
+                        if back_node not in node.weight_corrections:
+                            (node.weight_corrections)[back_node] = []
+                            
                         try:
                             index = int(back_node)
-
-                            #store final value in node
-                            if back_node not in weight_corrections[node]:
-                                (weight_corrections[node])[back_node] = []
-                            (weight_corrections[node])[back_node].append(error_gradients[node]*input[index])
+                            node.weight_corrections[back_node].append(node.error_gradient*input[index])
                         except ValueError:
-                            if back_node not in error_gradients:
-                                error_gradients[back_node] = 0
-                            error_gradients[back_node] += back_weight * error_gradients[node]
-
-                            if back_node not in weight_corrections[node]:
-                                (weight_corrections[node])[back_node] = []
-                            (weight_corrections[node])[back_node].append(error_gradients[node] * back_node.output(input))
+                            back_node.error_gradient += back_weight * node.error_gradient
+                            node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
             
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
                 #Calculate weight update
                 for back_node, back_weight in node.weights.iteritems():
-                    node.weights[back_node] = back_weight + learning_rate * sum(weight_corrections[node][back_node])/len(weight_corrections[node][back_node])
+                    node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node])/len(node.weight_corrections[back_node])
                     
 
         #normalize error
@@ -221,7 +216,7 @@ if __name__ == '__main__':
                 
     net = build_feedforward(2, 4, 1)
     
-    epochs = 1000
+    epochs = 300
     
     best = traingd(net, P, T, epochs)
     Y = best.sim(P)
@@ -229,17 +224,19 @@ if __name__ == '__main__':
     plot2d2c(best, P, T, 1)
     plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
     
-    #best = train_evolutionary(net, P, T, epochs/5, random_range=5)
-    #Y = best.sim(P)
-    #[num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    #plot2d2c(best, P, T, 2)
-    #plt.title("Only Genetic\n Total performance = " + str(total_performance) + "%")
+    best = train_evolutionary(net, P, T, epochs/5, random_range=5)
+    Y = best.sim(P)
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+    plot2d2c(best, P, T, 2)
+    plt.title("Only Genetic\n Total performance = " + str(total_performance) + "%")
     
-    best = traingd_block(best, P, T, epochs, block_size=0)
+    #net = build_feedforward(2, 4, 1)
+    
+    best = traingd_block(best, P, T, epochs, block_size=10)
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plot2d2c(best, P, T, 3)
-    plt.title("Genetic followed by Gradient Descent\n Total performance = " + str(total_performance) + "%")
+    plt.title("Genetic followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
     
     #plotroc(Y, T)
     plt.show()
