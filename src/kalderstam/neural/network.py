@@ -2,7 +2,7 @@
 from random import uniform
 import numpy
 import logging
-from kalderstam.neural.functions.activation_functions import linear, logsig, tanh
+from kalderstam.neural.activation_functions import linear, logsig, tanh
 
 logger = logging.getLogger('kalderstam.neural.network')
 

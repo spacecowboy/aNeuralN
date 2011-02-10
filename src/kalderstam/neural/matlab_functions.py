@@ -230,7 +230,7 @@ def stat(Y, T):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     
-    from kalderstam.neural.functions.training_functions import traingd
+    from kalderstam.neural.training_functions import traingd
     from kalderstam.neural.network import build_feedforward
     
     #Binary activation function

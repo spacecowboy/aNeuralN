@@ -1,7 +1,7 @@
 from multiprocessing import Process
 
-from kalderstam.neural.functions.activation_functions import logsig, tanh
-from kalderstam.neural.functions import training_functions
+from kalderstam.neural.activation_functions import logsig, tanh
+from kalderstam.neural import training_functions
 from kalderstam.neural.network import build_feedforward
 from kalderstam.neural.matlab_functions import plotroc, plot2d2c, stat
 import matplotlib.pyplot as plt
