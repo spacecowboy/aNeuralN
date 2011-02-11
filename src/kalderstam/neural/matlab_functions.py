@@ -156,7 +156,7 @@ def boundary(net, P):
                 x2 += x2_inc
             x1 += x1_inc
         
-        plt.plot(coords[0], coords[1], 'g--')
+        plt.plot(coords[0], coords[1], 'g.')
         
 def plotroc(Y, T, points = 100):
     
@@ -230,7 +230,7 @@ def stat(Y, T):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     
-    from kalderstam.neural.functions.training_functions import traingd
+    from kalderstam.neural.training_functions import traingd
     from kalderstam.neural.network import build_feedforward
     
     #Binary activation function
