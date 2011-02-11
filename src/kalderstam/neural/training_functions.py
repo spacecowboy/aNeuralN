@@ -123,7 +123,7 @@ def train_evolutionary(net, input_array, output_array, epochs=300, population_si
     best = None
     best_error = None
     for _ in range(population_size):
-        population.append(build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes), net.hidden_function, net.output_function))
+        population.append(build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes)))
     #For each generation
     for generation in range(int(epochs)):
         error = {} #reset errors
@@ -159,7 +159,7 @@ def train_evolutionary(net, input_array, output_array, epochs=300, population_si
         for child_index in range(len(population)):
             [mother, father] = sample(best_five, 2)
             
-            population[child_index] = network(mother.hidden_function, mother.output_function)
+            population[child_index] = network()
             population[child_index].num_of_inputs = mother.num_of_inputs
     
             #Input nodes
@@ -170,7 +170,7 @@ def train_evolutionary(net, input_array, output_array, epochs=300, population_si
             
             #Hidden layer
             for i in range(len(mother.hidden_nodes)):
-                hidden = node(mother.hidden_function, random_range)
+                hidden = node(mother.hidden_nodes[i].function, random_range)
                 weights = {}
                 for j in range(mother.num_of_inputs):
                     choice = sample([mother, father], 1)[0]
@@ -184,7 +184,7 @@ def train_evolutionary(net, input_array, output_array, epochs=300, population_si
                 
             #Output nodes
             for i in range(len(mother.output_nodes)):
-                output = node(mother.output_function)
+                output = node(mother.output_nodes[i].function)
                 weights = {}
                 for j in range(len(mother.hidden_nodes)):
                     choice = sample([mother, father], 1)[0]
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                 
     net = build_feedforward(2, 4, 1)
     
-    epochs = 300
+    epochs = 50
     
     best = traingd(net, P, T, epochs)
     Y = best.sim(P)

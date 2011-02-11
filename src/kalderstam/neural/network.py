@@ -7,7 +7,7 @@ from kalderstam.neural.activation_functions import linear, logsig, tanh
 logger = logging.getLogger('kalderstam.neural.network')
 
 def build_feedforward(input_number=2, hidden_number=2, output_number=1, hidden_function=tanh(), output_function=logsig()):
-    net = network(hidden_function, output_function)
+    net = network()
     net.num_of_inputs = input_number
     inputs = range(input_number)
     
@@ -27,12 +27,10 @@ def build_feedforward(input_number=2, hidden_number=2, output_number=1, hidden_f
 
 class network:
     
-    def __init__(self, hidden_func, output_func):
+    def __init__(self):
         self.num_of_inputs = 0
         self.hidden_nodes = []
         self.output_nodes = []
-        self.hidden_function = hidden_func
-        self.output_function = output_func
             
     def get_all_nodes(self):
         """Returns all nodes."""
@@ -76,13 +74,22 @@ class node:
         raise ValueError
     
     #default function is F(x) = x
-    def __init__(self, active=linear(), random_range=1):
+    def __init__(self, active=linear(), bias = None, random_range=1):
         self.random_range = random_range
         self.weights = dict()
+        self.function = active #Used to save to file
         self.activation_function = active.function
         self.activation_derivative = active.derivative
         #initialize the bias
-        self.bias = uniform(-self.random_range,self.random_range)
+        if bias:
+            self.bias = bias
+        else:
+            self.bias = uniform(-self.random_range,self.random_range)
+        
+    def connect_node(self, node, weight=None):
+        if not weight:
+            weight = uniform(-self.random_range,self.random_range)
+        self.weights[node] = weight
         
     def connect_nodes(self, nodes, weight_dict = None):
         for node in nodes:
