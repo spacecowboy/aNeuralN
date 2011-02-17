@@ -44,6 +44,9 @@ def traingd(net, input_array, output_array, epochs=300, learning_rate=0.1):
                     except ValueError:
                         back_node.error_gradient += back_weight * node.error_gradient
                         node.weights[back_node] = back_weight + learning_rate * node.error_gradient * back_node.output(input)
+                #Finally, bias
+                node.bias = node.bias + learning_rate * node.error_gradient * node.bias
+                
         #normalize error
         error_sum /= len(net.output_nodes)
         logger.debug("Error = " + str(error_sum))
@@ -103,12 +106,19 @@ def traingd_block(net, input_array, output_array, epochs=300, learning_rate=0.1,
                         except ValueError:
                             back_node.error_gradient += back_weight * node.error_gradient
                             node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
+                    
+                    #Finally, correct the bias
+                    if "bias" not in node.weight_corrections:
+                        (node.weight_corrections)["bias"] = []
+                        node.weight_corrections["bias"].append(node.error_gradient * node.bias)
             
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
                 #Calculate weight update
                 for back_node, back_weight in node.weights.iteritems():
                     node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node])/len(node.weight_corrections[back_node])
+                #Don't forget bias
+                node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"])/len(node.weight_corrections["bias"])
                     
 
         #normalize error
@@ -177,6 +187,11 @@ def train_evolutionary(net, input_array, output_array, epochs=300, population_si
                     weights[j] = choice.hidden_nodes[i].weights[j]
                     if (random() < mutation_chance): # mutation chance
                         weights[j] += uniform(-random_range, random_range)
+                #Don't forget bias
+                if (random() < mutation_chance): # mutation chance
+                    hidden.bias = uniform(-random_range, random_range)
+                else:
+                    hidden.bias = sample([mother, father], 1)[0].hidden_nodes[i].bias
                 
                 hidden.connect_nodes(range(mother.num_of_inputs), weights)
                 population[child_index].hidden_nodes.append(hidden)
@@ -191,6 +206,11 @@ def train_evolutionary(net, input_array, output_array, epochs=300, population_si
                     weights[hidden_nodes[j]] = choice.output_nodes[i].weights[choice.hidden_nodes[j]]
                     if (random() < mutation_chance): # mutation chance
                         weights[hidden_nodes[j]] += uniform(-random_range, random_range)
+                #Don't forget bias
+                if (random() < mutation_chance): # mutation chance
+                    output.bias = uniform(-random_range, random_range)
+                else:
+                    output.bias = sample([mother, father], 1)[0].output_nodes[i].bias
                 
                 output.connect_nodes(hidden_nodes, weights)
                 population[child_index].output_nodes.append(output)
@@ -206,7 +226,7 @@ if __name__ == '__main__':
     try:
         from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c,\
         loadsyn2, loadsyn3
-        from kalderstam.util.filehandling import parse_file
+        from kalderstam.util.filehandling import parse_file, save_network
         import matplotlib.pyplot as plt
     except:
         pass
@@ -214,9 +234,9 @@ if __name__ == '__main__':
     P, T = loadsyn3(100)
     #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
                 
-    net = build_feedforward(2, 4, 1)
+    net = build_feedforward(2, 3, 1)
     
-    epochs = 50
+    epochs = 100
     
     best = traingd(net, P, T, epochs)
     Y = best.sim(P)
@@ -229,10 +249,11 @@ if __name__ == '__main__':
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plot2d2c(best, P, T, 2)
     plt.title("Only Genetic\n Total performance = " + str(total_performance) + "%")
+    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
     
     #net = build_feedforward(2, 4, 1)
     
-    best = traingd_block(best, P, T, epochs, block_size=10)
+    best = traingd_block(best, P, T, epochs, block_size=100)
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plot2d2c(best, P, T, 3)
