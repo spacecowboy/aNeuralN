@@ -231,8 +231,8 @@ if __name__ == '__main__':
     except:
         pass
         
-    P, T = loadsyn3(100)
-    #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, 1)
+    #P, T = loadsyn3(100)
+    P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, ignorecols = 40)
                 
     net = build_feedforward(2, 3, 1)
     

@@ -1,5 +1,5 @@
 import numpy
-from kalderstam.util.filehandling import read_data_file
+from kalderstam.util.filehandling import read_data_file, load_network
 from kalderstam.neural.network import network, build_feedforward
 from kalderstam.neural.matlab_functions import stat
 import logging

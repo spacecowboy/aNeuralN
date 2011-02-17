@@ -3,7 +3,7 @@ from kalderstam.neural import network
 import re
 from kalderstam.neural.activation_functions import get_function
 def read_data_file(filename):
-    """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [][]."""
+    """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
     f = open(filename, 'r')
     inputs = []
     
@@ -13,14 +13,30 @@ def read_data_file(filename):
     
     return inputs
 
-def parse_file(filename, targetcolumn, targetnum=1):
-    return parse_data(numpy.array(read_data_file(filename)), targetcolumn, targetnum)
+def parse_file(filename, targetcols, inputcols = None, ignorecols = []):
+    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols)
     
 
-def parse_data(inputs, targetcolumn, targetnum=1):
-    """inputs is an array of input and target columns. targetcolumn specifies which column is the starting target column (starting at 0!). targetnum is the number of target columns."""
-    targets = numpy.array(inputs[:, targetcolumn:(targetcolumn + targetnum)], dtype='float64') #target is 40th column
-    inputs = numpy.array(inputs[:, :targetcolumn], dtype='float64') #first 39 columns are inputs
+def parse_data(inputs, targetcols, inputcols = None, ignorecols = []):
+    """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
+    Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
+    Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs"""
+    if not inputcols:
+        inputcols = range(len(inputs[0]))
+        destroycols = []
+        try:
+            destroycols.append(int(targetcols)) #Only if it's an int
+        except TypeError:
+            destroycols.extend(targetcols)
+        try:
+            destroycols.append(int(ignorecols)) #Only if it's an int
+        except TypeError:
+            destroycols.extend(ignorecols)
+            
+        inputcols = numpy.delete(inputcols, destroycols, 0)
+    
+    targets = numpy.array(inputs[:, targetcols], dtype='float64') #target is 40th column
+    inputs = numpy.array(inputs[:, inputcols], dtype='float64') #first 39 columns are inputs
     
     return (inputs, targets)
 
