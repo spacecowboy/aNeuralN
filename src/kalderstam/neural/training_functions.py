@@ -57,7 +57,7 @@ def traingd_block(net, input_array, output_array, epochs=300, learning_rate=0.1,
     
     for j in range(0, int(epochs)):
         #Iterate over training data
-        logger.debug('Epoch ' + str(j))
+        #logger.debug('Epoch ' + str(j))
         #error_sum = 0
         if block_size < 1 or block_size > len(input_array): #if 0, then equivalent to batch. 1 is equivalent to online
             block_size = len(input_array)
@@ -231,8 +231,8 @@ if __name__ == '__main__':
     except:
         pass
         
-    #P, T = loadsyn3(100)
-    P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, ignorecols = 40)
+    P, T = loadsyn3(100)
+    #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, ignorecols = 40)
                 
     net = build_feedforward(2, 3, 1)
     

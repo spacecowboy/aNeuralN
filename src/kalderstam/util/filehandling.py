@@ -13,14 +13,18 @@ def read_data_file(filename):
     
     return inputs
 
-def parse_file(filename, targetcols, inputcols = None, ignorecols = []):
-    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols)
+def parse_file(filename, targetcols, inputcols = None, ignorecols = [],  ignorerows = []):
+    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows)
     
 
-def parse_data(inputs, targetcols, inputcols = None, ignorecols = []):
+def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = []):
     """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
     Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
-    Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs"""
+    Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs.
+    Ignorerows specify which, if any, rows should be skipped."""
+    
+    inputs = numpy.delete(inputs, ignorerows, 0)
+    
     if not inputcols:
         inputcols = range(len(inputs[0]))
         destroycols = []
