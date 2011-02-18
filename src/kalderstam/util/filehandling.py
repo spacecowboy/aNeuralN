@@ -17,7 +17,7 @@ def parse_file(filename, targetcols, inputcols = None, ignorecols = [],  ignorer
     return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows)
     
 
-def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = []):
+def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
     """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
     Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
     Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs.
@@ -39,8 +39,22 @@ def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows
             
         inputcols = numpy.delete(inputcols, destroycols, 0)
     
-    targets = numpy.array(inputs[:, targetcols], dtype='float64') #target is 40th column
-    inputs = numpy.array(inputs[:, inputcols], dtype='float64') #first 39 columns are inputs
+    targets = numpy.array(inputs[:, targetcols], dtype='float64')
+    inputs = numpy.array(inputs[:, inputcols], dtype='float64')
+    
+    if normalize:
+        #First we must determine which columns have real values in them
+        #Basically, we if it isn't a binary value by comparing to 0 and 1
+        for col in range(len(inputs[0])):
+            real = False
+            for value in inputs[:, col]:
+                if value != 0 and value != 1:
+                    real = True
+                    break #No point in continuing now that we know they're real
+            if real:
+                #Subtract the mean and divide by the standard deviation
+                inputs[:, col] = (inputs[:, col] - numpy.mean(inputs[:, col]))/numpy.std(inputs[:, col])
+                
     
     return (inputs, targets)
 
