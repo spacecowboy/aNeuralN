@@ -21,14 +21,14 @@ def find_solution(P, T):
     #best = train_evolutionary(net, P, T, epochs, random_range=5)
     
     Y = best.sim(P)
-    plotroc(Y, T)
+    area = plotroc(Y, T)
     
     print("")
     print("Stats for cut = 0.5")
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     
-    save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_gdblock20_" + str(total_performance) + ".ann")
-    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_genetic_" + str(total_performance) + ".ann")
+    save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_gdblock20_rocarea" + str(area) + ".ann")
+    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_genetic_rocarea" + str(area) + ".ann")
     
     plt.show()
 
