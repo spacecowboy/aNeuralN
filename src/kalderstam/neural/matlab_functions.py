@@ -185,7 +185,7 @@ def plotroc(Y, T):
         plt.xlabel("1-specificity")
         plt.ylabel("sensitivity")
         #plt.axis([101, -1, -1, 101])
-        plt.plot(x, y, 'b-', x, y, 'ro')
+        plt.plot(x, y, 'r+', x, y, 'b-')
 
         area = numpy.trapz(y, x)
         print("ROC area: " + str(area))
@@ -213,13 +213,13 @@ def stat(Y, T, cut=0.5):
         num_second = max(1,len(T.compress((T<cut).flat)))
         num_first = max(1,len(T.compress((T>cut).flat)))
         
-        num_correct_firsterr = len(T.compress(((T-Y)<-cut).flat))
+        num_correct_firsterr = len(T.compress(((T-Y)>=(1-cut)).flat))
         num_correct_first = 100.0*(num_first-num_correct_firsterr)/num_first
         
-        num_correct_seconderr = len(T.compress(((T-Y)>=(1-cut)).flat))
+        num_correct_seconderr = len(T.compress(((T-Y)<-cut).flat))
         num_correct_second = 100.0*(num_second-num_correct_seconderr)/num_second
         
-        missed = sum(abs(numpy.round(Y)-T))
+        missed = num_correct_firsterr + num_correct_seconderr
         total_performance = 100.0*(len(T)-missed)/len(T)
         
         print("\nResults for the training:\n")
