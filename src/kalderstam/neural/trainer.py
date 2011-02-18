@@ -1,4 +1,5 @@
-from processing import Process, Queue
+from multiprocessing import Process, Queue
+from threading import Thread
 
 from kalderstam.neural.activation_functions import logsig, tanh
 from kalderstam.neural import training_functions
