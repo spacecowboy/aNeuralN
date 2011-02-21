@@ -38,20 +38,46 @@ class ANN_gui():
         self.epoch_number = self.builder.get_object("epoch_adjuster")
         self.block_size = self.builder.get_object("block_size_adjuster")
         
-        self.input_entry = self.builder.get_object("input_entry")
+        self.inputs_entry = self.builder.get_object("inputs_entry")
+        self.ignore_entry = self.builder.get_object("ignore_entry")
+        self.targets_entry = self.builder.get_object("targets_entry")
 #        self.config_entry = self.builder.get_object("config_entry")
         
         #default values
         self.training_method = training_functions.traingd
         
     def on_train_button_pressed(self, *args):
+        targets = self.get_target_cols()
         pass
     
     def on_stop_button_pressed(self, *args):
         pass
     
+    def get_cols(self, text):
+        targets = []
+        for target in text.split():
+            targets.append(int(target))
+        return targets
+    
+    def get_target_cols(self):
+        return self.get_cols(self.targets_entry.get_text())
+    
+    def get_ignore_cols(self):
+        return self.get_cols(self.ignore_entry.get_text())
+    
+    def get_input_cols(self):
+        return self.get_cols(self.inputs_entry.get_text())
+    
     def on_sim_button_pressed(self, *args):
-        pass
+        targets = self.get_target_cols()
+        inputs = self.get_input_cols()
+        ignores = self.get_ignore_cols()
+
+        P, T = parse_file(self.input_file, targetcols = targets, inputcols = inputs, ignorecols = ignores)
+        
+        results = self.net.sim(P)
+        print(str(results))
+        
         
     def on_startbutton_pressed(self, *args):
         logging.basicConfig(level=logging.DEBUG)
@@ -124,7 +150,7 @@ class ANN_gui():
             self.output_activation_function = tanh()
             
     def on_file_chosen_button(self, button):
-        self.input_entry.set_text(button.get_filename())
+        self.input_file = button.get_filename()
         
     def on_config_file_button(self, button):
         print button.get_filename()
