@@ -41,10 +41,17 @@ class ANN_gui():
         self.inputs_entry = self.builder.get_object("inputs_entry")
         self.ignore_entry = self.builder.get_object("ignore_entry")
         self.targets_entry = self.builder.get_object("targets_entry")
+        
+        self.network_image = self.builder.get_object("network_image")
 #        self.config_entry = self.builder.get_object("config_entry")
         
         #default values
         self.training_method = training_functions.traingd
+        
+    def visualize_network(self):
+        #pixmap = gtk.gdk.pixmap_create_from_data(None, data, width, height, depth = 8, fg, bg)
+        #self.network_image.set_from_pixmap(pixmap)
+        pass
         
     def on_train_button_pressed(self, *args):
         targets = self.get_target_cols()

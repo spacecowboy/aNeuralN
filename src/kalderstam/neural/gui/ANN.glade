@@ -321,50 +321,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHBox" id="hbox4">
+                      <object class="GtkImage" id="network_image">
+                        <property name="width_request">100</property>
+                        <property name="height_request">100</property>
                         <property name="visible">True</property>
-                        <child>
-                          <object class="GtkVBox" id="hiddenWeightsBox">
-                            <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
-                            <child>
-                              <object class="GtkLabel" id="label2">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">Hidden weights</property>
-                              </object>
-                              <packing>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <placeholder/>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkVBox" id="outputWeightsBox">
-                            <property name="visible">True</property>
-                            <property name="orientation">vertical</property>
-                            <child>
-                              <object class="GtkLabel" id="label3">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">Output weights</property>
-                              </object>
-                              <packing>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <placeholder/>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
+                        <property name="stock">gtk-missing-image</property>
                       </object>
                       <packing>
                         <property name="position">1</property>
@@ -809,16 +770,16 @@
     </child>
   </object>
   <object class="GtkAdjustment" id="block_size_adjuster">
-    <property name="value">1</property>
     <property name="upper">999999999999</property>
+    <property name="value">1</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
     <property name="page_size">10</property>
   </object>
   <object class="GtkAdjustment" id="epoch_adjuster">
-    <property name="value">100</property>
     <property name="lower">1</property>
     <property name="upper">10000000</property>
+    <property name="value">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
     <property name="page_size">10</property>
