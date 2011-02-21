@@ -15,6 +15,7 @@ except:
     
 class ANN_Creator():
     def __init__(self):
+        self.net = None
         #Set the Glade file
         self.gladefile = "New_ANN.glade"
         self.builder = gtk.Builder()

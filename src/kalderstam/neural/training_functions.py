@@ -52,7 +52,7 @@ def traingd(net, input_array, output_array, epochs=300, learning_rate=0.1):
         logger.debug("Error = " + str(error_sum))
     return net
 
-def traingd_block(net, input_array, output_array, epochs=300, learning_rate=0.1, block_size=0):
+def traingd_block(net, input_array, output_array, epochs=300, learning_rate=0.1, block_size=1):
     """Train using Gradient Descent."""
     
     for j in range(0, int(epochs)):
@@ -126,7 +126,7 @@ def traingd_block(net, input_array, output_array, epochs=300, learning_rate=0.1,
         #logger.debug("Error = " + str(error_sum))
     return net
             
-def train_evolutionary(net, input_array, output_array, epochs=300, population_size = 50, mutation_chance = 0.05, random_range=3):
+def train_evolutionary(net, input_array, output_array, epochs=300, population_size = 50, mutation_chance = 0.05, random_range=3, *args):
     """Creates more networks and evolves the best it can."""
     #Create a population of 50 networks
     population = list()
