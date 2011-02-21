@@ -771,7 +771,6 @@
                   <object class="GtkButton" id="sim_button">
                     <property name="label" translatable="yes">Simulate</property>
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <signal name="pressed" handler="on_sim_button_pressed"/>
