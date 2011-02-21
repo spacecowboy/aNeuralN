@@ -157,40 +157,43 @@ def boundary(net, P):
             x1 += x1_inc
         
         plt.plot(coords[0], coords[1], 'g.')
-        
-def plotroc(Y, T, points = 100):
-    
+            
+def plotroc(Y, T):
     Y = Y.flatten()
     T = T.flatten()
     
     if len(Y) != len(T):
         logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
     else:
+        #Sort them
+        tval = dict()
+        for i in range(len(T)):
+            tval[Y[i]] = T[i]
+        Y.sort()
+        for i in range(len(T)):
+            T[i] = tval[Y[i]]
+        
         x = numpy.array([])
         y = numpy.array([])
-        for cut in numpy.linspace(0, 1, points):
-            num_first = max(0,len(T.compress((T>cut).flat)))
-            num_second = max(0,len(T.compress((T<cut).flat)))
-            
-            num_correct_firsterr = len(T.compress(((T-Y)<-cut).flat))
-            num_correct_first = 0
-            if num_first > 0:
-                num_correct_first = 100.0*(num_first-num_correct_firsterr)/num_first
-            
-            num_correct_seconderr = len(T.compress(((T-Y)>cut).flat))
-            num_correct_second = 0
-            if num_second > 0:
-                num_correct_second = 100.0*(num_second-num_correct_seconderr)/num_second
+        for cut in Y:
+            [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T, cut)
             
             x = numpy.append(x, 100 - num_correct_first)
             y = numpy.append(y, num_correct_second)
-        plt.figure(2)
-        plt.title("ROC curve")
-        plt.axis([101, -1, -1, 101])
-        plt.plot(x, y, 'r-', x, y, 'ro')
             
+        plt.figure(2)
+        plt.xlabel("1-specificity")
+        plt.ylabel("sensitivity")
+        #plt.axis([101, -1, -1, 101])
+        plt.plot(x, y, 'r+', x, y, 'b-')
+
+        area = numpy.trapz(y, x)
+        print("ROC area: " + str(area))
+        plt.title("ROC area: " + str(area))
         
-def stat(Y, T):
+        return area
+        
+def stat(Y, T, cut=0.5):
     """ Calculates the results for a single output classification
      problem. Y is the network output and T is the target output.
 
@@ -207,16 +210,16 @@ def stat(Y, T):
     if len(Y) != len(T):
         logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
     else:
-        num_second = max(1,len(T.compress((T<0.5).flat)))
-        num_first = max(1,len(T.compress((T>0.5).flat)))
+        num_second = max(1,len(T.compress((T<cut).flat)))
+        num_first = max(1,len(T.compress((T>cut).flat)))
         
-        num_correct_firsterr = len(T.compress(((T-Y)<-0.5).flat))
+        num_correct_firsterr = len(T.compress(((T-Y)>=(1-cut)).flat))
         num_correct_first = 100.0*(num_first-num_correct_firsterr)/num_first
         
-        num_correct_seconderr = len(T.compress(((T-Y)>0.5).flat))
+        num_correct_seconderr = len(T.compress(((T-Y)<-cut).flat))
         num_correct_second = 100.0*(num_second-num_correct_seconderr)/num_second
         
-        missed = sum(abs(numpy.round(Y)-T))
+        missed = num_correct_firsterr + num_correct_seconderr
         total_performance = 100.0*(len(T)-missed)/len(T)
         
         print("\nResults for the training:\n")
@@ -244,7 +247,7 @@ if __name__ == '__main__':
                 
     net = build_feedforward(2, 1, 1)
     
-    net = traingd(net, P, T, 300, 0.1)
+    net = traingd(net, P, T, 100, 0.1)
     
     Y = net.sim(P)
     

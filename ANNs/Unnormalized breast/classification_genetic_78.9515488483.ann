@@ -1,0 +1,15 @@
+[hidden_0]
+function=tanh
+bias=0.870081450514
+input_0:0.748353052345
+input_1:3.62246347072
+input_2:-10.1381724598
+input_3:-0.797919544815
+input_4:0.164407173022
+input_5:0.0126614121244
+
+[output_0]
+function=logsig
+bias=-0.736073946962
+hidden_0:-0.925186551069
+

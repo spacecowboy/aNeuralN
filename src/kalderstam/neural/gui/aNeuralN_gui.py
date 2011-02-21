@@ -1,9 +1,9 @@
 import sys
 from kalderstam.neural.network import build_feedforward
-from kalderstam.neural.functions.activation_functions import linear, logsig, tanh
+from kalderstam.neural.activation_functions import linear, logsig, tanh
 from kalderstam.neural.matlab_functions import loadsyn1, plotroc, plot2d2c, stat
 from kalderstam.util.filehandling import parse_file
-from kalderstam.neural.functions import training_functions
+from kalderstam.neural import training_functions
 from kalderstam.neural.trainer import Builder
 try:
     import pygtk
