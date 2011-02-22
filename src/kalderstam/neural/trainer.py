@@ -38,6 +38,26 @@ class Builder(Process):
         plot2d2c(self.net, self.inputs, self.outputs)
         plt.show()
         
+class Trainer(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.stop = False
+    
+    
+    def run(self):
+        net = build_feedforward(self.input_number, self.hidden_number, self.output_number, self.hidden_activation_function, self.output_activation_function)
+        
+        #if self.trainingbox.props.sensitive:
+        self.net = self.training_method(net, self.inputs, self.outputs, self.epochs, self.block_size)
+        
+        Y = self.net.sim(self.inputs)
+        
+        [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, self.outputs)
+        
+        plotroc(Y, self.outputs)
+        plot2d2c(self.net, self.inputs, self.outputs)
+        plt.show()
+        
 class Evaluator(Process):
     def __init__(self, input, target, net_queue, error_queue):
         Process.__init__(self)

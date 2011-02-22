@@ -6,6 +6,7 @@ from kalderstam.util.filehandling import parse_file
 from kalderstam.neural import training_functions
 from kalderstam.neural.gui.New_ANN import show_new_ann_window
 from kalderstam.neural.gui.Dialogs import show_open_dialog, show_save_dialog
+from pickletools import read_int4
 try:
     import pygtk
     pygtk.require("2.0")
@@ -54,7 +55,8 @@ class ANN_gui():
         pass
         
     def on_train_button_pressed(self, *args):
-        targets = self.get_target_cols()
+        P, T = self.read_input_file()
+        
         pass
     
     def on_stop_button_pressed(self, *args):
@@ -75,37 +77,24 @@ class ANN_gui():
     def get_input_cols(self):
         return self.get_cols(self.inputs_entry.get_text())
     
-    def on_sim_button_pressed(self, *args):
+    def read_input_file(self):
         targets = self.get_target_cols()
         inputs = self.get_input_cols()
         ignores = self.get_ignore_cols()
 
         P, T = parse_file(self.input_file, targetcols = targets, inputcols = inputs, ignorecols = ignores)
         
+        return (P, T)
+    
+    def on_sim_button_pressed(self, *args):
+        P, T = self.read_input_file()
+        
         results = self.net.sim(P)
-        print(str(results))
         
-        
-    def on_startbutton_pressed(self, *args):
-        logging.basicConfig(level=logging.DEBUG)
-        
-        #P, T = loadsyn1(100)
-        P, T = parse_file(self.input_entry.get_text(), self.input_number.get_value(), self.output_number.get_value())
-        
-#        trainer = Builder()
-#        trainer.input_number = self.input_number.get_value()
-#        trainer.hidden_number = self.hidden_number.get_value()
-#        trainer.output_number = self.output_number.get_value()
-#        trainer.hidden_activation_function = self.hidden_activation_function
-#        trainer.output_activation_function = self.output_activation_function
-#        trainer.training_method = self.training_method
-#        trainer.epochs = self.epoch_number.get_value()
-#        trainer.block_size = self.block_size.get_value()
-#        trainer.inputs = P
-#        trainer.outputs = T
-#        
-#        trainer.start()
-        
+        print("{0:<9}   {1:<9}".format("T", "Output"))
+        for index in range(len(P)):
+            print("{0:<9}   {1:<9}".format(T[index], results[index]))
+        print("\n")
             
     def on_window1_destroy(self, *args):
         gtk.main_quit()
