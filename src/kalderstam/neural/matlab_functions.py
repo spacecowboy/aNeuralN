@@ -184,12 +184,12 @@ def plotroc(Y, T):
         plt.figure(2)
         plt.xlabel("1-specificity")
         plt.ylabel("sensitivity")
-        #plt.axis([101, -1, -1, 101])
+        plt.axis([-1, 101, -1, 101])
         plt.plot(x, y, 'r+', x, y, 'b-')
 
         area = numpy.trapz(y, x)
-        print("ROC area: " + str(area))
-        plt.title("ROC area: " + str(area))
+        print("ROC area: " + str(area/100) + "%")
+        plt.title("ROC area: " + str(area/100) + "%")
         
         return area
         
