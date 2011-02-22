@@ -22,10 +22,10 @@ except:
     sys.exit(1)
     
 class ANN_gui():
-    def __init__(self, net):
+    def __init__(self, path, net):
         self.net = net
         #Set the Glade file
-        self.gladefile = "ANN.glade"
+        self.gladefile = path + "ANN.glade"
         self.builder = gtk.Builder()
         self.builder.add_from_file(self.gladefile)
         
@@ -221,11 +221,11 @@ class ANN_gui():
         gtk.main_quit()
         
         
-def show_ann_window(net):
+def show_ann_window(path, net):
     logging.basicConfig(level=logging.DEBUG)
-    gui = ANN_gui(net)
+    gui = ANN_gui(path, net)
     gui.window.show()
     gtk.main()
             
 if __name__ == '__main__':
-    show_ann_window(build_feedforward())
+    show_ann_window(sys.argv[0][0:-len("ANN.py")], build_feedforward())

@@ -14,10 +14,10 @@ except:
     sys.exit(1)
     
 class ANN_Creator():
-    def __init__(self):
+    def __init__(self, path):
         self.net = None
         #Set the Glade file
-        self.gladefile = "New_ANN.glade"
+        self.gladefile = path + "New_ANN.glade"
         self.builder = gtk.Builder()
         self.builder.add_from_file(self.gladefile)
         
@@ -77,13 +77,12 @@ class ANN_Creator():
         if radio_button.props.active: 
             self.output_activation_function = tanh()
         
-def show_new_ann_window():
+def show_new_ann_window(path):
     logging.basicConfig(level=logging.DEBUG)
-    gui = ANN_Creator()
+    gui = ANN_Creator(path)
     gui.window.show()
     gtk.main()
     return gui.net
-    
             
 if __name__ == '__main__':
-    show_new_ann_window()
+    show_new_ann_window(sys.argv[0][0:-len("New_ANN.py")])
