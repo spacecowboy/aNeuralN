@@ -101,7 +101,6 @@
                                 <property name="invisible_char_set">True</property>
                                 <property name="caps_lock_warning">False</property>
                                 <property name="adjustment">hidden_adjuster</property>
-                                <property name="climb_rate">1</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
                               </object>
@@ -142,7 +141,6 @@
                                 <property name="invisible_char_set">True</property>
                                 <property name="caps_lock_warning">False</property>
                                 <property name="adjustment">output_adjuster</property>
-                                <property name="climb_rate">1</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
                               </object>
@@ -395,25 +393,25 @@
     </child>
   </object>
   <object class="GtkAdjustment" id="input_adjuster">
-    <property name="value">1</property>
     <property name="lower">1</property>
     <property name="upper">1000</property>
+    <property name="value">2</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
     <property name="page_size">10</property>
   </object>
   <object class="GtkAdjustment" id="hidden_adjuster">
-    <property name="value">2</property>
     <property name="lower">1</property>
     <property name="upper">1000</property>
+    <property name="value">2</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
     <property name="page_size">10</property>
   </object>
   <object class="GtkAdjustment" id="output_adjuster">
-    <property name="value">1</property>
     <property name="lower">1</property>
     <property name="upper">1000</property>
+    <property name="value">1</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
     <property name="page_size">10</property>
