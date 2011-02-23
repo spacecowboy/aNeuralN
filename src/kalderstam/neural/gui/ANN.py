@@ -23,6 +23,7 @@ class ANN_gui():
     def __init__(self, path, net):
         self.net = net
         #Set the Glade file
+        self.path = path
         self.gladefile = path + "ANN.glade"
         self.builder = gtk.Builder()
         self.builder.add_from_file(self.gladefile)
@@ -187,18 +188,18 @@ class ANN_gui():
         self.config_entry.set_text(button.get_filename())
         
     def on_new_item_activate(self, *args):
-        net = show_new_ann_window()
-        show_ann_window(net)
+        net = show_new_ann_window(self.path)
+        show_ann_window(self.path, net)
         
     def on_open_item_activate(self, *args):
-        net = show_open_dialog()
-        show_ann_window(net)
+        net = show_open_dialog(self.path)
+        show_ann_window(self.path, net)
         
     def on_save_item_activate(self, *args):
         self.on_save_as_item_activate()
         
     def on_save_as_item_activate(self, *args):
-        show_save_dialog(self.net)
+        show_save_dialog(self.path, self.net)
     
     def on_quit_item_activate(self, *args):
         self.window.hide()

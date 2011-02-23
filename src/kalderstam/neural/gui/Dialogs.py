@@ -19,10 +19,10 @@ except:
     sys.exit(1)
     
 class open_dialog():
-    def __init__(self):
+    def __init__(self, path):
         self.net = None
         #Set the Glade file
-        self.gladefile = "OpenDialog.glade"
+        self.gladefile = path + "OpenDialog.glade"
         self.builder = gtk.Builder()
         self.builder.add_from_file(self.gladefile)
         
@@ -44,10 +44,10 @@ class open_dialog():
         gtk.main_quit()
         
 class save_dialog():
-    def __init__(self, net):
+    def __init__(self, path, net):
         self.net = net
         #Set the Glade file
-        self.gladefile = "SaveDialog.glade"
+        self.gladefile = path + "SaveDialog.glade"
         self.builder = gtk.Builder()
         self.builder.add_from_file(self.gladefile)
         
@@ -68,19 +68,19 @@ class save_dialog():
     def on_filechooserdialog1_destroy(self, *args):
         gtk.main_quit()
         
-def show_open_dialog():
+def show_open_dialog(path):
     logging.basicConfig(level=logging.DEBUG)
-    gui = open_dialog()
+    gui = open_dialog(path)
     gui.window.show()
     gtk.main()
     return gui.net
 
-def show_save_dialog(net):
+def show_save_dialog(path, net):
     logging.basicConfig(level=logging.DEBUG)
-    gui = save_dialog(net)
+    gui = save_dialog(path, net)
     gui.window.show()
     gtk.main()
             
 if __name__ == '__main__':
-    net = show_open_dialog()
-    show_save_dialog(net)
+    net = show_open_dialog(sys.argv[0][0:-len("Dialogs.py")])
+    show_save_dialog(sys.argv[0][0:-len("Dialogs.py")], net)

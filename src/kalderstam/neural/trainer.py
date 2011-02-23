@@ -137,7 +137,7 @@ class Trainer(Process):
         population = list()
         best = None
         best_error = None
-        for _ in range(population_size):
+        for _ in range(int(population_size)):
             population.append(build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes)))
         #For each generation
         for generation in range(int(epochs)):
