@@ -6,8 +6,6 @@ from kalderstam.util.filehandling import parse_file
 from kalderstam.neural import training_functions
 from kalderstam.neural.gui.New_ANN import show_new_ann_window
 from kalderstam.neural.gui.Dialogs import show_open_dialog, show_save_dialog
-from pickletools import read_int4
-from kalderstam.neural.trainer import Trainer
 try:
     import pygtk
     pygtk.require("2.0")
@@ -78,17 +76,11 @@ class ANN_gui():
         
         P, T = self.read_input_file()
         
-        self.__get_trained_network()
-        
-        self.trainer = Trainer()
-        
         #Set the function and start training with appropriate arguments
         if self.trn_btn_gradient.props.active:
-            self.trainer.training_function = self.trainer.traingd_block
-            self.trainer.train(net = self.net, input_array = P, output_array = T, epochs=self.epoch_number.get_value(), learning_rate=self.learning_rate.get_value(), block_size=self.block_size.get_value(), momentum=self.momentum.get_value())
+            self.net = training_functions.traingd_block(net = self.net, input_array = P, output_array = T, epochs=self.epoch_number.get_value(), learning_rate=self.learning_rate.get_value(), block_size=self.block_size.get_value(), momentum=self.momentum.get_value())
         elif self.trn_btn_genetic.props.active:
-            self.trainer.training_function = self.trainer.train_evolutionary
-            self.trainer.train(net = self.net, input_array = P, output_array = T, epochs=self.epoch_number.get_value(), population_size = self.population.get_value(), mutation_chance = self.mutation.get_value(), random_range=self.random_range.get_value())
+            self.net = training_functions.train_evolutionary(net = self.net, input_array = P, output_array = T, epochs=self.epoch_number.get_value(), population_size = self.population.get_value(), mutation_chance = self.mutation.get_value(), random_range=self.random_range.get_value())
             
         #For single threaded
         self.train_button.props.sensitive = True
@@ -97,8 +89,6 @@ class ANN_gui():
 
     
     def on_stop_button_pressed(self, *args):
-        if self.trainer != None:
-            self.trainer.stop = True
         self.train_button.props.sensitive = True
         self.stop_button.props.sensitive = False
         self.sim_button.props.sensitive = True
@@ -127,17 +117,8 @@ class ANN_gui():
         
         return (P, T)
     
-    def __get_trained_network(self):
-        if self.trainer != None:
-            if self.trainer.net != None:
-                self.net = self.trainer.net #Get trained network
-            #self.trainer.join(2)
-            self.trainer = None
-    
     def on_sim_button_pressed(self, *args):
         P, T = self.read_input_file()
-        
-        self.__get_trained_network()
         
         results = self.net.sim(P)
         
@@ -145,6 +126,9 @@ class ANN_gui():
         for index in range(len(P)):
             print("{0:<9}   {1:<9}".format(T[index], results[index]))
         print("\n")
+        
+        plotroc(results, T)
+        plt.show()
             
     def on_window1_destroy(self, *args):
         gtk.main_quit()

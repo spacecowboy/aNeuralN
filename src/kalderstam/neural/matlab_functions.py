@@ -222,11 +222,11 @@ def stat(Y, T, cut=0.5):
         missed = num_correct_firsterr + num_correct_seconderr
         total_performance = 100.0*(len(T)-missed)/len(T)
         
-        print("\nResults for the training:\n")
-        print("Total number of data: " + str(len(T)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
-        print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
-        print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
-        print("Sensitivity: " + str(num_correct_second) + "% (Success for class 1)")
+        #print("\nResults for the training:\n")
+        #print("Total number of data: " + str(len(T)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
+        #print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
+        #print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
+        #print("Sensitivity: " + str(num_correct_second) + "% (Success for class 1)")
         
         return [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed]
     
