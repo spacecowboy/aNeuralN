@@ -9,7 +9,7 @@ def main(path, networkpath = None):
     else:
         net = show_new_ann_window(path)
         if net:
-            show_ann_window(net)
+            show_ann_window(path, net)
             
 if __name__ == '__main__':
     if len(sys.argv) > 1:
