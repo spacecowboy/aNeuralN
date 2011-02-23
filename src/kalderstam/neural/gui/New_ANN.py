@@ -23,7 +23,7 @@ class ANN_Creator():
         
         #Connect methods with signals
         self.builder.connect_signals(self)
-        #Get the Main Window, and connect the "destroy" event
+
         self.window = self.builder.get_object("window1")
         
         self.input_number = self.builder.get_object("input_adjuster")
@@ -33,6 +33,9 @@ class ANN_Creator():
         #default values
         self.hidden_activation_function = tanh()
         self.output_activation_function = logsig()
+        
+        #Window title
+        self.window.set_title("Neural Network creator")
         
     def on_create_button_clicked(self, *args):
         logging.basicConfig(level=logging.DEBUG)

@@ -30,14 +30,11 @@ class ANN_gui():
         
         #Connect methods with signals
         self.builder.connect_signals(self)
-        #Get the Main Window, and connect the "destroy" event
+        
         self.window = self.builder.get_object("window1")
         self.trainingbox = self.builder.get_object("trainingbox")
-#        self.input_number = self.builder.get_object("input_number")
-#        self.hidden_number = self.builder.get_object("hidden_number")
         self.trn_btn_gradient = self.builder.get_object("trn_btn_gradient")
         self.trn_btn_genetic = self.builder.get_object("trn_btn_genetic")
-#        self.output_number = self.builder.get_object("output_number")
         self.epoch_number = self.builder.get_object("epoch_adjuster")
         self.block_size = self.builder.get_object("block_size_adjuster")
         
@@ -58,10 +55,9 @@ class ANN_gui():
         self.targets_entry = self.builder.get_object("targets_entry")
         
         self.network_image = self.builder.get_object("network_image")
-#        self.config_entry = self.builder.get_object("config_entry")
         
-        #default values
-        self.trainer = None
+        #window title
+        self.window.set_title("Neural Network " + str(net.num_of_inputs) + "-" + str(len(net.hidden_nodes)) + "-" + str(len(net.output_nodes)))
         
     def visualize_network(self):
         #self.__get_trained_network()
