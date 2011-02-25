@@ -163,9 +163,9 @@ def load_network(filename):
                 node.connect_node(nodes[name], weight)
             """ add to network"""
             if node_name.startswith("hidden"):
-                net.hidden_nodes.append(nodes[current_node])
+                net.hidden_nodes.append(nodes[node_name])
             else:
-                net.output_nodes.append(nodes[current_node])
+                net.output_nodes.append(nodes[node_name])
             
     """Done! return net!"""
     return net
