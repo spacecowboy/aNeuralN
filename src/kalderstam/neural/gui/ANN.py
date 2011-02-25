@@ -189,7 +189,8 @@ class ANN_gui():
         
     def on_open_item_activate(self, *args):
         net = show_open_dialog(self.path)
-        show_ann_window(self.path, net)
+        if net:
+            show_ann_window(self.path, net)
         
     def on_save_item_activate(self, *args):
         self.on_save_as_item_activate()

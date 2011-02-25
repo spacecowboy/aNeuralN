@@ -32,7 +32,8 @@ class open_dialog():
         self.window = self.builder.get_object("filechooserdialog1")
         
     def on_cancelButton_clicked(self, *args):
-        self.on_filechooserdialog1_destroy()
+        self.window.hide()
+        gtk.main_quit()
     
     def on_openButton_clicked(self, *args):
         self.net = load_network(self.window.get_filename())
@@ -57,7 +58,8 @@ class save_dialog():
         self.window = self.builder.get_object("filechooserdialog1")
         
     def on_cancelButton_clicked(self, *args):
-        self.on_filechooserdialog1_destroy()
+        self.window.hide()
+        gtk.main_quit()
     
     def on_saveButton_clicked(self, *args):
         save_network(self.net, filename = self.window.get_filename())
