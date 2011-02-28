@@ -1,4 +1,3 @@
-
 import numpy
 import matplotlib.pyplot as plt
 from math import sqrt
@@ -9,7 +8,7 @@ import logging
 logger = logging.getLogger('kalderstam.neural.matlab_functions')
 
 def loadsyn1(n = 100):
-    half = n/2
+    half = n / 2
     
     P = numpy.zeros([2, n])
                 
@@ -18,8 +17,8 @@ def loadsyn1(n = 100):
     P[1, :half] = 0.5 + numpy.random.randn(half)
     
     # The negatives
-    P[0, half:n] = -0.5 + numpy.random.randn(n-half)
-    P[1, half:n] = -0.5 + numpy.random.randn(n-half)
+    P[0, half:n] = -0.5 + numpy.random.randn(n - half)
+    P[1, half:n] = -0.5 + numpy.random.randn(n - half)
         
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
@@ -30,17 +29,17 @@ def loadsyn1(n = 100):
     return (P, T)
 
 def loadsyn2(n = 100):
-    half = n/2
+    half = n / 2
     
     P = numpy.zeros([2, n])
     
     # The positives
-    P[0, :half] = 10 + 2.0*numpy.random.randn(half)
-    P[1, :half] = 10*numpy.random.randn(half)
+    P[0, :half] = 10 + 2.0 * numpy.random.randn(half)
+    P[1, :half] = 10 * numpy.random.randn(half)
     
     # The negatives
-    P[0, half:n] = -10 + 2.0*numpy.random.randn(n-half)
-    P[1, half:n] = 10*numpy.random.randn(n-half)
+    P[0, half:n] = -10 + 2.0 * numpy.random.randn(n - half)
+    P[1, half:n] = 10 * numpy.random.randn(n - half)
     
         
     #Rotate it to make it interesting
@@ -48,8 +47,8 @@ def loadsyn2(n = 100):
     P = dot(R, P)
     
     #And normalize
-    P[0,:] = P[0,:]/numpy.std(P[0,:])
-    P[1,:] = P[1,:]/numpy.std(P[1,:])
+    P[0, :] = P[0, :] / numpy.std(P[0, :])
+    P[1, :] = P[1, :] / numpy.std(P[1, :])
     
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
@@ -60,7 +59,7 @@ def loadsyn2(n = 100):
     return (P, T)
 
 def loadsyn3(n = 100):
-    half = n/2
+    half = n / 2
     
     Rpos = 0.6
     Rneg = 0.9
@@ -68,16 +67,16 @@ def loadsyn3(n = 100):
     P = numpy.zeros([2, n])
     
     # The positives
-    tmpang = 2.0*math.pi*numpy.random.rand(half)
-    tmpr = Rpos*numpy.random.randn(half)
-    P[0,:half] = tmpr*numpy.cos(tmpang)
-    P[1,:half] = tmpr*numpy.sin(tmpang)
+    tmpang = 2.0 * math.pi * numpy.random.rand(half)
+    tmpr = Rpos * numpy.random.randn(half)
+    P[0, :half] = tmpr * numpy.cos(tmpang)
+    P[1, :half] = tmpr * numpy.sin(tmpang)
     
     # The negatives
-    tmpang = 2.0*math.pi*numpy.random.rand(n-half)
-    tmpr = numpy.random.rand(n-half) + Rneg
-    P[0, half:n] = tmpr*numpy.cos(tmpang)
-    P[1, half:n] = tmpr*numpy.sin(tmpang)
+    tmpang = 2.0 * math.pi * numpy.random.rand(n - half)
+    tmpr = numpy.random.rand(n - half) + Rneg
+    P[0, half:n] = tmpr * numpy.cos(tmpang)
+    P[1, half:n] = tmpr * numpy.sin(tmpang)
     
     T = numpy.ones([n, 1])
     T[half:n, 0] = 0
@@ -87,27 +86,27 @@ def loadsyn3(n = 100):
     
     return (P, T)
 
-def plot2d2c(net, P, T, figure=1):
+def plot2d2c(net, P, T, figure = 1):
     if len(P[0]) != 2:
         logger.error('Input is not of dimension 2')
     else:
         plt.figure(figure)
         plt.title("Blue are correctly classified, while Red are incorrectly classified.")
-        for num in range(0, len(T)):
-            results = net.update([P[num, 0], P[num, 1]])
+        for x, y, target in zip(P[:, 0], P[:, 1], T[:, 0]):
+            results = net.update([x, y])
             mark = ''
-            if (T[num][0] - 1 < -0.5):
+            if (target - 1 < -0.5):
                 mark = 'o'
             else:
                 mark = '+'
             
             color = ''
-            if (T[num][0] > 0.5 and results[0] > 0.5 or
-                T[num][0] <= 0.5 and results[0] <= 0.5):
+            if (target > 0.5 and results[0] > 0.5 or
+                target <= 0.5 and results[0] <= 0.5):
                 color = 'b'
             else:
                 color = 'r'   
-            plt.plot(P[num, 0], P[num, 1], color + mark)
+            plt.plot(x, y, color + mark)
         boundary(net, P)
         
 def boundary(net, P):
@@ -128,13 +127,13 @@ def boundary(net, P):
             elif (P[num, 0] < min_X1):
                 min_X1 = P[num, 0]
         
-        x1_inc = (max_X1 - min_X1)/100
-        x2_inc = (max_X2 - min_X2)/100
+        x1_inc = (max_X1 - min_X1) / 100
+        x2_inc = (max_X2 - min_X2) / 100
         
         x1 = min_X1
         x2 = min_X2
         
-        coords = [[],[]]
+        coords = [[], []]
         while (x1 < max_X1):
             
             x2 = min_X2
@@ -166,12 +165,11 @@ def plotroc(Y, T):
         logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
     else:
         #Sort them
-        tval = dict()
-        for i in range(len(T)):
-            tval[Y[i]] = T[i]
-        Y.sort()
-        for i in range(len(T)):
-            T[i] = tval[Y[i]]
+        zipped = zip(Y, T)
+        zipped.sort()
+        Y, T = zip(*zipped)
+        Y = numpy.array(Y)
+        T = numpy.array(T)
         
         x = numpy.array([])
         y = numpy.array([])
@@ -188,12 +186,12 @@ def plotroc(Y, T):
         plt.plot(x, y, 'r+', x, y, 'b-')
 
         area = numpy.trapz(y, x)
-        logger.info("ROC area: " + str(area/100) + "%")
-        plt.title("ROC area: " + str(area/100) + "%")
+        logger.info("ROC area: " + str(area / 100) + "%")
+        plt.title("ROC area: " + str(area / 100) + "%")
         
         return area
         
-def stat(Y, T, cut=0.5):
+def stat(Y, T, cut = 0.5):
     """ Calculates the results for a single output classification
      problem. Y is the network output and T is the target output.
 
@@ -210,17 +208,17 @@ def stat(Y, T, cut=0.5):
     if len(Y) != len(T):
         logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
     else:
-        num_second = max(1,len(T.compress((T<cut).flat)))
-        num_first = max(1,len(T.compress((T>cut).flat)))
+        num_second = max(1, len(T.compress((T < cut).flat)))
+        num_first = max(1, len(T.compress((T > cut).flat)))
         
-        num_correct_firsterr = len(T.compress(((T-Y)>=(1-cut)).flat))
-        num_correct_first = 100.0*(num_first-num_correct_firsterr)/num_first
+        num_correct_firsterr = len(T.compress(((T - Y) >= (1 - cut)).flat))
+        num_correct_first = 100.0 * (num_first - num_correct_firsterr) / num_first
         
-        num_correct_seconderr = len(T.compress(((T-Y)<-cut).flat))
-        num_correct_second = 100.0*(num_second-num_correct_seconderr)/num_second
+        num_correct_seconderr = len(T.compress(((T - Y) < -cut).flat))
+        num_correct_second = 100.0 * (num_second - num_correct_seconderr) / num_second
         
         missed = num_correct_firsterr + num_correct_seconderr
-        total_performance = 100.0*(len(T)-missed)/len(T)
+        total_performance = 100.0 * (len(T) - missed) / len(T)
         
         #print("\nResults for the training:\n")
         #print("Total number of data: " + str(len(T)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
@@ -231,7 +229,7 @@ def stat(Y, T, cut=0.5):
         return [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed]
     
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level = logging.DEBUG)
     
     from kalderstam.neural.training_functions import traingd
     from kalderstam.neural.network import build_feedforward
@@ -254,5 +252,5 @@ if __name__ == '__main__':
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     
     plotroc(Y, T)
-    plot2d2c(net, P, T)
+    plot2d2c(net, P, T, figure = 2)
     plt.show()

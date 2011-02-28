@@ -75,9 +75,9 @@ class ANN_gui():
         
         #Set the function and start training with appropriate arguments
         if self.trn_btn_gradient.props.active:
-            self.net = training_functions.traingd_block(net = self.net, input_array = P, output_array = T, epochs=self.epoch_number.get_value(), learning_rate=self.learning_rate.get_value(), block_size=self.block_size.get_value(), momentum=self.momentum.get_value())
+            self.net = training_functions.traingd_block(net = self.net, input_array = P, output_array = T, epochs = self.epoch_number.get_value(), learning_rate = self.learning_rate.get_value(), block_size = self.block_size.get_value(), momentum = self.momentum.get_value())
         elif self.trn_btn_genetic.props.active:
-            self.net = training_functions.train_evolutionary(net = self.net, input_array = P, output_array = T, epochs=self.epoch_number.get_value(), population_size = self.population.get_value(), mutation_chance = self.mutation.get_value(), random_range=self.random_range.get_value())
+            self.net = training_functions.train_evolutionary(net = self.net, input_array = P, output_array = T, epochs = self.epoch_number.get_value(), population_size = self.population.get_value(), mutation_chance = self.mutation.get_value(), random_range = self.random_range.get_value())
             
         #For single threaded
         self.train_button.props.sensitive = True
@@ -91,10 +91,7 @@ class ANN_gui():
         self.sim_button.props.sensitive = True
     
     def get_cols(self, text):
-        targets = []
-        for target in text.split():
-            targets.append(int(target))
-        return targets
+        return [int(number) for number in text.split()]
     
     def get_target_cols(self):
         return self.get_cols(self.targets_entry.get_text())
@@ -120,11 +117,13 @@ class ANN_gui():
         results = self.net.sim(P)
         
         print("{0:<9}   {1:<9}".format("T", "Output"))
-        for index in range(len(P)):
-            print("{0:<9}   {1:<9}".format(T[index], results[index]))
+        for target, result in zip(T, results):
+            print("{0:<9}   {1:<9}".format(target, result))
         print("\n")
         
         plotroc(results, T)
+        if len(P[0]) == 2:
+            plot2d2c(self.net, P, T, 2)
         plt.show()
             
     def on_window1_destroy(self, *args):
@@ -204,7 +203,7 @@ class ANN_gui():
         
         
 def show_ann_window(path, net):
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level = logging.DEBUG)
     gui = ANN_gui(path, net)
     gui.window.show()
     gtk.main()

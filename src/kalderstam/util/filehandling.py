@@ -2,20 +2,17 @@ import numpy
 from kalderstam.neural import network
 import re
 from kalderstam.neural.activation_functions import get_function
+from os import path
+
 def read_data_file(filename):
     """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
-    f = open(filename, 'r')
-    inputs = []
-    
-    for line in f.readlines():
-        cols = line.split() #Get rid of whitespace delimiters
-        inputs.append(cols)
+    with open(filename, 'r') as f:
+        inputs = [line.split() for line in f.readlines()]
     
     return inputs
 
-def parse_file(filename, targetcols, inputcols = None, ignorecols = [],  ignorerows = []):
+def parse_file(filename, targetcols, inputcols = None, ignorecols = [], ignorerows = []):
     return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows)
-    
 
 def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
     """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
@@ -39,8 +36,8 @@ def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows
             
         inputcols = numpy.delete(inputcols, destroycols, 0)
     
-    targets = numpy.array(inputs[:, targetcols], dtype='float64')
-    inputs = numpy.array(inputs[:, inputcols], dtype='float64')
+    targets = numpy.array(inputs[:, targetcols], dtype = 'float64')
+    inputs = numpy.array(inputs[:, inputcols], dtype = 'float64')
     
     if normalize:
         #First we must determine which columns have real values in them
@@ -53,15 +50,16 @@ def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows
                     break #No point in continuing now that we know they're real
             if real:
                 #Subtract the mean and divide by the standard deviation
-                inputs[:, col] = (inputs[:, col] - numpy.mean(inputs[:, col]))/numpy.std(inputs[:, col])
+                inputs[:, col] = (inputs[:, col] - numpy.mean(inputs[:, col])) / numpy.std(inputs[:, col])
                 
     
     return (inputs, targets)
 
 def save_network(net, filename = None):
-    """If Filename is None, create a new as net_#hashnumber.ann"""
+    """If Filename is None, create a new as net_#hashnumber.ann and save in home dir"""
     if not filename:
         filename = "net_" + str(hash(net)) + ".ann"
+        filename = path.join(path.expanduser("~"), filename)
     
     """Open a file to write to"""
     with open(filename, 'w') as f:
@@ -102,8 +100,8 @@ def save_network(net, filename = None):
 def load_network(filename):
     """Create a network"""
     net = network.network()
-    nodes = dict()
-    node_weights = dict()
+    nodes = {}
+    node_weights = {}
     
     """Read file"""
     with open(filename, 'r') as f:
@@ -135,8 +133,8 @@ def load_network(filename):
                     except:
                         value = None #Random value
                     """ create node"""
-                    nodes[current_node] = network.node(active=function, bias = value)
-                    node_weights[current_node] = dict()
+                    nodes[current_node] = network.node(active = function, bias = value)
+                    node_weights[current_node] = {}
                     continue
                 
                 """check weights"""
@@ -154,12 +152,12 @@ def load_network(filename):
                     continue
     
     """Now iterate over the hashes and connect the nodes for real"""
-    for node_name, node in nodes.iteritems():
+    for node_name, node in nodes.items():
         """Not for inputs"""
         if node_name.startswith("input"):
             net.num_of_inputs += 1
         else:
-            for name, weight in node_weights[node_name].iteritems():
+            for name, weight in node_weights[node_name].items():
                 node.connect_node(nodes[name], weight)
             """ add to network"""
             if node_name.startswith("hidden"):
@@ -179,7 +177,7 @@ if __name__ == '__main__':
     
     print results
     
-    filename = "/home/gibson/jonask/test.ann"
+    filename = path.join(path.expanduser("~"), "test.ann")
     print "saving and reloading"
     save_network(net, filename)
     
