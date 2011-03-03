@@ -2,10 +2,11 @@ import logging
 import numpy
 from random import sample, random, uniform
 from kalderstam.neural.network import build_feedforward, node, network
+from kalderstam.neural.error_functions import sum_squares
 
 logger = logging.getLogger('kalderstam.neural.training_functions')
 
-def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1):
+def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1, error_derivative = sum_squares.derivative):
     """Train using Gradient Descent."""
     
     for epoch in range(0, int(epochs)):
@@ -25,9 +26,9 @@ def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1):
                 node.error_gradient = 0
             
             #Set errors on output nodes first
-            for node, output_value, result_value in zip(net.output_nodes, output, result):
-                node.error_gradient = output_value - result_value
-                error_sum += ((output_value - result_value) ** 2).sum()
+            for node, gradient in zip(net.output_nodes, error_derivative(output, result)):
+                node.error_gradient = gradient
+                error_sum += (gradient ** 2).sum()
             
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
@@ -50,7 +51,7 @@ def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1):
         logger.debug("Error = " + str(error_sum))
     return net
 
-def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0):
+def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative):
     """Train using Gradient Descent."""
     
     for epoch in range(0, int(epochs)):
@@ -80,8 +81,8 @@ def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 
                     node.error_gradient = 0
 
                 #Set errors on output nodes first
-                for node, answer_value, result_value in zip(net.output_nodes, answer, result):
-                    node.error_gradient = answer_value - result_value
+                for node, gradient in zip(net.output_nodes, error_derivative(answer, result)):
+                    node.error_gradient = gradient
                 
                 #Iterate over the nodes and correct the weights
                 for node in net.output_nodes + net.hidden_nodes:
@@ -104,7 +105,7 @@ def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 
                     #Finally, correct the bias
                     if "bias" not in node.weight_corrections:
                         node.weight_corrections["bias"] = []
-                        node.weight_corrections["bias"].append(node.error_gradient * node.bias)
+                    node.weight_corrections["bias"].append(node.error_gradient * node.bias)
             
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
@@ -116,7 +117,7 @@ def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 
 
     return net
             
-def train_evolutionary(net, input_array, output_array, epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 3, top_number = 5, *args):
+def train_evolutionary(net, input_array, output_array, epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 3, top_number = 5, error_function = sum_squares.total_error, *args):
     """Creates more networks and evolves the best it can."""
     #Create a population of 50 networks
     best = None
@@ -135,7 +136,7 @@ def train_evolutionary(net, input_array, output_array, epochs = 300, population_
                 #Calc output
                 result = member.update(input)
                 #calc sum-square error
-                error[member] += ((output - result) ** 2).sum()
+                error[member] += error_function(output, result)
                 
             #compare with best
             if not best or error[member] < best_error:
