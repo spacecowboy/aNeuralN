@@ -43,6 +43,20 @@ class network:
             
     def set_weights(self, node, weights):
         self.weights[node] = weights
+        
+    def fix_layers(self):
+        """Calculates what layers the nodes belong in."""
+        #self.layers.append([]) #input nodes are layer 0, are not used for calculations
+        distances = [0 for n in range(len(self))] #initialize vector
+        for node_index in range(len(self.weights)):
+            for weight, weight_index in zip(self.weights[node_index], range(len(self.weights[node_index]))):
+                if weight_index != node_index + self.num_of_inputs and weight != 0:
+                    distances[node_index + self.num_of_inputs] = distances[weight_index] + 1
+                    
+        self.layers = [[] for d in range(max(distances))]
+        for d, weight_index in zip(distances, range(len(distances))):
+            if d > 0:
+                self.layers[d-1].append(weight_index - self.num_of_inputs)
             
     def __len__(self):
         """The length of the network is defined as: input nodes + hidden nodes + output nodes."""
@@ -66,10 +80,10 @@ class network:
         """Returns a numpy array of output value arrays."""
         col = self.num_of_inputs
         inputs = self.__pad_input(inputs)
-        for row in range(len(self.weights)): #Traverse the network
-            input_sum = numpy.dot(self.weights[row], inputs)
+        for rows in self.layers: #Traverse the network
+            input_sum = numpy.dot(self.weights[rows], inputs)
             if row < self.output_start:
-                inputs[col] = self.hidden_function.function(input_sum)
+                inputs[rows + self.num_of_inputs] = self.hidden_function.function(input_sum)
             else:
                 inputs[col] = self.output_function.function(input_sum)
             col += 1
@@ -77,8 +91,9 @@ class network:
         return numpy.delete(inputs, range(self.output_start + self.num_of_inputs))
 
 if __name__ == '__main__': 
-    net = build_feedforward(output_number = 2)
-     
+    net = build_feedforward(input_number = 2, hidden_number = 2, output_number = 2)
+    net.fix_layers()
+    
     results = net.update([1, 2])
      
     print(results)

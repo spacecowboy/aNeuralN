@@ -99,7 +99,7 @@ class node:
                 
 
 if __name__ == '__main__': 
-    net = build_feedforward(output_number = 2)
+    net = build_feedforward(input_number = 2, hidden_number = 5000, output_number = 2)
      
     results = net.update([1, 2])
      
