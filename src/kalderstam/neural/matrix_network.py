@@ -3,13 +3,13 @@ from random import uniform
 import numpy
 import logging
 from kalderstam.neural.activation_functions import linear, logsig, tanh
-from kalderstam.util.exceptions import ArgumentError
+#from kalderstam.util.exceptions import ArgumentError
 from multiprocessing import Pool
 import os
+from numpy.oldnumeric.random_array import ArgumentError
 
 logger = logging.getLogger('kalderstam.neural.network')
 
-pool = Pool() #Processing pool, default to number of cpu-cores
 
 def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = tanh(), output_function = logsig(), random_range=1.0):
     net = network(input_number = input_number, hidden_number = hidden_number, output_number = output_number)
@@ -98,17 +98,21 @@ class network:
         self.__check_input(inputs)
         for rows in self.layers: #Traverse the network
             input_sum = numpy.dot(self.weights[rows], inputs)
-            inputs[rows] = [active.function(input) for active, input in zip(self.activation_functions[rows], input_sum)]
-            mp_result = pool.map(mp_evaluate, [(row, self.weights, inputs, self.activation_functions) for row in rows])
+            inputs[rows] = pool.map(mp_calc_outputs, [(self.weights[row], inputs, self.activation_functions[row]) for row in rows])
+            #map_result = pool.map(mp_calc_outputs, [(self.weights[row], inputs, self.activation_functions[row]) for row in rows])
+            #inputs[rows] = [active.function(input) for active, input in zip(self.activation_functions[rows], input_sum)]
         #Now return output values stored in input vector
         return numpy.delete(inputs, range(self.output_start + self.num_of_inputs))
     
-def mp_evaluate((row, weights, inputs, activation_functions)):
+def mp_calc_outputs((weights, inputs, activation_function)):
     """For multiprocessing map, only supports one iterable argument."""
-    input_sum = numpy.dot(weights[row], inputs)
-    value =  activation_functions[row].function(input_sum)
-    print 'process id:', os.getpid(), 'value:', value
+    input_sum = numpy.dot(weights, inputs)
+    value =  activation_function.function(input_sum)
+    #print 'process id:', os.getpid(), 'input_sum:', input_sum, 'value:', value
     return value
+
+
+pool = Pool() #Processing pool, default to number of cpu-cores
 
 if __name__ == '__main__': 
     net = build_feedforward(input_number = 2, hidden_number = 2, output_number = 2)
@@ -121,5 +125,5 @@ if __name__ == '__main__':
      
     i2 = [pad_input(net, [1, 2]), pad_input(net, [2, 3])]
     results2 = net.sim(i2)
-    print(i2)
+    #print(i2)
     print(results2)

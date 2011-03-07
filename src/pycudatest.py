@@ -14,8 +14,8 @@ __global__ void multiply_them(float *dest, float *a, float *b)
 
 multiply_them = mod.get_function("multiply_them")
 
-a = numpy.random.randn(400).astype(numpy.float32)
-b = numpy.random.randn(400).astype(numpy.float32)
+a = numpy.random.randn(1000).astype(numpy.float32)
+b = numpy.random.randn(1000).astype(numpy.float32)
 
 dest = numpy.zeros_like(a)
 start = time.time()
