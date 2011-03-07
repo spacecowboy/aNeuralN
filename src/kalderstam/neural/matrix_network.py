@@ -5,6 +5,7 @@ import logging
 from kalderstam.neural.activation_functions import linear, logsig, tanh
 from kalderstam.util.exceptions import ArgumentError
 from multiprocessing import Pool
+import os
 
 logger = logging.getLogger('kalderstam.neural.network')
 
@@ -105,7 +106,9 @@ class network:
 def mp_evaluate((row, weights, inputs, activation_functions)):
     """For multiprocessing map, only supports one iterable argument."""
     input_sum = numpy.dot(weights[row], inputs)
-    return activation_functions[row].function(input_sum)
+    value =  activation_functions[row].function(input_sum)
+    print 'process id:', os.getpid(), 'value:', value
+    return value
 
 if __name__ == '__main__': 
     net = build_feedforward(input_number = 2, hidden_number = 2, output_number = 2)
