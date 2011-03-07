@@ -98,8 +98,8 @@ class network:
         """Returns a numpy array of output values. Input vector is also modified! And contains this information as well"""
         self.__check_input(inputs)
         for rows in self.layers: #Traverse the network
-            input_sum = numpy.dot(self.weights[rows], inputs)
-            inputs[rows] = map(mp_calc_outputs, [(self.weights[row], inputs, self.activation_functions[row]) for row in rows])
+            inputs[rows] = pool.map(mp_calc_outputs, [(self.weights[row], inputs, self.activation_functions[row]) for row in rows])
+            #input_sum = numpy.dot(self.weights[rows], inputs)
             #map_result = pool.map(mp_calc_outputs, [(self.weights[row], inputs, self.activation_functions[row]) for row in rows])
             #inputs[rows] = [active.function(input) for active, input in zip(self.activation_functions[rows], input_sum)]
         #Now return output values stored in input vector
@@ -110,9 +110,9 @@ def mp_calc_outputs((weights, inputs, activation_function)):
     input_sum = numpy.dot(weights, inputs)
     value =  activation_function.function(input_sum)
     #Wait one second...
-    t = time.time()
-    while time.time() - t < 1:
-        pass
+    #t = time.time()
+    #while time.time() - t < 1:
+    #    pass
     #print 'process id:', os.getpid(), 'input_sum:', input_sum, 'value:', value
     return value
 
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     net = build_feedforward(input_number = 8, hidden_number = 8, output_number = 8)
     net.fix_layers()
     
-    i = pad_input(net, [i for i in range(2)])
+    i = pad_input(net, [i for i in range(8)])
     start = time.time()
     for times in range(1):
         results = net.update(i)
@@ -141,3 +141,4 @@ if __name__ == '__main__':
     #results2 = net.sim(i2)
     #print(i2)
     #print(results2)
+    pool.close()
