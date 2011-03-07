@@ -98,8 +98,8 @@ class network:
         """Returns a numpy array of output values. Input vector is also modified! And contains this information as well"""
         self.__check_input(inputs)
         for rows in self.layers: #Traverse the network
-            inputs[rows] = pool.map(mp_calc_outputs, [(self.weights[row], inputs, self.activation_functions[row]) for row in rows])
-            #input_sum = numpy.dot(self.weights[rows], inputs)
+            input_sum = numpy.dot(self.weights[rows], inputs)
+            inputs[rows] = map(mp_calc_outputs, [(self.weights[row], inputs, self.activation_functions[row]) for row in rows])
             #map_result = pool.map(mp_calc_outputs, [(self.weights[row], inputs, self.activation_functions[row]) for row in rows])
             #inputs[rows] = [active.function(input) for active, input in zip(self.activation_functions[rows], input_sum)]
         #Now return output values stored in input vector
@@ -141,4 +141,3 @@ if __name__ == '__main__':
     #results2 = net.sim(i2)
     #print(i2)
     #print(results2)
-    pool.close()
