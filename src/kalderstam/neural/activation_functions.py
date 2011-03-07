@@ -1,6 +1,6 @@
 #A few activation functions
-import math
-from math import exp
+import numpy
+from numpy import exp
 
 def get_function(name):
     if (name == str(logsig())):
@@ -32,7 +32,7 @@ class tanh():
     def __str__(self):
         return 'tanh'
     def function(self, x):
-        return math.tanh(x)
+        return numpy.tanh(x)
     def derivative(self, x):
         #return (1/math.cosh(x))**2 #sech(x)^2
         y = self.function(x)
