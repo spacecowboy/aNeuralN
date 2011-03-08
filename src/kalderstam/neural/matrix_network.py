@@ -11,7 +11,13 @@ logger = logging.getLogger('kalderstam.neural.network')
 
 
 def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = tanh(), output_function = logsig(), random_range=1.0):
-    net = network(input_number = input_number, hidden_number = hidden_number, output_number = output_number)
+    t = hidden_function
+    l = output_function
+    activation_functions = [None for i in range(input_number)] # Is never used
+    [activation_functions.append(t) for i in range(hidden_number)]
+    [activation_functions.append(l) for i in range(output_number)]
+
+    net = network(input_number = input_number, hidden_number = hidden_number, output_number = output_number, activation_functions = numpy.array(activation_functions))
     
     #Hidden layer
     for i in range(int(hidden_number)):
@@ -67,17 +73,17 @@ class network:
         
     def fix_layers(self):
         """Calculates what layers the nodes belong in."""
-        #self.layers.append([]) #input nodes are layer 0, are not used for calculations
         distances = [0 for n in range(len(self))] #initialize vector
         for node_index in range(self.num_of_inputs, len(self.weights)):
             for weight, weight_index in zip(self.weights[node_index], range(len(self.weights[node_index]))):
                 if weight_index != node_index and weight != 0:
                     distances[node_index] = max(distances[node_index], distances[weight_index] + 1)
                     
-        self.layers = [[] for d in range(max(distances))]
+        self.layers = [[] for d in range(max(distances) + 1)]
         for d, weight_index in zip(distances, range(len(distances))):
-            if d > 0:
-                self.layers[d-1].append(weight_index)
+                self.layers[d].append(weight_index)
+        self.output_layer = self.layers[len(self.layers) - 1] #last layer
+        self.input_layer = self.layers[0] #first layer
             
     def __len__(self):
         """The length of the network is defined as: input nodes + hidden nodes + output nodes."""
@@ -95,7 +101,7 @@ class network:
     def update(self, inputs):
         """Returns a numpy array of output values. Input vector is also modified! And contains this information as well"""
         self.__check_input(inputs)
-        for rows in self.layers: #Traverse the network
+        for rows in self.layers[1:]: #Traverse the network, skipping input layer
             input_sum = numpy.dot(self.weights[rows], inputs)
             inputs[rows] = [active.function(input) for active, input in zip(self.activation_functions[rows], input_sum)]
         #Now return output values stored in input vector
