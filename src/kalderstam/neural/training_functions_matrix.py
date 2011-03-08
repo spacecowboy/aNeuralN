@@ -49,6 +49,7 @@ def traingd_block(net, input_array, target_array, epochs = 300, learning_rate = 
                     error_gradients[back_rows] = numpy.dot(net.weights[min(rows):(max(rows) + 1), back_rows].transpose(), error_gradients[rows])
                     
                     gradient = numpy.matrix([net.activation_functions[node].derivative(node_input(node)) for node in rows] * error_gradients[rows]).T.A #transposed and back to array
+                    """Bias calculation is wrong, because it doesn't remove the previous erroneous bias. just adds to it!"""
                     weight_corrections[min(rows):(max(rows) + 1), back_rows] += learning_rate * gradient * input[back_rows]
                     weight_corrections[min(rows):(max(rows) + 1), rows] += learning_rate * gradient * net.weights[min(rows):(max(rows) + 1), rows] #bias
                 
