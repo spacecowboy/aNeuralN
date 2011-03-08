@@ -108,24 +108,20 @@ class network:
         return numpy.delete(inputs, range(self.output_start + self.num_of_inputs))
 
 if __name__ == '__main__':
-    net = build_feedforward(input_number = 8, hidden_number = 8, output_number = 8)
+    net = build_feedforward(input_number = 2, hidden_number = 3, output_number = 1)
     net.fix_layers()
     
-    i = pad_input(net, [i for i in range(8)])
+    i = pad_input(net, [1, 2])
     start = time.time()
-    for times in range(1):
-        results = net.update(i)
+    results = net.update(i)
     stop = time.time()
-    
-    
-    #i = pad_input(net, [1, 2])
-    #results = net.update(i)
-    #print(i)
      
     print(results)
     print('Time was: ', stop - start)
      
-    #i2 = [pad_input(net, [1, 2]), pad_input(net, [2, 3])]
-    #results2 = net.sim(i2)
-    #print(i2)
-    #print(results2)
+    start = time.time()
+    ii = [pad_input(net, var) for var in [[1, 2], [2, 3]]]
+    results2 = net.sim(ii)
+    stop = time.time()
+    print(results2)
+    print('Time was: ', stop - start)

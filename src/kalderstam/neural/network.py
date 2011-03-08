@@ -99,11 +99,18 @@ class node:
                 
 
 if __name__ == '__main__': 
-    net = build_feedforward(input_number = 2, hidden_number = 5000, output_number = 2)
-     
+    import time
+    net = build_feedforward(input_number = 2, hidden_number = 3, output_number = 1)
+    
+    start = time.time()
     results = net.update([1, 2])
+    stop = time.time()
      
     print(results)
+    print('Time was: ', stop - start)
      
+    start = time.time()
     results2 = net.sim([[1, 2], [2, 3]])
+    stop = time.time()
     print(results2)
+    print('Time was: ', stop - start)

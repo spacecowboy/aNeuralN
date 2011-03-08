@@ -78,43 +78,43 @@ def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 
                 result = net.update(input)
 
                 #Set error to 0 on all nodes first
-                for node in net.get_all_nodes():
-                    node.error_gradient = 0
+#                for node in net.get_all_nodes():
+#                    node.error_gradient = 0
 
                 #Set errors on output nodes first
-                for node, gradient in zip(net.output_nodes, error_derivative(answer, result)):
-                    node.error_gradient = gradient
+#                for node, gradient in zip(net.output_nodes, error_derivative(answer, result)):
+#                    node.error_gradient = gradient
                 
                 #Iterate over the nodes and correct the weights
-                for node in net.output_nodes + net.hidden_nodes:
-                    #Calculate local error gradient
-                    node.error_gradient *= node.activation_derivative(node.input_sum(input))
-
-                    #Propagate the error backwards and then update the weights
-                    for back_node, back_weight in node.weights.items():
-                        
-                        if back_node not in node.weight_corrections:
-                            node.weight_corrections[back_node] = []
-                            
-                        try:
-                            index = int(back_node)
-                            node.weight_corrections[back_node].append(node.error_gradient * input[index])
-                        except ValueError:
-                            back_node.error_gradient += back_weight * node.error_gradient
-                            node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
-                    
-                    #Finally, correct the bias
-                    if "bias" not in node.weight_corrections:
-                        node.weight_corrections["bias"] = []
-                    node.weight_corrections["bias"].append(node.error_gradient * node.bias)
+#                for node in net.output_nodes + net.hidden_nodes:
+#                    #Calculate local error gradient
+#                    node.error_gradient *= node.activation_derivative(node.input_sum(input))
+#
+#                    #Propagate the error backwards and then update the weights
+#                    for back_node, back_weight in node.weights.items():
+#                        
+#                        if back_node not in node.weight_corrections:
+#                            node.weight_corrections[back_node] = []
+#                            
+#                        try:
+#                            index = int(back_node)
+#                            node.weight_corrections[back_node].append(node.error_gradient * input[index])
+#                        except ValueError:
+#                            back_node.error_gradient += back_weight * node.error_gradient
+#                            node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
+#                    
+#                    #Finally, correct the bias
+#                    if "bias" not in node.weight_corrections:
+#                        node.weight_corrections["bias"] = []
+#                    node.weight_corrections["bias"].append(node.error_gradient * node.bias)
             
-            #Iterate over the nodes and correct the weights
-            for node in net.output_nodes + net.hidden_nodes:
-                #Calculate weight update
-                for back_node, back_weight in node.weights.items():
-                    node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
-                #Don't forget bias
-                node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
+#            #Iterate over the nodes and correct the weights
+#            for node in net.output_nodes + net.hidden_nodes:
+#                #Calculate weight update
+#                for back_node, back_weight in node.weights.items():
+#                    node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
+#                #Don't forget bias
+#                node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
 
     return net
             
@@ -332,20 +332,22 @@ if __name__ == '__main__':
     
     epochs = 100
     
-    best = traingd(net, P, T, epochs)
-    Y = best.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(best, P, T, 1)
-    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
-#    
-    start = time.clock()
-    best = train_evolutionary(net, P, T, epochs / 5, random_range = 5)
-    stop = time.clock()
-    Y = best.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(best, P, T, 2)
-    plt.title("Only Genetic\n Total performance = " + str(total_performance) + "%")
-    print("Genetic time: " + str(stop-start))
+    best = net
+    
+#    best = traingd(net, P, T, epochs)
+#    Y = best.sim(P)
+#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+#    plot2d2c(best, P, T, 1)
+#    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
+##    
+#    start = time.clock()
+#    best = train_evolutionary(net, P, T, epochs / 5, random_range = 5)
+#    stop = time.clock()
+#    Y = best.sim(P)
+#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+#    plot2d2c(best, P, T, 2)
+#    plt.title("Only Genetic\n Total performance = " + str(total_performance) + "%")
+#    print("Genetic time: " + str(stop-start))
 #    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
 #    
 #    #net = build_feedforward(2, 4, 1)
@@ -355,27 +357,32 @@ if __name__ == '__main__':
     print("traingd_block time: " + str(time.time()-start))
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(best, P, T, 3)
-    plt.title("Genetic followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
+    #plot2d2c(best, P, T, 3)
+    #plt.title("Genetic followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
+    print("\nResults for the training:\n")
+    print("Total number of data: " + str(len(T)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
+    print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
+    print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
+    print("Sensitivity: " + str(num_correct_second) + "% (Success for class 1)")
     
-    start = time.clock()
-    best = train_evolutionary_sequential(net, P, T, epochs / 5, random_range = 5, block_size = 0)
-    stop = time.clock()
-    Y = best.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(best, P, T, 4)
-    plt.title("Only Genetic Sequential\n Total performance = " + str(total_performance) + "%")
-    print("Sequential time: " + str(stop-start))
-    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
-    
-    #net = build_feedforward(2, 4, 1)
-    
-    best = traingd_block(best, P, T, epochs, block_size = 100)
-    Y = best.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(best, P, T, 5)
-    plt.title("Genetic Sequential followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
+#    start = time.clock()
+#    best = train_evolutionary_sequential(net, P, T, epochs / 5, random_range = 5, block_size = 0)
+#    stop = time.clock()
+#    Y = best.sim(P)
+#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+#    plot2d2c(best, P, T, 4)
+#    plt.title("Only Genetic Sequential\n Total performance = " + str(total_performance) + "%")
+#    print("Sequential time: " + str(stop-start))
+#    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
+#    
+#    #net = build_feedforward(2, 4, 1)
+#    
+#    best = traingd_block(best, P, T, epochs, block_size = 100)
+#    Y = best.sim(P)
+#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+#    plot2d2c(best, P, T, 5)
+#    plt.title("Genetic Sequential followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
     
     #plotroc(Y, T)
-    plt.show()
+#    plt.show()
     
