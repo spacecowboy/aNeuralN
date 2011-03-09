@@ -3,6 +3,7 @@ import numpy
 from random import sample, random, uniform
 from kalderstam.neural.network import build_feedforward, node, network
 from kalderstam.neural.error_functions import sum_squares
+from kalderstam.util.filehandling import get_validation_set
 
 logger = logging.getLogger('kalderstam.neural.training_functions')
 
@@ -52,27 +53,33 @@ def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1, e
         logger.debug("Error = " + str(error_sum))
     return net
 
-def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative):
+def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative, error_function = sum_squares.total_error):
     """Train using Gradient Descent."""
+    
+#    targets = []
+#    for output in test_targets:
+#        # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
+#        targets.append(output)
+#    targets = numpy.array(targets)
     
     for epoch in range(0, int(epochs)):
         #Iterate over training data
         logger.debug('Epoch ' + str(epoch))
         #error_sum = 0
         block_size = int(block_size)
-        if block_size < 1 or block_size > len(input_array): #if 0, then equivalent to batch. 1 is equivalent to online
-            block_size = len(input_array)
+        if block_size < 1 or block_size > len(test_inputs): #if 0, then equivalent to batch. 1 is equivalent to online
+            block_size = len(test_inputs)
         
-        for block in range(int(len(input_array) / block_size)):
+        for block in range(int(len(test_inputs) / block_size)):
             
             #Set error to 0 on all nodes first
             for node in net.get_all_nodes():
                 node.weight_corrections = {}
             
             #Train in random order
-            for input, output in sample(zip(input_array, output_array), block_size):
+            for input, target in sample(zip(test_inputs, test_targets), block_size):
                 # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
-                answer = numpy.append(numpy.array([]), output)
+#                target = numpy.append(numpy.array([]), output)
 
                 #Calc output
                 result = net.update(input)
@@ -82,7 +89,7 @@ def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 
                     node.error_gradient = 0
 
                 #Set errors on output nodes first
-                for node, gradient in zip(net.output_nodes, error_derivative(answer, result)):
+                for node, gradient in zip(net.output_nodes, error_derivative(target, result)):
                     node.error_gradient = gradient
                 
                 #Iterate over the nodes and correct the weights
@@ -115,11 +122,21 @@ def traingd_block(net, input_array, output_array, epochs = 300, learning_rate = 
                     node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
                 #Don't forget bias
                 node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
+                
+        #Calculate error of the network and print
+        if (len(validation_inputs) > 0 and len(test_inputs > 0)):
+            test_results = net.sim(test_inputs)
+            test_error = error_function(test_targets, test_results)/len(test_targets)
+            validation_results = net.sim(validation_inputs)
+            validation_error = error_function(validation_targets, validation_results)/len(validation_targets)
+            logger.debug("Test Error = " + str(test_error))
+            logger.debug("Validation Error = " + str(validation_error))
 
     return net
             
-def train_evolutionary(net, input_array, output_array, epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 3, top_number = 5, error_function = sum_squares.total_error, *args):
-    """Creates more networks and evolves the best it can."""
+def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 3, top_number = 5, error_function = sum_squares.total_error, *args):
+    """Creates more networks and evolves the best it can.
+    Does NOT use any validation set..."""
     #Create a population of 50 networks
     best = None
     best_error = None
@@ -130,15 +147,15 @@ def train_evolutionary(net, input_array, output_array, epochs = 300, population_
         top_networks = [None for each in range(int(top_number))] #reset top five
         #For all networks, simulate, measure their error, and save the best network so far
         for member in population:
-            error[member] = 0
-            for input, output in zip(input_array, output_array):
-                # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
-                output = numpy.append(numpy.array([]), output)
-                #Calc output
-                result = member.update(input)
-                #calc sum-square error
-                error[member] += error_function(output, result)
-            error[member] /= len(output_array)
+#            error[member] = 0
+#            for input, output in zip(input_array, output_array):
+#                # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
+#                output = numpy.append(numpy.array([]), output)
+#                #Calc output
+#                result = member.update(input)
+#                #calc sum-square error
+#                error[member] += error_function(output, result)
+            error[member] = error_function(output_array, member.sim(input_array))/len(output_array)
             #compare with best
             if not best or error[member] < best_error:
                 best = member
@@ -318,68 +335,83 @@ if __name__ == '__main__':
     
     try:
         from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
-        loadsyn2, loadsyn3
+        loadsyn2, loadsyn3, plotroc
         from kalderstam.util.filehandling import parse_file, save_network
         import time
         import matplotlib.pyplot as plt
     except:
         pass
         
-    P, T = loadsyn3(100)
+    P, T = loadsyn1(100)
     #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, ignorecols = 40)
-                
+    test, validation = get_validation_set(P, T)
     net = build_feedforward(2, 3, 1)
     
     epochs = 100
     
-    best = traingd(net, P, T, epochs)
+#    best = traingd(net, P, T, epochs)
+#    Y = best.sim(P)
+#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+#    plot2d2c(best, P, T, 1)
+#    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
+    
+    start = time.clock()
+    best = train_evolutionary(net, test, validation, epochs / 5, random_range = 5)
+    stop = time.clock()
+    P, T = test
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plot2d2c(best, P, T, 1)
-    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
-    
-    start = time.clock()
-    best = train_evolutionary(net, P, T, epochs / 5, random_range = 5)
-    stop = time.clock()
+    plt.title("Only Genetic\n [Test set] Total performance = " + str(total_performance) + "%")
+    print("Genetic time: " + str(stop-start))
+    P, T = validation
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(best, P, T, 2)
-    plt.title("Only Genetic\n Total performance = " + str(total_performance) + "%")
+    plt.title("Only Genetic\n [Validation set] Total performance = " + str(total_performance) + "%")
     print("Genetic time: " + str(stop-start))
     #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
     
     #net = build_feedforward(2, 4, 1)
     
     start = time.time()
-    best = traingd_block(best, P, T, epochs, block_size = 100)
+    best = traingd_block(best, test, validation, epochs, block_size = 10)
     print("traingd_block time: " + str(time.time()-start))
+    Y = best.sim(P)
+    
+    P, T = validation
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plot2d2c(best, P, T, 3)
-    plt.title("Genetic followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
+    plt.title("Genetic followed by Gradient Descent block size 10\n [Validation set] Total performance = " + str(total_performance) + "%")
+    P, T = test
+    Y = best.sim(P)
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+    plot2d2c(best, P, T, 4)
+    #plotroc(Y, T)
+    plt.title("Genetic followed by Gradient Descent block size 10\n [Test set] Total performance = " + str(total_performance) + "%")
 #    print("\nResults for the training:\n")
 #    print("Total number of data: " + str(len(T)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
 #    print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
 #    print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
 #    print("Sensitivity: " + str(num_correct_second) + "% (Success for class 1)")
     
-    start = time.clock()
-    best = train_evolutionary_sequential(net, P, T, epochs / 5, random_range = 5, block_size = 0)
-    stop = time.clock()
-    Y = best.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(best, P, T, 4)
-    plt.title("Only Genetic Sequential\n Total performance = " + str(total_performance) + "%")
-    print("Sequential time: " + str(stop-start))
-    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
-    
-    #net = build_feedforward(2, 4, 1)
-    
-    best = traingd_block(best, P, T, epochs, block_size = 100)
-    Y = best.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(best, P, T, 5)
-    plt.title("Genetic Sequential followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
+#    start = time.clock()
+#    best = train_evolutionary_sequential(net, P, T, epochs / 5, random_range = 5, block_size = 0)
+#    stop = time.clock()
+#    Y = best.sim(P)
+#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+#    plot2d2c(best, P, T, 4)
+#    plt.title("Only Genetic Sequential\n Total performance = " + str(total_performance) + "%")
+#    print("Sequential time: " + str(stop-start))
+#    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
+#    
+#    #net = build_feedforward(2, 4, 1)
+#    
+#    best = traingd_block(best, P, T, epochs, block_size = 100)
+#    Y = best.sim(P)
+#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+#    plot2d2c(best, P, T, 5)
+#    plt.title("Genetic Sequential followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
     
     #plotroc(Y, T)
     plt.show()

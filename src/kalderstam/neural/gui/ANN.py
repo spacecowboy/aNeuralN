@@ -37,6 +37,7 @@ class ANN_gui():
         self.trn_btn_genetic = self.builder.get_object("trn_btn_genetic")
         self.epoch_number = self.builder.get_object("epoch_adjuster")
         self.block_size = self.builder.get_object("block_size_adjuster")
+        self.validation_size = self.builder.get_object("validation_adjuster")
         
         #Gradient Descent
         self.learning_rate = self.builder.get_object("learning_rate_adjuster")
@@ -71,13 +72,13 @@ class ANN_gui():
         self.stop_button.props.sensitive = True
         self.sim_button.props.sensitive = False
         
-        P, T = self.read_input_file()
+        T, V = self.read_input_file(True)
         
         #Set the function and start training with appropriate arguments
         if self.trn_btn_gradient.props.active:
-            self.net = training_functions.traingd_block(net = self.net, input_array = P, output_array = T, epochs = self.epoch_number.get_value(), learning_rate = self.learning_rate.get_value(), block_size = self.block_size.get_value(), momentum = self.momentum.get_value())
+            self.net = training_functions.traingd_block(self.net, T, V, epochs = self.epoch_number.get_value(), learning_rate = self.learning_rate.get_value(), block_size = self.block_size.get_value(), momentum = self.momentum.get_value())
         elif self.trn_btn_genetic.props.active:
-            self.net = training_functions.train_evolutionary(net = self.net, input_array = P, output_array = T, epochs = self.epoch_number.get_value(), population_size = self.population.get_value(), mutation_chance = self.mutation.get_value(), random_range = self.random_range.get_value())
+            self.net = training_functions.train_evolutionary(self.net, T, V, epochs = self.epoch_number.get_value(), population_size = self.population.get_value(), mutation_chance = self.mutation.get_value(), random_range = self.random_range.get_value())
             
         #For single threaded
         self.train_button.props.sensitive = True
@@ -102,28 +103,31 @@ class ANN_gui():
     def get_input_cols(self):
         return self.get_cols(self.inputs_entry.get_text())
     
-    def read_input_file(self):
+    def read_input_file(self, make_validation_set):
         targets = self.get_target_cols()
         inputs = self.get_input_cols()
         ignores = self.get_ignore_cols()
-
-        P, T = parse_file(self.input_file, targetcols = targets, inputcols = inputs, ignorecols = ignores)
+        if make_validation_set:
+            v_size = self.validation_size.get_value()
+        else:
+            v_size = 0
+        T, V = parse_file(self.input_file, targetcols = targets, inputcols = inputs, ignorecols = ignores, validation_size = v_size)
         
-        return (P, T)
+        return (T, V)
     
     def on_sim_button_pressed(self, *args):
-        P, T = self.read_input_file()
+        T, V = self.read_input_file(False)
         
-        results = self.net.sim(P)
+        results = self.net.sim(T[0])
         
         print("{0:<9}   {1:<9}".format("T", "Output"))
         for target, result in zip(T, results):
             print("{0:<9}   {1:<9}".format(target, result))
         print("\n")
         
-        plotroc(results, T)
-        if len(P[0]) == 2:
-            plot2d2c(self.net, P, T, 2)
+        plotroc(results, T[1])
+        if len(T[0][0]) == 2:
+            plot2d2c(self.net, T[0], T[1], 2)
         plt.show()
             
     def on_window1_destroy(self, *args):

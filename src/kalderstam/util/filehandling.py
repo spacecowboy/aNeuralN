@@ -3,6 +3,7 @@ from kalderstam.neural import network
 import re
 from kalderstam.neural.activation_functions import get_function
 from os import path
+from random import random
 
 def read_data_file(filename):
     """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
@@ -11,16 +12,14 @@ def read_data_file(filename):
     
     return inputs
 
-def parse_file(filename, targetcols, inputcols = None, ignorecols = [], ignorerows = []):
-    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows)
+def parse_file(filename, targetcols, inputcols = None, ignorecols = [], ignorerows = [], validation_size = 0.2):
+    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows, validation_size = validation_size)
 
-def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
+def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = [], normalize = True, validation_size = 0.2):
     """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
     Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
     Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs.
     Ignorerows specify which, if any, rows should be skipped."""
-    
-    inputs = numpy.delete(inputs, ignorerows, 0)
     
     if not inputcols:
         inputcols = range(len(inputs[0]))
@@ -35,6 +34,16 @@ def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows
             destroycols.extend(ignorecols)
             
         inputcols = numpy.delete(inputcols, destroycols, 0)
+        
+    for line in range(len(inputs)):
+        for col in inputs[line, numpy.append(inputcols, targetcols)]: #check only valid columns
+            try:
+                float(col)
+            except ValueError: #This row contains crap, get rid of it
+                ignorerows.append(line)
+                break #skip to next line
+    
+    inputs = numpy.delete(inputs, ignorerows, 0)
     
     targets = numpy.array(inputs[:, targetcols], dtype = 'float64')
     inputs = numpy.array(inputs[:, inputcols], dtype = 'float64')
@@ -51,9 +60,31 @@ def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows
             if real:
                 #Subtract the mean and divide by the standard deviation
                 inputs[:, col] = (inputs[:, col] - numpy.mean(inputs[:, col])) / numpy.std(inputs[:, col])
-                
     
-    return (inputs, targets)
+    #Now divide the input into test and validation parts
+    return get_validation_set(inputs, targets, validation_size)
+
+def get_validation_set(inputs, targets, validation_size = 0.2):
+    if validation_size < 0 or validation_size > 1:
+        raise TypeError('validation_size not between 0 and 1')
+    test_inputs = []
+    test_targets = []
+    validation_inputs = []
+    validation_targets = []
+    for row in range(len(inputs)):
+        if random() > validation_size:
+            test_inputs.append(inputs[row])
+            test_targets.append(targets[row])
+        else:
+            validation_inputs.append(inputs[row])
+            validation_targets.append(targets[row])
+    
+    test_inputs = numpy.array(test_inputs, dtype = 'float64')
+    test_targets = numpy.array(test_targets, dtype = 'float64')
+    validation_inputs = numpy.array(validation_inputs, dtype = 'float64')
+    validation_targets = numpy.array(validation_targets, dtype = 'float64')
+    
+    return ((test_inputs, test_targets), (validation_inputs, validation_targets))
 
 def save_network(net, filename = None):
     """If Filename is None, create a new as net_#hashnumber.ann and save in home dir"""
@@ -170,17 +201,50 @@ def load_network(filename):
                     
     
 if __name__ == '__main__':   
+    print("Testing network saving/loading")
+    
     from kalderstam.neural.network import build_feedforward
     net = build_feedforward()
      
-    results = net.update([1, 2])
+    results1 = net.update([1, 2])
     
-    print results
+    print results1
     
     filename = path.join(path.expanduser("~"), "test.ann")
     print "saving and reloading"
     save_network(net, filename)
     
     net = load_network(filename)
-    results = net.update([1, 2])
-    print results
+    results2 = net.update([1, 2])
+    print results2
+    
+    assert(abs(results1[0] - results2[0]) < 0.0001) #float doesn't handle absolutes so well
+    print("Results are good. Testing input parsing....")
+    filename = path.join(path.expanduser("~"), "ann_input_data_test_file.txt")
+    print("First, split the file into a test set(80%) and validation set(20%)...")
+    test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [])
+    assert(len(test) == 2)
+    assert(len(test[0]) > 0)
+    assert(len(test[1]) > 0)
+    assert(len(validation) == 2)
+    assert(len(validation[0]) > 0)
+    assert(len(validation[1]) > 0)
+    print("Went well, now expecting a zero size validation set...")
+    test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [], validation_size = 0)
+    assert(len(test) == 2)
+    assert(len(test[0]) > 0)
+    assert(len(test[1]) > 0)
+    assert(len(validation) == 2)
+    assert(len(validation[0]) == 0)
+    assert(len(validation[1]) == 0)
+    print("As expected. Now a 100% validation set...")
+    test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [], validation_size = 1)
+    assert(len(test) == 2)
+    assert(len(test[0]) == 0)
+    assert(len(test[1]) == 0)
+    assert(len(validation) == 2)
+    assert(len(validation[0]) > 0)
+    assert(len(validation[1]) > 0)
+    
+    print("All tests completed successfully!")
+    

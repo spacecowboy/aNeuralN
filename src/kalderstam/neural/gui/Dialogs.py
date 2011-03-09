@@ -1,10 +1,5 @@
 import sys
-from kalderstam.neural.network import build_feedforward
-from kalderstam.neural.activation_functions import linear, logsig, tanh
-from kalderstam.neural.matlab_functions import loadsyn1, plotroc, plot2d2c, stat
-from kalderstam.util.filehandling import parse_file, load_network, save_network
-from kalderstam.neural import training_functions
-from kalderstam.neural.gui.New_ANN import show_new_ann_window
+from kalderstam.util.filehandling import load_network, save_network
 try:
     import pygtk
     pygtk.require("2.0")
