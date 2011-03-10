@@ -110,7 +110,7 @@ if __name__ == '__main__':
     
     print "Testing pool!"
     
-    p = Pool(2)
+    p = Pool()
     map_args = [(net, [P1], {}), (net, [P2], {}), (net, [P3], {}), (net, [P4], {}), (net, [P5], {}), (net, [P6], {}), (net, [P7], {}), (net, [P8], {})]
     
     Y_vals = p.map(run_net_sim, map_args)
