@@ -51,6 +51,7 @@ class ANN_gui():
         self.train_button = self.builder.get_object("train_button")
         self.stop_button = self.builder.get_object("stop_button")
         self.sim_button = self.builder.get_object("sim_button")
+        self.split_button = self.builder.get_object("split_button")
         
         self.inputs_entry = self.builder.get_object("inputs_entry")
         self.ignore_entry = self.builder.get_object("ignore_entry")
@@ -60,6 +61,9 @@ class ANN_gui():
         
         #window title
         self.window.set_title("Neural Network " + str(net.num_of_inputs) + "-" + str(len(net.hidden_nodes)) + "-" + str(len(net.output_nodes)))
+        
+        self.validation_set = None
+        self.test_set = None
         
     def visualize_network(self):
         #self.__get_trained_network()
@@ -73,7 +77,9 @@ class ANN_gui():
         self.stop_button.props.sensitive = True
         self.sim_button.props.sensitive = False
         
-        T, V = self.read_input_file(True)
+        if self.validation_set == None:
+            self.on_split_button_pressed()
+        T, V = self.test_set, self.validation_set
         
         #Set the function and start training with appropriate arguments
         if self.trn_btn_gradient.props.active:
@@ -91,6 +97,9 @@ class ANN_gui():
         self.train_button.props.sensitive = True
         self.stop_button.props.sensitive = False
         self.sim_button.props.sensitive = True
+        
+    def on_split_button_pressed(self, *args):
+        self.test_set, self.validation_set = self.read_input_file(True)
     
     def get_cols(self, text):
         return [int(number) for number in text.split()]
@@ -117,7 +126,13 @@ class ANN_gui():
         return (T, V)
     
     def on_sim_button_pressed(self, *args):
-        T, V = self.read_input_file(False)
+        if self.validation_set == None:
+            self.on_split_button_pressed()
+            
+        if len(self.validation_set[0]) > 0:
+            T = self.validation_set
+        else:
+            T = self.test_set
         
         results = self.net.sim(T[0])
         
