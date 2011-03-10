@@ -23,6 +23,9 @@ def __mp_net_sim(cmd_list):
     
     return numpy.array(results)
 
+def run_on_pool(func, cmd_list):
+    return p.map(func, cmd_list)
+
 def mp_net_sim_inputs(net, inputs):
     """Splits the input into cpu_count pieces, and evaluates the network on each piece in a separate process."""
     cmd_list = [(net, [input_part], {}) for input_part in __split_inputs(inputs, cpu_count())]

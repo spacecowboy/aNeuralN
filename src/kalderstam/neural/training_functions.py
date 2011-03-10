@@ -4,7 +4,6 @@ from random import sample, random, uniform
 from kalderstam.neural.network import build_feedforward, node, network
 from kalderstam.neural.error_functions import sum_squares
 from kalderstam.util.filehandling import get_validation_set
-from kalderstam.neural.mp_network import mp_net_sim_inputs, mp_nets_sim
 
 logger = logging.getLogger('kalderstam.neural.training_functions')
 
@@ -54,6 +53,44 @@ def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1, e
         logger.debug("Error = " + str(error_sum))
     return net
 
+def block_weight_calc((net, input, target, error_derivative)):
+    #Calc output
+    result = net.update(input)
+
+    #Set error to 0 on all nodes first
+    for node in net.get_all_nodes():
+        node.error_gradient = 0
+
+    #Set errors on output nodes first
+    for node, gradient in zip(net.output_nodes, error_derivative(target, result)):
+        node.error_gradient = gradient
+    
+    #Iterate over the nodes and correct the weights
+    for node in net.output_nodes + net.hidden_nodes:
+        #Calculate local error gradient
+        node.error_gradient *= node.activation_function.derivative(node.input_sum(input))
+
+        #Propagate the error backwards and then update the weights
+        for back_node, back_weight in node.weights.items():
+            
+            if back_node not in node.weight_corrections:
+                node.weight_corrections[back_node] = []
+                
+            try:
+                index = int(back_node)
+                node.weight_corrections[back_node].append(node.error_gradient * input[index])
+            except ValueError:
+                back_node.error_gradient += back_weight * node.error_gradient
+                node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
+        
+        #Finally, correct the bias
+        if "bias" not in node.weight_corrections:
+            node.weight_corrections["bias"] = []
+        node.weight_corrections["bias"].append(node.error_gradient * node.bias)
+        
+from kalderstam.neural.mp_network import mp_net_sim_inputs, mp_nets_sim,\
+    run_on_pool
+
 def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative, error_function = sum_squares.total_error):
     """Train using Gradient Descent."""
     
@@ -78,43 +115,47 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
                 node.weight_corrections = {}
             
             #Train in random order
+            cmd_list = []
             for input, target in sample(zip(test_inputs, test_targets), block_size):
                 # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
 #                target = numpy.append(numpy.array([]), output)
 
                 #Calc output
-                result = net.update(input)
-
-                #Set error to 0 on all nodes first
-                for node in net.get_all_nodes():
-                    node.error_gradient = 0
-
-                #Set errors on output nodes first
-                for node, gradient in zip(net.output_nodes, error_derivative(target, result)):
-                    node.error_gradient = gradient
-                
-                #Iterate over the nodes and correct the weights
-                for node in net.output_nodes + net.hidden_nodes:
-                    #Calculate local error gradient
-                    node.error_gradient *= node.activation_function.derivative(node.input_sum(input))
-
-                    #Propagate the error backwards and then update the weights
-                    for back_node, back_weight in node.weights.items():
-                        
-                        if back_node not in node.weight_corrections:
-                            node.weight_corrections[back_node] = []
-                            
-                        try:
-                            index = int(back_node)
-                            node.weight_corrections[back_node].append(node.error_gradient * input[index])
-                        except ValueError:
-                            back_node.error_gradient += back_weight * node.error_gradient
-                            node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
-                    
-                    #Finally, correct the bias
-                    if "bias" not in node.weight_corrections:
-                        node.weight_corrections["bias"] = []
-                    node.weight_corrections["bias"].append(node.error_gradient * node.bias)
+                #block_weight_calc((net, input, target, error_derivative))
+                cmd_list.append((net, input, target, error_derivative))
+            run_on_pool(block_weight_calc, cmd_list)
+#                result = net.update(input)
+#
+#                #Set error to 0 on all nodes first
+#                for node in net.get_all_nodes():
+#                    node.error_gradient = 0
+#
+#                #Set errors on output nodes first
+#                for node, gradient in zip(net.output_nodes, error_derivative(target, result)):
+#                    node.error_gradient = gradient
+#                
+#                #Iterate over the nodes and correct the weights
+#                for node in net.output_nodes + net.hidden_nodes:
+#                    #Calculate local error gradient
+#                    node.error_gradient *= node.activation_function.derivative(node.input_sum(input))
+#
+#                    #Propagate the error backwards and then update the weights
+#                    for back_node, back_weight in node.weights.items():
+#                        
+#                        if back_node not in node.weight_corrections:
+#                            node.weight_corrections[back_node] = []
+#                            
+#                        try:
+#                            index = int(back_node)
+#                            node.weight_corrections[back_node].append(node.error_gradient * input[index])
+#                        except ValueError:
+#                            back_node.error_gradient += back_weight * node.error_gradient
+#                            node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
+#                    
+#                    #Finally, correct the bias
+#                    if "bias" not in node.weight_corrections:
+#                        node.weight_corrections["bias"] = []
+#                    node.weight_corrections["bias"].append(node.error_gradient * node.bias)
             
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
@@ -362,7 +403,7 @@ if __name__ == '__main__':
 #    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
     
     #start = time.clock()
-    best = benchmark(train_evolutionary)(net, test, validation, epochs, random_range = 5)
+    best = benchmark(train_evolutionary)(net, test, validation, epochs / 10, random_range = 5)
     #stop = time.clock()
     P, T = test
     Y = best.sim(P)
