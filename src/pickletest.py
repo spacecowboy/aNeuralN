@@ -88,6 +88,12 @@ if __name__ == '__main__':
     
     P1, T1 = loadsyn1(100000)
     P2, T2 = loadsyn1(100000)
+    P3, T3 = loadsyn1(100000)
+    P4, T4 = loadsyn1(100000)
+    P5, T5 = loadsyn1(100000)
+    P6, T6 = loadsyn1(100000)
+    P7, T7 = loadsyn1(100000)
+    P8, T8 = loadsyn1(100000)
                 
     net = build_feedforward(2, 1, 1)
     
@@ -104,8 +110,8 @@ if __name__ == '__main__':
     
     print "Testing pool!"
     
-    p = Pool()
-    map_args = [(net, [P1], {}), (net, [P2], {}), (net, [P1 + P2], {})]
+    p = Pool(2)
+    map_args = [(net, [P1], {}), (net, [P2], {}), (net, [P3], {}), (net, [P4], {}), (net, [P5], {}), (net, [P6], {}), (net, [P7], {}), (net, [P8], {})]
     
     Y_vals = p.map(run_net_sim, map_args)
     
