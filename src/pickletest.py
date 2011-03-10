@@ -2,15 +2,18 @@ from multiprocessing import Process
 from multiprocessing.queues import Queue
 
 class Worker(Process):
-    def __init__(self):
+    def __init__(self, q):
         Process.__init__(self)
-        self.queue = Queue()
+        self.queue = q
 
     def run(self):
-        element = self.queue.get()
+        element, args, kwargs = self.queue.get()
         print element
+        print args
+        print kwargs
         print element.color
         element.method()
+        element.args_method(*args, **kwargs)
         
 
 class car():
@@ -27,14 +30,22 @@ class car():
         
         print("Inner object: " + self.motor.power)
         
+    def args_method(self, *args, **kwargs):
+        print("Args: " + str(args))
+        print("Kwargs: " + str(kwargs))
+        
 class engine():
     def __init__(self):
         self.power = "V6 800BHP"
 
 
 if __name__ == '__main__':
-    w = Worker()
+    queue = Queue()
+    w = Worker(queue)
     w.start()
     # To trigger the problem, any non-pickleable object is to be passed here.
-    w.queue.put(car())
+    args = ['hej', 'hopp']
+    kwargs = {}
+    kwargs['one'] = 1
+    queue.put((car(), args, kwargs))
     w.join()
