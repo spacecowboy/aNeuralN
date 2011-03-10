@@ -337,6 +337,7 @@ if __name__ == '__main__':
         from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
         loadsyn2, loadsyn3, plotroc
         from kalderstam.util.filehandling import parse_file, save_network
+        from kalderstam.util.decorators import benchmark
         import time
         import matplotlib.pyplot as plt
     except:
@@ -355,27 +356,27 @@ if __name__ == '__main__':
 #    plot2d2c(best, P, T, 1)
 #    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
     
-    start = time.clock()
-    best = train_evolutionary(net, test, validation, epochs / 5, random_range = 5)
-    stop = time.clock()
+    #start = time.clock()
+    best = benchmark(train_evolutionary)(net, test, validation, epochs / 5, random_range = 5)
+    #stop = time.clock()
     P, T = test
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plot2d2c(best, P, T, 1)
     plt.title("Only Genetic\n [Test set] Total performance = " + str(total_performance) + "%")
-    print("Genetic time: " + str(stop-start))
+    #print("Genetic time: " + str(stop-start))
     P, T = validation
     Y = best.sim(P)
     [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
     plt.title("Only Genetic\n [Validation set] Total performance = " + str(total_performance) + "%")
-    print("Genetic time: " + str(stop-start))
+    #print("Genetic time: " + str(stop-start))
     #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
     
     #net = build_feedforward(2, 4, 1)
     
-    start = time.time()
-    best = traingd_block(best, test, validation, epochs, block_size = 10)
-    print("traingd_block time: " + str(time.time()-start))
+    #start = time.time()
+    best = benchmark(traingd_block)(best, test, validation, epochs, block_size = 10)
+    #print("traingd_block time: " + str(time.time()-start))
     Y = best.sim(P)
     
     P, T = validation
