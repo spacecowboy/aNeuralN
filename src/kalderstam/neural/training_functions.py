@@ -4,6 +4,7 @@ from random import sample, random, uniform
 from kalderstam.neural.network import build_feedforward, node, network
 from kalderstam.neural.error_functions import sum_squares
 from kalderstam.util.filehandling import get_validation_set
+from kalderstam.neural.mp_network import mp_net_sim_inputs, mp_nets_sim
 
 logger = logging.getLogger('kalderstam.neural.training_functions')
 
@@ -125,9 +126,11 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
                 
         #Calculate error of the network and print
         if (len(validation_inputs) > 0 and len(test_inputs > 0)):
-            test_results = net.sim(test_inputs)
+            test_results = mp_net_sim_inputs(net, test_inputs)
+            #test_results = net.sim(test_inputs)
             test_error = error_function(test_targets, test_results)/len(test_targets)
-            validation_results = net.sim(validation_inputs)
+            validation_results = mp_net_sim_inputs(net, validation_inputs)
+            #validation_results = net.sim(validation_inputs)
             validation_error = error_function(validation_targets, validation_results)/len(validation_targets)
             logger.debug("Test Error = " + str(test_error))
             logger.debug("Validation Error = " + str(validation_error))
@@ -146,7 +149,8 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
         error = {} #reset errors
         top_networks = [None for each in range(int(top_number))] #reset top five
         #For all networks, simulate, measure their error, and save the best network so far
-        for member in population:
+        sim_results = mp_nets_sim(population, input_array)
+        for member, sim_result in zip(population, sim_results):
 #            error[member] = 0
 #            for input, output in zip(input_array, output_array):
 #                # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
@@ -155,7 +159,8 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
 #                result = member.update(input)
 #                #calc sum-square error
 #                error[member] += error_function(output, result)
-            error[member] = error_function(output_array, member.sim(input_array))/len(output_array)
+            #error[member] = error_function(output_array, member.sim(input_array))/len(output_array)
+            error[member] = error_function(output_array, sim_result)/len(output_array)
             #compare with best
             if not best or error[member] < best_error:
                 best = member
@@ -357,7 +362,7 @@ if __name__ == '__main__':
 #    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
     
     #start = time.clock()
-    best = benchmark(train_evolutionary)(net, test, validation, epochs / 5, random_range = 5)
+    best = benchmark(train_evolutionary)(net, test, validation, epochs, random_range = 5)
     #stop = time.clock()
     P, T = test
     Y = best.sim(P)
