@@ -96,7 +96,7 @@ class Trainer(Process):
                     #Iterate over the nodes and correct the weights
                     for node in net.output_nodes + net.hidden_nodes:
                         #Calculate local error gradient
-                        node.error_gradient *= node.activation_derivative(node.input_sum(input))
+                        node.error_gradient *= node.activation_function.derivative(node.input_sum(input))
     
                         #Propagate the error backwards and then update the weights
                         for back_node, back_weight in node.weights.iteritems():
@@ -187,7 +187,7 @@ class Trainer(Process):
                 
                 #Hidden layer
                 for i in range(len(mother.hidden_nodes)):
-                    hidden = node(mother.hidden_nodes[i].function, random_range)
+                    hidden = node(mother.hidden_nodes[i].activation_function, random_range)
                     weights = {}
                     for j in range(mother.num_of_inputs):
                         choice = sample([mother, father], 1)[0]
@@ -206,7 +206,7 @@ class Trainer(Process):
                     
                 #Output nodes
                 for i in range(len(mother.output_nodes)):
-                    output = node(mother.output_nodes[i].function)
+                    output = node(mother.output_nodes[i].activation_function)
                     weights = {}
                     for j in range(len(mother.hidden_nodes)):
                         choice = sample([mother, father], 1)[0]

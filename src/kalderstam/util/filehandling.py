@@ -104,8 +104,8 @@ def save_network(net, filename = None):
                 node_index = net.output_nodes.index(node)
             """Write node identifier"""
             f.write("[" + node_type + str(node_index) + "]\n")
-            """Write its activation function"""
-            f.write("function=" + str(node.function) + "\n")
+            """Write its activation activation_function"""
+            f.write("activation_function=" + str(node.activation_function) + "\n")
             """Write its bias"""
             f.write("bias=" + str(node.bias) + "\n")
             """Now write its connections and weights"""
@@ -150,8 +150,8 @@ def load_network(filename):
                     current_node = m.group(1)
                     continue
                 
-                """check function name"""
-                m = re.search('function\s*=\s*([\w\d]+)', line)
+                """check activation_function name"""
+                m = re.search('activation_function\s*=\s*([\w\d]+)', line)
                 if m:
                     function = get_function(m.group(1))
                     continue

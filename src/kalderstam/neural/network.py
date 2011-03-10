@@ -58,13 +58,13 @@ class node:
     def __int__(self):
         raise ValueError
     
-    #default function is F(x) = x
+    #default activation_function is F(x) = x
     def __init__(self, active = linear(), bias = None, random_range = 1):
         self.random_range = random_range
         self.weights = {}
-        self.function = active #Used to save to file
-        self.activation_function = active.function
-        self.activation_derivative = active.derivative
+        self.activation_function = active #Used to save to file
+        #self.activation_function = active.activation_function
+        #self.activation_derivative = active.derivative
         #initialize the bias
         if bias:
             self.bias = bias
@@ -95,7 +95,7 @@ class node:
         return input_sum
         
     def output(self, inputs):
-        return self.activation_function(self.input_sum(inputs))
+        return self.activation_function.function(self.input_sum(inputs))
                 
 
 if __name__ == '__main__': 

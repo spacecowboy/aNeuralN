@@ -95,7 +95,7 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
                 #Iterate over the nodes and correct the weights
                 for node in net.output_nodes + net.hidden_nodes:
                     #Calculate local error gradient
-                    node.error_gradient *= node.activation_derivative(node.input_sum(input))
+                    node.error_gradient *= node.activation_function.derivative(node.input_sum(input))
 
                     #Propagate the error backwards and then update the weights
                     for back_node, back_weight in node.weights.items():
@@ -180,7 +180,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
             
             #Hidden layer
             for mother_node, father_node in zip(mother.hidden_nodes, father.hidden_nodes):
-                hidden = node(mother_node.function, random_range)
+                hidden = node(mother_node.activation_function, random_range)
                 weights = {}
                 for input_number in range(mother.num_of_inputs):
                     choice = sample([mother_node, father_node], 1)[0]
@@ -201,7 +201,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
             #Output nodes
             #for mother_node, father_node in zip(mother.output_nodes, father.output_nodes):
             for output_number in range(len(mother.output_nodes)):
-                output = node(mother_node.function)
+                output = node(mother_node.activation_function)
                 weights = {}
                 for hidden_number in range(len(mother.hidden_nodes)):
                     choice = sample([mother, father], 1)[0]
@@ -270,7 +270,7 @@ def train_evolutionary_sequential(net, input_array, output_array, epochs = 300, 
             
             #Hidden layer
             for mother_node, father_node in zip(mother.hidden_nodes, father.hidden_nodes):
-                hidden = node(mother_node.function, random_range)
+                hidden = node(mother_node.activation_function, random_range)
                 weights = {}
                 for input_number in range(mother.num_of_inputs):
                     choice = sample([mother_node, father_node], 1)[0]
@@ -291,7 +291,7 @@ def train_evolutionary_sequential(net, input_array, output_array, epochs = 300, 
             #Output nodes
             #for mother_node, father_node in zip(mother.output_nodes, father.output_nodes):
             for output_number in range(len(mother.output_nodes)):
-                output = node(mother_node.function)
+                output = node(mother_node.activation_function)
                 weights = {}
                 for hidden_number in range(len(mother.hidden_nodes)):
                     choice = sample([mother, father], 1)[0]
