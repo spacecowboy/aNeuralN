@@ -38,6 +38,7 @@ class ANN_gui():
         self.epoch_number = self.builder.get_object("epoch_adjuster")
         self.block_size = self.builder.get_object("block_size_adjuster")
         self.validation_size = self.builder.get_object("validation_adjuster")
+        self.early_stopping_btn = self.builder.get_object("early_stopping_button")
         
         #Gradient Descent
         self.learning_rate = self.builder.get_object("learning_rate_adjuster")
@@ -50,6 +51,7 @@ class ANN_gui():
         self.train_button = self.builder.get_object("train_button")
         self.stop_button = self.builder.get_object("stop_button")
         self.sim_button = self.builder.get_object("sim_button")
+        self.split_button = self.builder.get_object("split_button")
         
         self.inputs_entry = self.builder.get_object("inputs_entry")
         self.ignore_entry = self.builder.get_object("ignore_entry")
@@ -59,6 +61,9 @@ class ANN_gui():
         
         #window title
         self.window.set_title("Neural Network " + str(net.num_of_inputs) + "-" + str(len(net.hidden_nodes)) + "-" + str(len(net.output_nodes)))
+        
+        self.validation_set = None
+        self.test_set = None
         
     def visualize_network(self):
         #self.__get_trained_network()
@@ -72,11 +77,13 @@ class ANN_gui():
         self.stop_button.props.sensitive = True
         self.sim_button.props.sensitive = False
         
-        T, V = self.read_input_file(True)
+        if self.validation_set == None:
+            self.on_split_button_pressed()
+        T, V = self.test_set, self.validation_set
         
         #Set the function and start training with appropriate arguments
         if self.trn_btn_gradient.props.active:
-            self.net = training_functions.traingd_block(self.net, T, V, epochs = self.epoch_number.get_value(), learning_rate = self.learning_rate.get_value(), block_size = self.block_size.get_value(), momentum = self.momentum.get_value())
+            self.net = training_functions.traingd_block(self.net, T, V, epochs = self.epoch_number.get_value(), learning_rate = self.learning_rate.get_value(), block_size = self.block_size.get_value(), momentum = self.momentum.get_value(), early_stopping = self.early_stopping_btn.props.active)
         elif self.trn_btn_genetic.props.active:
             self.net = training_functions.train_evolutionary(self.net, T, V, epochs = self.epoch_number.get_value(), population_size = self.population.get_value(), mutation_chance = self.mutation.get_value(), random_range = self.random_range.get_value())
             
@@ -90,6 +97,9 @@ class ANN_gui():
         self.train_button.props.sensitive = True
         self.stop_button.props.sensitive = False
         self.sim_button.props.sensitive = True
+        
+    def on_split_button_pressed(self, *args):
+        self.test_set, self.validation_set = self.read_input_file(True)
     
     def get_cols(self, text):
         return [int(number) for number in text.split()]
@@ -116,7 +126,13 @@ class ANN_gui():
         return (T, V)
     
     def on_sim_button_pressed(self, *args):
-        T, V = self.read_input_file(False)
+        if self.validation_set == None:
+            self.on_split_button_pressed()
+            
+        if len(self.validation_set[0]) > 0:
+            T = self.validation_set
+        else:
+            T = self.test_set
         
         results = self.net.sim(T[0])
         
