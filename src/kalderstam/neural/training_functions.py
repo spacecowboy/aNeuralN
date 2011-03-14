@@ -390,7 +390,7 @@ if __name__ == '__main__':
     except:
         pass
         
-    P, T = loadsyn3(100)
+    P, T = loadsyn3(1000)
     #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, ignorecols = 40)
     test, validation = get_validation_set(P, T)
     net = build_feedforward(2, 3, 1)
@@ -404,7 +404,7 @@ if __name__ == '__main__':
 #    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
     
     #start = time.clock()
-    best = benchmark(train_evolutionary)(net, test, validation, epochs, random_range = 5)
+    best = benchmark(train_evolutionary)(net, test, validation, epochs/10, random_range = 5)
     #stop = time.clock()
     P, T = test
     Y = best.sim(P)

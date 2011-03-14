@@ -62,6 +62,7 @@ def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows
                 inputs[:, col] = (inputs[:, col] - numpy.mean(inputs[:, col])) / numpy.std(inputs[:, col])
     
     #Now divide the input into test and validation parts
+    
     return get_validation_set(inputs, targets, validation_size)
 
 def get_validation_set(inputs, targets, validation_size = 0.2):
@@ -79,6 +80,39 @@ def get_validation_set(inputs, targets, validation_size = 0.2):
             validation_inputs.append(inputs[row])
             validation_targets.append(targets[row])
     
+    test_inputs = numpy.array(test_inputs, dtype = 'float64')
+    test_targets = numpy.array(test_targets, dtype = 'float64')
+    validation_inputs = numpy.array(validation_inputs, dtype = 'float64')
+    validation_targets = numpy.array(validation_targets, dtype = 'float64')
+    
+    return ((test_inputs, test_targets), (validation_inputs, validation_targets))
+
+def get_stratified_validation_set(inputs, targets, validation_size = 0.2):
+    """Will sort on 0-1 for targets. Only valid for classification sets."""
+    zero_inputs, zero_targets = [], []
+    one_inputs, one_targets = [], []
+    for input, target in zip(inputs, targets):
+        target = numpy.append(numpy.array([]), target) #Support both [0, 1] and [[0], [1]]
+        if target[0] < 1: #Array of output values, in this case only one output node exists
+            zero_inputs.append(input)
+            zero_targets.append(target)
+        else:
+            one_inputs.append(input)
+            one_targets.append(target)
+    #Values are now divided up. Now, choose a validation set by dividing up each set randomly
+    (zero_test_inputs, zero_test_targets), (zero_validation_inputs, zero_validation_targets) = get_validation_set(zero_inputs, zero_targets, validation_size)
+    (one_test_inputs, one_test_targets), (one_validation_inputs, one_validation_targets) = get_validation_set(one_inputs, one_targets, validation_size)
+    #Numpy is crap at appending data
+    test_inputs = list(zero_test_inputs)
+    test_targets = list(zero_test_targets)
+    validation_inputs = list(zero_validation_inputs)
+    validation_targets = list(zero_validation_targets)
+    #now we add the two sets together
+    test_inputs.extend(one_test_inputs)
+    test_targets.extend(one_test_targets)
+    validation_inputs.extend(one_validation_inputs)
+    validation_targets.extend(one_validation_targets)
+    #Finally, convert back to numpy arrays and return
     test_inputs = numpy.array(test_inputs, dtype = 'float64')
     test_targets = numpy.array(test_targets, dtype = 'float64')
     validation_inputs = numpy.array(validation_inputs, dtype = 'float64')
@@ -223,6 +257,10 @@ if __name__ == '__main__':
     filename = path.join(path.expanduser("~"), "ann_input_data_test_file.txt")
     print("First, split the file into a test set(80%) and validation set(20%)...")
     test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [])
+    print(len(test[0]))
+    print(len(test[1]))
+    print(len(validation[0]))
+    print(len(validation[1]))
     assert(len(test) == 2)
     assert(len(test[0]) > 0)
     assert(len(test[1]) > 0)
@@ -231,6 +269,10 @@ if __name__ == '__main__':
     assert(len(validation[1]) > 0)
     print("Went well, now expecting a zero size validation set...")
     test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [], validation_size = 0)
+    print(len(test[0]))
+    print(len(test[1]))
+    print(len(validation[0]))
+    print(len(validation[1]))
     assert(len(test) == 2)
     assert(len(test[0]) > 0)
     assert(len(test[1]) > 0)
@@ -239,9 +281,26 @@ if __name__ == '__main__':
     assert(len(validation[1]) == 0)
     print("As expected. Now a 100% validation set...")
     test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [], validation_size = 1)
+    print(len(test[0]))
+    print(len(test[1]))
+    print(len(validation[0]))
+    print(len(validation[1]))
     assert(len(test) == 2)
     assert(len(test[0]) == 0)
     assert(len(test[1]) == 0)
+    assert(len(validation) == 2)
+    assert(len(validation[0]) > 0)
+    assert(len(validation[1]) > 0)
+    print("Now we test a stratified set...")
+    inputs, targets = validation
+    test, validation = get_stratified_validation_set(inputs, targets, validation_size = 0.5)
+    print(len(test[0]))
+    print(len(test[1]))
+    print(len(validation[0]))
+    print(len(validation[1]))
+    assert(len(test) == 2)
+    assert(len(test[0]) > 0)
+    assert(len(test[1]) > 0)
     assert(len(validation) == 2)
     assert(len(validation[0]) > 0)
     assert(len(validation[1]) > 0)
