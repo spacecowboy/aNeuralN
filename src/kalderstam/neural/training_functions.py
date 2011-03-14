@@ -89,7 +89,7 @@ def block_weight_calc((net, input, target, error_derivative)):
             node.weight_corrections["bias"] = []
         node.weight_corrections["bias"].append(node.error_gradient * node.bias)
 
-def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative, error_function = sum_squares.total_error):
+def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative, error_function = sum_squares.total_error, early_stopping = False):
     """Train using Gradient Descent."""
     
 #    targets = []
@@ -97,6 +97,8 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
 #        # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
 #        targets.append(output)
 #    targets = numpy.array(targets)
+    validation_error = None
+    test_error = None
     
     for epoch in range(0, int(epochs)):
         #Iterate over training data
@@ -161,6 +163,8 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
                 
         #Calculate error of the network and print
         if (len(validation_inputs) > 0 and len(test_inputs > 0)):
+            pre_test = test_error
+            pre_validation = validation_error
             test_results = mp_net_sim_inputs(net, test_inputs)
             #test_results = net.sim(test_inputs)
             test_error = error_function(test_targets, test_results)/len(test_targets)
@@ -169,6 +173,9 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
             validation_error = error_function(validation_targets, validation_results)/len(validation_targets)
             logger.debug("Test Error = " + str(test_error))
             logger.debug("Validation Error = " + str(validation_error))
+            if early_stopping and (pre_test != None and test_error < pre_test and validation_error > pre_validation):
+                logger.debug("Divergence detected, aborting...")
+                break
 
     return net
             
@@ -383,7 +390,7 @@ if __name__ == '__main__':
     except:
         pass
         
-    P, T = loadsyn1(100)
+    P, T = loadsyn3(1000)
     #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, ignorecols = 40)
     test, validation = get_validation_set(P, T)
     net = build_feedforward(2, 3, 1)
@@ -397,7 +404,7 @@ if __name__ == '__main__':
 #    plt.title("Only Gradient Descent.\n Total performance = " + str(total_performance) + "%")
     
     #start = time.clock()
-    best = benchmark(train_evolutionary)(net, test, validation, epochs, random_range = 5)
+    best = benchmark(train_evolutionary)(net, test, validation, epochs/10, random_range = 5)
     #stop = time.clock()
     P, T = test
     Y = best.sim(P)
@@ -415,7 +422,7 @@ if __name__ == '__main__':
     #net = build_feedforward(2, 4, 1)
     
     #start = time.time()
-    best = benchmark(traingd_block)(best, test, validation, epochs, block_size = 10)
+    best = benchmark(traingd_block)(best, test, validation, epochs, block_size = 10, early_stopping = True)
     #print("traingd_block time: " + str(time.time()-start))
     Y = best.sim(P)
     
