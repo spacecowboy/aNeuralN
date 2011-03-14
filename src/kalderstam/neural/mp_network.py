@@ -45,16 +45,23 @@ def mp_nets_sim(nets, inputs):
     results = p.map(__net_sim, cmd_list)
     
     return results
+
+def mp_committee_sim(com, inputs):
+    """This evaluates each network in a separate process. Does not split the input.
+    The results are returned in the same order as the iterator of nets"""
+    cmd_list = [(net, [inputs], {}) for net in com.nets]
+    sim_list = p.map(__net_sim, cmd_list)
+    return com.__average__(sim_list)
     
 
 p = Pool()
 
 if __name__ == '__main__':
-    from kalderstam.neural.network import build_feedforward
+    from kalderstam.neural.network import build_feedforward, build_feedforward_committee
     from kalderstam.neural.matlab_functions import loadsyn1
     from kalderstam.util.decorators import benchmark
 
-    net = build_feedforward(2, 1, 1)
+    net = build_feedforward(2, 4, 1)
     
     P, T = loadsyn1(10000)
     
@@ -63,8 +70,9 @@ if __name__ == '__main__':
     benchmark(net.sim)(P)
     #print Y
     print len(Y)
+    print len(Y[0])
     
-    netlist = [build_feedforward(2, 1, 1) for i in range(8)]
+    netlist = [build_feedforward(2, 4, 1) for i in range(4)]
     Ys = benchmark(mp_nets_sim)(netlist, P)
     
     def single_nets(nets, P):
@@ -73,5 +81,12 @@ if __name__ == '__main__':
     
     benchmark(single_nets)(netlist, P)
     
+    print len(Ys)
+    print len(Ys[0])
+    print len(Ys[0][0])
+    
+    com = build_feedforward_committee(input_number = 2, hidden_number = 4, output_number = 1)
+    Ys = benchmark(mp_committee_sim)(com, P)
+    benchmark(com.sim)(P)
     print len(Ys)
     print len(Ys[0])

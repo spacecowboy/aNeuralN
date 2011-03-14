@@ -3,8 +3,13 @@ from random import uniform
 import numpy
 import logging
 from kalderstam.neural.activation_functions import linear, logsig, tanh
+from kalderstam.util.decorators import benchmark
 
 logger = logging.getLogger('kalderstam.neural.network')
+
+def build_feedforward_committee(size = 8, input_number = 2, hidden_number = 2, output_number = 1, hidden_function = tanh(), output_function = logsig()):
+    net_list = [build_feedforward(input_number, hidden_number, output_number, hidden_function, output_function) for n in range(size)]
+    return committee(net_list)
 
 def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = tanh(), output_function = logsig()):
     net = network()
@@ -24,6 +29,32 @@ def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hi
         net.output_nodes.append(output)
     
     return net
+
+class committee:
+    def __init__(self, net_list = None):
+        if net_list == None:
+            self.nets = []
+        else:
+            self.nets = net_list
+            
+    def __len__(self):
+        return len(self.nets)
+    
+    def update(self, inputs):
+        results = [net.update(inputs) for net in self.nets]
+        return self.__average__(results)
+    
+    def sim(self, input_array):
+        return numpy.array([self.update(input) for input in input_array])
+    
+    def __average__(self, outputs):
+        """Outputs is a list of network outputs. Each a list of output node results."""
+        result = outputs[0] - outputs[0] #A zero array of the same shape as output
+        #Calculate average
+        for output in outputs: #Sum all values
+            result += output
+        result /= len(self) #Divide by size
+        return result #Returns an array of average values for each output node
 
 class network:
     
@@ -102,15 +133,16 @@ if __name__ == '__main__':
     import time
     net = build_feedforward(input_number = 2, hidden_number = 3, output_number = 1)
     
-    start = time.time()
-    results = net.update([1, 2])
-    stop = time.time()
-     
+    results = benchmark(net.update)([1, 2])
     print(results)
-    print('Time was: ', stop - start)
      
-    start = time.time()
-    results2 = net.sim([[1, 2], [2, 3]])
-    stop = time.time()
-    print(results2)
-    print('Time was: ', stop - start)
+    results = benchmark(net.sim)([[1, 2], [2, 3]])
+    print(results)
+    
+    com = build_feedforward_committee(input_number = 2, hidden_number = 3, output_number = 1)
+    
+    results = benchmark(com.update)([1, 2])
+    print(results)
+     
+    results = benchmark(com.sim)([[1, 2], [2, 3]])
+    print(results)

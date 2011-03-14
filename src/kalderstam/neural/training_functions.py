@@ -54,41 +54,6 @@ def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1, e
         logger.debug("Error = " + str(error_sum))
     return net
 
-def block_weight_calc((net, input, target, error_derivative)):
-    #Calc output
-    result = net.update(input)
-
-    #Set error to 0 on all nodes first
-    for node in net.get_all_nodes():
-        node.error_gradient = 0
-
-    #Set errors on output nodes first
-    for node, gradient in zip(net.output_nodes, error_derivative(target, result)):
-        node.error_gradient = gradient
-    
-    #Iterate over the nodes and correct the weights
-    for node in net.output_nodes + net.hidden_nodes:
-        #Calculate local error gradient
-        node.error_gradient *= node.activation_function.derivative(node.input_sum(input))
-
-        #Propagate the error backwards and then update the weights
-        for back_node, back_weight in node.weights.items():
-            
-            if back_node not in node.weight_corrections:
-                node.weight_corrections[back_node] = []
-                
-            try:
-                index = int(back_node)
-                node.weight_corrections[back_node].append(node.error_gradient * input[index])
-            except ValueError:
-                back_node.error_gradient += back_weight * node.error_gradient
-                node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
-        
-        #Finally, correct the bias
-        if "bias" not in node.weight_corrections:
-            node.weight_corrections["bias"] = []
-        node.weight_corrections["bias"].append(node.error_gradient * node.bias)
-
 def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative, error_function = sum_squares.total_error, early_stopping = False):
     """Train using Gradient Descent."""
     
