@@ -12,10 +12,10 @@ def read_data_file(filename):
     
     return inputs
 
-def parse_file(filename, targetcols, inputcols = None, ignorecols = [], ignorerows = [], validation_size = 0.2):
-    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows, validation_size = validation_size)
+def parse_file(filename, targetcols, inputcols = None, ignorecols = [], ignorerows = []):
+    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows)
 
-def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = [], normalize = True, validation_size = 0.2):
+def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
     """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
     Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
     Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs.
@@ -63,7 +63,7 @@ def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows
     
     #Now divide the input into test and validation parts
     
-    return get_validation_set(inputs, targets, validation_size)
+    return inputs, targets
 
 def get_validation_set(inputs, targets, validation_size = 0.2):
     if validation_size < 0 or validation_size > 1:
@@ -256,7 +256,8 @@ if __name__ == '__main__':
     print("Results are good. Testing input parsing....")
     filename = path.join(path.expanduser("~"), "ann_input_data_test_file.txt")
     print("First, split the file into a test set(80%) and validation set(20%)...")
-    test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [])
+    inputs, targets = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [])
+    test, validation = get_validation_set(inputs, targets, validation_size=0.5)
     print(len(test[0]))
     print(len(test[1]))
     print(len(validation[0]))
@@ -268,7 +269,7 @@ if __name__ == '__main__':
     assert(len(validation[0]) > 0)
     assert(len(validation[1]) > 0)
     print("Went well, now expecting a zero size validation set...")
-    test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [], validation_size = 0)
+    test, validation = get_validation_set(inputs, targets, validation_size=0)
     print(len(test[0]))
     print(len(test[1]))
     print(len(validation[0]))
@@ -280,7 +281,7 @@ if __name__ == '__main__':
     assert(len(validation[0]) == 0)
     assert(len(validation[1]) == 0)
     print("As expected. Now a 100% validation set...")
-    test, validation = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [], validation_size = 1)
+    test, validation = get_validation_set(inputs, targets, validation_size=1)
     print(len(test[0]))
     print(len(test[1]))
     print(len(validation[0]))
@@ -292,7 +293,6 @@ if __name__ == '__main__':
     assert(len(validation[0]) > 0)
     assert(len(validation[1]) > 0)
     print("Now we test a stratified set...")
-    inputs, targets = validation
     test, validation = get_stratified_validation_set(inputs, targets, validation_size = 0.5)
     print(len(test[0]))
     print(len(test[1]))

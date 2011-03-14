@@ -2,7 +2,8 @@ import sys
 from kalderstam.neural.network import build_feedforward
 from kalderstam.neural.activation_functions import linear, logsig, tanh
 from kalderstam.neural.matlab_functions import loadsyn1, plotroc, plot2d2c, stat
-from kalderstam.util.filehandling import parse_file
+from kalderstam.util.filehandling import parse_file,\
+    get_stratified_validation_set, get_validation_set
 from kalderstam.neural import training_functions
 from kalderstam.neural.gui.New_ANN import show_new_ann_window
 from kalderstam.neural.gui.Dialogs import show_open_dialog, show_save_dialog
@@ -121,7 +122,11 @@ class ANN_gui():
             v_size = self.validation_size.get_value()
         else:
             v_size = 0
-        T, V = parse_file(self.input_file, targetcols = targets, inputcols = inputs, ignorecols = ignores, validation_size = v_size)
+        input_array, target_array = parse_file(self.input_file, targetcols = targets, inputcols = inputs, ignorecols = ignores)
+        if len(targets) == 1: #Do stratified
+            T, V = get_stratified_validation_set(input_array, target_array, validation_size = v_size)
+        else:
+            T, V = get_validation_set(input_array, target_array, validation_size = v_size)
         
         return (T, V)
     
