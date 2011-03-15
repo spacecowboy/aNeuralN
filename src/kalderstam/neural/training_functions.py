@@ -4,9 +4,11 @@ from random import sample, random, uniform
 from kalderstam.neural.network import build_feedforward, node, network
 from kalderstam.neural.error_functions import sum_squares
 from kalderstam.util.filehandling import get_validation_set
-from kalderstam.neural.mp_network import mp_net_sim_inputs, mp_nets_sim
 
 logger = logging.getLogger('kalderstam.neural.training_functions')
+
+def train_committee(com, train_func, *train_args, **train_kwargs):
+    return mp_train_committee(com, train_func, *train_args, **train_kwargs)
 
 def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1, error_derivative = sum_squares.derivative):
     """Train using Gradient Descent."""
@@ -130,11 +132,11 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
         if (len(validation_inputs) > 0 and len(test_inputs > 0)):
             pre_test = test_error
             pre_validation = validation_error
-            test_results = mp_net_sim_inputs(net, test_inputs)
-            #test_results = net.sim(test_inputs)
+            #test_results = mp_net_sim_inputs(net, test_inputs)
+            test_results = net.sim(test_inputs)
             test_error = error_function(test_targets, test_results)/len(test_targets)
-            validation_results = mp_net_sim_inputs(net, validation_inputs)
-            #validation_results = net.sim(validation_inputs)
+            #validation_results = mp_net_sim_inputs(net, validation_inputs)
+            validation_results = net.sim(validation_inputs)
             validation_error = error_function(validation_targets, validation_results)/len(validation_targets)
             logger.debug("Test Error = " + str(test_error))
             logger.debug("Validation Error = " + str(validation_error))
@@ -156,7 +158,8 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
         error = {} #reset errors
         top_networks = [None for each in range(int(top_number))] #reset top five
         #For all networks, simulate, measure their error, and save the best network so far
-        sim_results = mp_nets_sim(population, input_array)
+        #sim_results = mp_nets_sim(population, input_array)
+        sim_results = [net.sim(input_array) for net in population]
         for member, sim_result in zip(population, sim_results):
 #            error[member] = 0
 #            for input, output in zip(input_array, output_array):
@@ -341,6 +344,9 @@ def train_evolutionary_sequential(net, input_array, output_array, epochs = 300, 
             best = net
     logger.debug("Generation " + str(generation + 1) + ", best found (total error): " + str(best_error))
     return best
+
+from kalderstam.neural.mp_network import mp_net_sim_inputs, mp_nets_sim,\
+    mp_train_committee
             
 if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG)
@@ -350,6 +356,7 @@ if __name__ == '__main__':
         loadsyn2, loadsyn3, plotroc
         from kalderstam.util.filehandling import parse_file, save_network
         from kalderstam.util.decorators import benchmark
+        from kalderstam.neural.network import build_feedforward_committee
         import time
         import matplotlib.pyplot as plt
     except:
@@ -402,29 +409,41 @@ if __name__ == '__main__':
     plot2d2c(best, P, T, 4)
     #plotroc(Y, T)
     plt.title("Genetic followed by Gradient Descent block size 10\n [Test set] Total performance = " + str(total_performance) + "%")
-#    print("\nResults for the training:\n")
-#    print("Total number of data: " + str(len(T)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
-#    print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
-#    print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
-#    print("Sensitivity: " + str(num_correct_second) + "% (Success for class 1)")
+
+    com = build_feedforward_committee(size = 4, input_number = 2, hidden_number = 3, output_number = 1)
     
-#    start = time.clock()
-#    best = train_evolutionary_sequential(net, P, T, epochs / 5, random_range = 5, block_size = 0)
-#    stop = time.clock()
-#    Y = best.sim(P)
-#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-#    plot2d2c(best, P, T, 4)
-#    plt.title("Only Genetic Sequential\n Total performance = " + str(total_performance) + "%")
-#    print("Sequential time: " + str(stop-start))
-#    #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/test_genetic.ann")
-#    
-#    #net = build_feedforward(2, 4, 1)
-#    
-#    best = traingd_block(best, P, T, epochs, block_size = 100)
-#    Y = best.sim(P)
-#    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-#    plot2d2c(best, P, T, 5)
-#    plt.title("Genetic Sequential followed by Gradient Descent block size 10\n Total performance = " + str(total_performance) + "%")
+    benchmark(train_committee)(com, train_evolutionary, test, validation, epochs/10, random_range = 5)
+    
+    Y = best.sim(P)
+    
+    P, T = validation
+    Y = com.sim(P)
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+    plot2d2c(com, P, T, 5)
+    plt.title("Committee Genetic\n [Validation set] Total performance = " + str(total_performance) + "%")
+    P, T = test
+    Y = com.sim(P)
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+    plot2d2c(com, P, T, 6)
+    #plotroc(Y, T)
+    plt.title("Committee Genetic\n [Test set] Total performance = " + str(total_performance) + "%")
+    
+    
+    benchmark(train_committee)(com, traingd_block, test, validation, epochs, block_size = 10, early_stopping = True)
+    
+    Y = best.sim(P)
+    
+    P, T = validation
+    Y = com.sim(P)
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+    plot2d2c(com, P, T, 7)
+    plt.title("Committee Genetic followed by Gradient Descent block size 10\n [Validation set] Total performance = " + str(total_performance) + "%")
+    plotroc(Y, T, 9)
+    P, T = test
+    Y = com.sim(P)
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
+    plot2d2c(com, P, T, 8)
+    plt.title("Committee Genetic followed by Gradient Descent block size 10\n [Test set] Total performance = " + str(total_performance) + "%")
     
     #plotroc(Y, T)
     plt.show()

@@ -52,6 +52,14 @@ def mp_committee_sim(com, inputs):
     cmd_list = [(net, [inputs], {}) for net in com.nets]
     sim_list = p.map(__net_sim, cmd_list)
     return com.__average__(sim_list)
+
+def mp_train_committee(com, train_func, *train_args, **train_kwargs):
+    cmd_list = [(net, train_func, train_args, train_kwargs) for net in com.nets]
+    trained_nets = p.map(__train_net, cmd_list)
+    com.nets = trained_nets
+    
+def __train_net((net, train_func, train_args, train_kwargs)):
+    return train_func(net, *train_args, **train_kwargs)
     
 
 p = Pool()

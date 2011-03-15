@@ -157,12 +157,14 @@ def boundary(net, P):
         
         plt.plot(coords[0], coords[1], 'g.')
             
-def plotroc(Y, T):
+def plotroc(Y, T, figure = 1):
+    plt.figure(figure)
     Y = Y.flatten()
     T = T.flatten()
     
     if len(Y) != len(T):
         logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
+        raise TypeError
     else:
         #Sort them
         zipped = zip(Y, T)
@@ -207,15 +209,16 @@ def stat(Y, T, cut = 0.5):
     
     if len(Y) != len(T):
         logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
+        raise TypeError
     else:
-        num_second = max(1, len(T.compress((T < cut).flat)))
-        num_first = max(1, len(T.compress((T > cut).flat)))
+        num_second = len(T.compress((T < 0.5).flat)) #T is 1 or 0
+        num_first = len(T.compress((T > 0.5).flat))
         
         num_correct_firsterr = len(T.compress(((T - Y) >= (1 - cut)).flat))
-        num_correct_first = 100.0 * (num_first - num_correct_firsterr) / num_first
+        num_correct_first = 100.0 * (num_first - num_correct_firsterr) / max(1, num_first)
         
         num_correct_seconderr = len(T.compress(((T - Y) < -cut).flat))
-        num_correct_second = 100.0 * (num_second - num_correct_seconderr) / num_second
+        num_correct_second = 100.0 * (num_second - num_correct_seconderr) / max(1, num_second)
         
         missed = num_correct_firsterr + num_correct_seconderr
         total_performance = 100.0 * (len(T) - missed) / len(T)
@@ -231,8 +234,9 @@ def stat(Y, T, cut = 0.5):
 if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG)
     
-    from kalderstam.neural.training_functions import traingd
+    from kalderstam.neural.training_functions import traingd_block
     from kalderstam.neural.network import build_feedforward
+    from kalderstam.util.filehandling import get_validation_set
     
     #Binary activation function
     def activation_function(x):
@@ -242,10 +246,12 @@ if __name__ == '__main__':
             return 0
         
     P, T = loadsyn1(100)
+    test, validation = get_validation_set(P, T, validation_size = 0)
+    P, T = test
                 
     net = build_feedforward(2, 1, 1)
     
-    net = traingd(net, P, T, 100, 0.1)
+    net = traingd_block(net, test, validation, 100, block_size = 10, early_stopping = False)
     
     Y = net.sim(P)
     
