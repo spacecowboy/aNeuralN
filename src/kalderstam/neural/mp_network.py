@@ -1,5 +1,7 @@
 import numpy
 from multiprocessing import cpu_count, Pool
+from kalderstam.util.filehandling import get_stratified_validation_set,\
+    get_validation_set
 
 def __split_inputs(inputs, number_of_pieces):
     if len(inputs) <= 2*number_of_pieces:
@@ -53,13 +55,25 @@ def mp_committee_sim(com, inputs):
     sim_list = p.map(__net_sim, cmd_list)
     return com.__average__(sim_list)
 
-def mp_train_committee(com, train_func, *train_args, **train_kwargs):
-    cmd_list = [(net, train_func, train_args, train_kwargs) for net in com.nets]
+def mp_train_committee(com, train_func, input_array, target_array, *train_args, **train_kwargs):
+    #Do stratified or not?
+    do_strat = True
+    try:
+        if len(target_array[0]) > 1:
+            do_strat = False
+    except TypeError: #In this case, it's an array of single values. we should do strat
+        pass #Already true
+    if do_strat:
+        data_sets = [get_stratified_validation_set(input_array, target_array, validation_size = 1/len(com)) for times in range(len(com))]
+    else:
+        data_sets = [get_validation_set(input_array, target_array, validation_size = 1/len(com)) for times in range(len(com))]
+
+    cmd_list = [(net, train_func, T, V, train_args, train_kwargs) for net, (T, V) in zip(com.nets, data_sets)]
     trained_nets = p.map(__train_net, cmd_list)
     com.nets = trained_nets
     
-def __train_net((net, train_func, train_args, train_kwargs)):
-    return train_func(net, *train_args, **train_kwargs)
+def __train_net((net, train_func, T, V, train_args, train_kwargs)):
+    return train_func(net, T, V, *train_args, **train_kwargs)
     
 
 p = Pool()

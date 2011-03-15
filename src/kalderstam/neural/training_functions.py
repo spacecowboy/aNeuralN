@@ -7,8 +7,8 @@ from kalderstam.util.filehandling import get_validation_set
 
 logger = logging.getLogger('kalderstam.neural.training_functions')
 
-def train_committee(com, train_func, *train_args, **train_kwargs):
-    return mp_train_committee(com, train_func, *train_args, **train_kwargs)
+def train_committee(com, train_func, input_array, target_array, *train_args, **train_kwargs):
+    return mp_train_committee(com, train_func, input_array, target_array, *train_args, **train_kwargs)
 
 def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1, error_derivative = sum_squares.derivative):
     """Train using Gradient Descent."""
@@ -363,9 +363,10 @@ if __name__ == '__main__':
         pass
         
     P, T = loadsyn3(1000)
+    p, t = P, T
     #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, ignorecols = 40)
     test, validation = get_validation_set(P, T)
-    net = build_feedforward(2, 3, 1)
+    net = build_feedforward(2, 6, 1)
     
     epochs = 100
     
@@ -410,40 +411,23 @@ if __name__ == '__main__':
     #plotroc(Y, T)
     plt.title("Genetic followed by Gradient Descent block size 10\n [Test set] Total performance = " + str(total_performance) + "%")
 
-    com = build_feedforward_committee(size = 4, input_number = 2, hidden_number = 3, output_number = 1)
+    com = build_feedforward_committee(size = 4, input_number = 2, hidden_number = 6, output_number = 1)
     
-    benchmark(train_committee)(com, train_evolutionary, test, validation, epochs/10, random_range = 5)
+    benchmark(train_committee)(com, train_evolutionary, p, t, epochs/10, random_range = 5)
     
-    Y = best.sim(P)
-    
-    P, T = validation
-    Y = com.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(com, P, T, 5)
-    plt.title("Committee Genetic\n [Validation set] Total performance = " + str(total_performance) + "%")
-    P, T = test
-    Y = com.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(com, P, T, 6)
-    #plotroc(Y, T)
-    plt.title("Committee Genetic\n [Test set] Total performance = " + str(total_performance) + "%")
+    Y = com.sim(p)
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, t)
+    plot2d2c(com, p, t, 5)
+    plt.title("Committee Genetic\n [Cross validation] Total performance = " + str(total_performance) + "%")
     
     
-    benchmark(train_committee)(com, traingd_block, test, validation, epochs, block_size = 10, early_stopping = True)
+    benchmark(train_committee)(com, traingd_block, p, t, epochs, block_size = 10, early_stopping = True)
     
-    Y = best.sim(P)
-    
-    P, T = validation
-    Y = com.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(com, P, T, 7)
-    plt.title("Committee Genetic followed by Gradient Descent block size 10\n [Validation set] Total performance = " + str(total_performance) + "%")
-    plotroc(Y, T, 9)
-    P, T = test
-    Y = com.sim(P)
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-    plot2d2c(com, P, T, 8)
-    plt.title("Committee Genetic followed by Gradient Descent block size 10\n [Test set] Total performance = " + str(total_performance) + "%")
+    Y = com.sim(p)
+    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, t)
+    plot2d2c(com, p, t, 6)
+    plt.title("Committee Genetic followed by Gradient Descent block size 10\n [Cross validation] Total performance = " + str(total_performance) + "%")
+    plotroc(Y, t, 7)
     
     #plotroc(Y, T)
     plt.show()
