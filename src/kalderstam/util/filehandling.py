@@ -120,6 +120,137 @@ def get_stratified_validation_set(inputs, targets, validation_size = 0.2):
     
     return ((test_inputs, test_targets), (validation_inputs, validation_targets))
 
+def save_committee(com, filename = None):
+    """If Filename is None, create a new as net_#hashnumber.ann and save in home dir"""
+    if not filename:
+        filename = "com_" + str(hash(com)) + ".anncom"
+        filename = path.join(path.expanduser("~"), filename)
+    
+    """Open a file to write to"""
+    with open(filename, 'w') as f:
+        net_number = 0
+        for net in com.nets:
+            f.write("<net_" + str(net_number) + ">\n")
+            net_number += 1
+            for node in net.get_all_nodes():
+                node_type = "output_"
+                node_index = 0
+                if node in net.hidden_nodes:
+                    node_type = "hidden_"
+                    node_index = net.hidden_nodes.index(node)
+                else:
+                    node_index = net.output_nodes.index(node)
+                """Write node identifier"""
+                f.write("[" + node_type + str(node_index) + "]\n")
+                """Write its activation activation_function"""
+                f.write("activation_function=" + str(node.activation_function) + "\n")
+                """Write its bias"""
+                f.write("bias=" + str(node.bias) + "\n")
+                """Now write its connections and weights"""
+                for back_node, back_weight in node.weights.iteritems():
+                    """Assume its a hidden node, but check if its actually an output node"""
+                    type = "hidden_"
+                    type_index = 0
+                    try:
+                        if back_node in net.output_nodes:
+                            type = "output_"
+                            type_index = net.output_nodes.index(back_node)
+                        else:
+                            type_index = net.hidden_nodes.index(back_node)
+                    except ValueError:
+                        """back_node is input actually"""
+                        type = "input_"
+                        type_index = back_node
+                    f.write(type + str(type_index) + ":" + str(back_weight) + "\n")
+                """End with empty line since it's nicer that way"""
+                f.write("\n")
+    """And we're done!"""
+    
+def load_committee(filename):
+    """Create the committee"""
+    com = network.committee()
+    
+    nodes = {}
+    node_weights = {}
+    
+    """Current node we're working on"""
+    current_net = None
+    current_node = None
+    function = None
+    
+    """Read file"""
+    with open(filename, 'r') as f:
+        """Parse row by row"""
+        for line in f.readlines():
+            """Skip empty lines"""
+            if not re.search('^\s*$', line):
+                
+                """check if id for current_node"""
+                m = re.search('\<(net_\d+)\>', line)
+                if m:
+                    """Create a network"""
+                    current_net = network.network()
+                    com.nets.append(current_net)
+                    nodes[current_net] = {}
+                    node_weights[current_net] = {}
+                    continue
+                
+                """check if id for current_node"""
+                m = re.search('\[(\w+_\d+)\]', line)
+                if m:
+                    current_node = m.group(1)
+                    continue
+                
+                """check activation_function name"""
+                m = re.search('activation_function\s*=\s*([\w\d]+)', line)
+                if m:
+                    function = get_function(m.group(1))
+                    continue
+                
+                """check bias"""
+                m = re.search('bias\s*=\s*([-\d\.]*)', line)
+                if m:
+                    try:
+                        value = float(m.group(1))
+                    except:
+                        value = None #Random value
+                    """ create node"""
+                    nodes[current_net][current_node] = network.node(active = function, bias = value)
+                    node_weights[current_net][current_node] = {}
+                    continue
+                
+                """check weights"""
+                m = re.search('(\w+_\d+):([-\d\.]*)', line)
+                if m:
+                    back_node = m.group(1)
+                    try:
+                        weight = float(m.group(2))
+                    except:
+                        weight = None #Will yield random weight
+                    node_weights[current_net][current_node][back_node] = weight
+                    """If back_node is an input node, we have to create it down here if it doesn't exist"""
+                    if back_node.startswith('input') and back_node not in nodes:
+                        nodes[current_net][back_node] = int(back_node.strip('input_'))
+                    continue
+    
+    """Now iterate over the hashes and connect the nodes for real"""
+    for net in com.nets:
+        for node_name, node in nodes[net].items():
+            """Not for inputs"""
+            if node_name.startswith("input"):
+                net.num_of_inputs += 1
+            else:
+                for name, weight in node_weights[net][node_name].items():
+                    node.connect_node(nodes[net][name], weight)
+                """ add to network"""
+                if node_name.startswith("hidden"):
+                    net.hidden_nodes.append(nodes[net][node_name])
+                else:
+                    net.output_nodes.append(nodes[net][node_name])
+            
+    """Done! return committee!"""
+    return com
+
 def save_network(net, filename = None):
     """If Filename is None, create a new as net_#hashnumber.ann and save in home dir"""
     if not filename:
@@ -237,7 +368,7 @@ def load_network(filename):
 if __name__ == '__main__':   
     print("Testing network saving/loading")
     
-    from kalderstam.neural.network import build_feedforward
+    from kalderstam.neural.network import build_feedforward, build_feedforward_committee
     net = build_feedforward()
      
     results1 = net.update([1, 2])
@@ -253,6 +384,23 @@ if __name__ == '__main__':
     print results2
     
     assert(abs(results1[0] - results2[0]) < 0.0001) #float doesn't handle absolutes so well
+    print("Good, now testing committee...")
+    
+    com = build_feedforward_committee()
+    results1 = com.update([1, 2])
+    print results1
+    
+    filename = path.join(path.expanduser("~"), "test.anncom")
+    print "saving and reloading"
+    
+    save_committee(com, filename)
+    
+    com = load_committee(filename)
+    results2 = com.update([1, 2])
+    print results2
+    
+    assert(abs(results1[0] - results2[0]) < 0.0001) #float doesn't handle absolutes so well
+    
     print("Results are good. Testing input parsing....")
     filename = path.join(path.expanduser("~"), "ann_input_data_test_file.txt")
     print("First, split the file into a test set(80%) and validation set(20%)...")
