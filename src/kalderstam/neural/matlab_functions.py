@@ -187,9 +187,9 @@ def plotroc(Y, T, figure = 1):
         plt.axis([-1, 101, -1, 101])
         plt.plot(x, y, 'r+', x, y, 'b-')
 
-        area = numpy.trapz(y, x)
-        logger.info("ROC area: " + str(area / 100) + "%")
-        plt.title("ROC area: " + str(area / 100) + "%")
+        area = numpy.trapz(y, x) / 100
+        logger.info("ROC area: " + str(area) + "%")
+        plt.title("ROC area: " + str(area) + "%")
         
         return area
         
