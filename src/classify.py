@@ -16,11 +16,11 @@ def find_solution(P, T):
     #net = build_feedforward(6, 3, 1)
     com = build_feedforward_committee(size = 10, input_number = len(P[0]), hidden_number = 20, output_number = len(T[0]))
     
-    epochs = 7000
+    epochs = 2
     
     print("Training...")
-    #benchmark(train_committee)(com, train_evolutionary, P, T, 5, random_range = 3)
-    benchmark(train_committee)(com, traingd_block, P, T, epochs, learning_rate = 0.03, block_size = 30)
+    benchmark(train_committee)(com, train_evolutionary, P, T, 5, random_range = 3)
+    #benchmark(train_committee)(com, traingd_block, P, T, epochs, learning_rate = 0.03, block_size = 30)
     
     #P, T = test
     Y = com.sim(P)
@@ -36,7 +36,8 @@ def find_solution(P, T):
     
     #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_gdblock20_rocarea" + str(area) + ".ann")
     #save_network(best, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_genetic_rocarea" + str(area) + ".ann")
-    save_committee(com, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_gdblock30_rocarea" + str(area) + ".anncom")
+    #save_committee(com, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_gdblock30_rocarea" + str(area) + ".anncom")
+    #save_committee(com, "/export/home/jonask/Projects/aNeuralN/ANNs/classification_genetic_rocarea" + str(area) + ".anncom")
     
     plt.show()
 
