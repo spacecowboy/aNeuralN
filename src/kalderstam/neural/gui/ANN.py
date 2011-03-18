@@ -39,7 +39,7 @@ class ANN_gui():
         self.epoch_number = self.builder.get_object("epoch_adjuster")
         self.block_size = self.builder.get_object("block_size_adjuster")
         self.validation_size = self.builder.get_object("validation_adjuster")
-        self.early_stopping_btn = self.builder.get_object("early_stopping_button")
+        self.early_stopping_text = self.builder.get_object("early_stopping_text")
         
         #Gradient Descent
         self.learning_rate = self.builder.get_object("learning_rate_adjuster")
@@ -71,6 +71,12 @@ class ANN_gui():
         #pixmap = gtk.gdk.pixmap_create_from_data(None, data, width, height, depth = 8, fg, bg)
         #self.network_image.set_from_pixmap(pixmap)
         pass
+    
+    def __get_early_stop_value(self):
+        try:
+            return float(self.early_stopping_text.get_text())
+        except (ValueError, TypeError):
+            return 0
         
     def on_train_button_pressed(self, *args):
         #Make the button unpressable
@@ -84,7 +90,7 @@ class ANN_gui():
         
         #Set the function and start training with appropriate arguments
         if self.trn_btn_gradient.props.active:
-            self.net = training_functions.traingd_block(self.net, T, V, epochs = self.epoch_number.get_value(), learning_rate = self.learning_rate.get_value(), block_size = self.block_size.get_value(), momentum = self.momentum.get_value(), early_stopping = self.early_stopping_btn.props.active)
+            self.net = training_functions.traingd_block(self.net, T, V, epochs = self.epoch_number.get_value(), learning_rate = self.learning_rate.get_value(), block_size = self.block_size.get_value(), momentum = self.momentum.get_value(), stop_error_value = self.__get_early_stop_value())
         elif self.trn_btn_genetic.props.active:
             self.net = training_functions.train_evolutionary(self.net, T, V, epochs = self.epoch_number.get_value(), population_size = self.population.get_value(), mutation_chance = self.mutation.get_value(), random_range = self.random_range.get_value())
             
