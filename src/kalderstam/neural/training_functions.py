@@ -128,14 +128,14 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
                 
         #Calculate error of the network and print
         
-        if (len(validation_inputs) > 0 and len(test_inputs > 0)):
+        if len(test_inputs > 0):
             test_results = net.sim(test_inputs)
             test_error = error_function(test_targets, test_results)/len(test_targets)
             logger.debug("Test Error = " + str(test_error))
             if test_error <= stop_error_value:
                 break
             
-        if (len(validation_inputs) > 0 and len(test_inputs > 0)):
+        if validation_inputs != None and len(validation_inputs) > 0:
             validation_results = net.sim(validation_inputs)
             validation_error = error_function(validation_targets, validation_results)/len(validation_targets)
             logger.debug("Validation Error = " + str(validation_error))
