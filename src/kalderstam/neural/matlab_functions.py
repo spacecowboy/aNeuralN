@@ -175,11 +175,13 @@ def plotroc(Y, T, figure = 1):
         
         x = numpy.array([])
         y = numpy.array([])
+        cuts = numpy.array([])
         for cut in Y:
             [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T, cut)
             
             x = numpy.append(x, 100 - num_correct_first)
             y = numpy.append(y, num_correct_second)
+            cuts = numpy.append(cuts, cut)
             
         #plt.figure(2)
         plt.xlabel("1-specificity")
@@ -187,11 +189,41 @@ def plotroc(Y, T, figure = 1):
         plt.axis([-1, 101, -1, 101])
         plt.plot(x, y, 'r+', x, y, 'b-')
 
-        area = numpy.trapz(y, x) / 100
+        area, (best_x, best_y, best_cut) = __calc_area__(x, y, cuts)
         logger.info("ROC area: " + str(area) + "%")
-        plt.title("ROC area: " + str(area) + "%")
+        plt.title("ROC area: " + str(area) + "%\nBest cut at: " + str(best_cut))
+        
+        plt.plot([0, best_x],[100, best_y],'g-')
         
         return area
+    
+def __calc_area__(x_array, y_array, cuts):
+    """Find the largest value of Y where X is the same. """
+    left_y = 0 #Previous height at the right side
+    left_x = 0 #Right side of that area
+    area = 0
+    best_cut = None
+    best_dist = 10000 #Diagonal of entire graph
+    for x, y, cut in zip(x_array, y_array, cuts):
+        if x == left_x:
+            left_y = y
+        elif x > left_x:
+            #Simple square
+            area += left_y*(x - left_x)
+            if left_y <> y:
+                #And a triangle, will be negative if y has gone down, so no worries
+                area += (x - left_x)*(y-left_y)/2
+            left_y = y
+            left_x = x
+            
+        #Calculate distance
+        dist = math.sqrt(((100-y)**2) + (x**2))
+        if dist <= best_dist:
+            best_dist = dist
+            best_cut = (x, y, cut)
+    if area/100 > 100 or area/100 < 0:
+        print zip(x_array, y_array, cuts)
+    return (area / 100, best_cut)
         
 def stat(Y, T, cut = 0.5):
     """ Calculates the results for a single output classification
@@ -251,7 +283,7 @@ if __name__ == '__main__':
                 
     net = build_feedforward(2, 1, 1)
     
-    net = traingd_block(net, test, validation, 100, block_size = 10, early_stopping = False)
+    net = traingd_block(net, test, validation, 100, block_size = 10, stop_error_value = False)
     
     Y = net.sim(P)
     
