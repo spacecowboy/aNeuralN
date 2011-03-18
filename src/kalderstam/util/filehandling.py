@@ -12,14 +12,21 @@ def read_data_file(filename):
     
     return inputs
 
-def parse_file(filename, targetcols, inputcols = None, ignorecols = [], ignorerows = []):
+def parse_file(filename, targetcols = None, inputcols = None, ignorecols = [], ignorerows = []):
     return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows)
 
-def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
+def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
     """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
     Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
     Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs.
     Ignorerows specify which, if any, rows should be skipped."""
+    if targetcols == None:
+        targetcols = []
+    try:
+        targetcols = [int(targetcols)]
+    except TypeError:
+        #targetcols is alreayd a list
+        pass
     
     if not inputcols:
         inputcols = range(len(inputs[0]))
@@ -36,7 +43,13 @@ def parse_data(inputs, targetcols, inputcols = None, ignorecols = [], ignorerows
         inputcols = numpy.delete(inputcols, destroycols, 0)
         
     for line in range(len(inputs)):
-        for col in inputs[line, numpy.append(inputcols, targetcols)]: #check only valid columns
+        if len(targetcols) == 0:
+            all_cols = inputs[line, inputcols]
+        elif len(inputcols) == 0:
+            all_cols = inputs[line, targetcols]
+        else:
+            all_cols = inputs[line, numpy.append(inputcols, targetcols)]
+        for col in all_cols: #check only valid columns
             try:
                 float(col)
             except ValueError: #This row contains crap, get rid of it
@@ -452,6 +465,13 @@ if __name__ == '__main__':
     assert(len(validation) == 2)
     assert(len(validation[0]) > 0)
     assert(len(validation[1]) > 0)
+    print("Test with no targets, the no inputs")
+    inputs, targets = parse_file(filename, ignorecols = [0,1,4], ignorerows = [])
+    assert((targets.size) == 0)
+    assert((inputs.size) > 0)
+    inputs, targets = parse_file(filename, targetcols = 3, ignorecols = [0,1, 2,4, 5, 6,7 ,8, 9], ignorerows = [])
+    assert((targets.size) > 0)
+    assert((inputs.size) == 0)
     
     print("All tests completed successfully!")
     
