@@ -1,12 +1,13 @@
 from os import path
-from kalderstam.util.filehandling import parse_file
+from kalderstam.util.filehandling import parse_file, save_committee
 from kalderstam.neural.network import build_feedforward_committee,\
     build_feedforward
 from kalderstam.util.decorators import benchmark
 from kalderstam.neural.training_functions import train_committee,\
     traingd_block, train_evolutionary
 import logging
-from kalderstam.neural.matlab_functions import plotroc, stat
+from kalderstam.neural.matlab_functions import plotroc, stat,\
+    get_rocarea_and_best_cut
 import matplotlib.pyplot as plt
     
 logging.basicConfig(level = logging.DEBUG)
@@ -25,30 +26,53 @@ validation = ([], [])
 
 #Train!
 
-net = build_feedforward(8, 6, 1)
+#net = build_feedforward(8, 8, 1)
 
 epochs = 1000
 
-print "Training..."
-#best = benchmark(train_evolutionary)(net, test, validation, epochs/10, random_range = 5)
+#best = benchmark(train_evolutionary)(net, test, validation, 10, random_range = 1)
 #best = benchmark(traingd_block)(net, test, validation, epochs, block_size = 10, stop_error_value = 0)
 
 com = build_feedforward_committee(size = 10, input_number = 8, hidden_number = 8, output_number = 1)
 
-benchmark(train_committee)(com, train_evolutionary, inputs, targets, 25, random_range = 5)
+print "Training evolutionary..."
+benchmark(train_committee)(com, train_evolutionary, inputs, targets, 100, random_range = 1)
 
+Y = com.sim(inputs)
+area, best_cut = get_rocarea_and_best_cut(Y, targets)
+[num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, targets, cut = best_cut)
+print("Total number of data: " + str(len(targets)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
+print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
+print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
+print("Sensitivity: " + str(num_correct_second) + "% (Success for class 1)")
+print("Roc Area: " + str(area) + "%")
+
+save_committee(com, "/export/home/jonask/Projects/aNeuralN/ANNs/pimatrain_gen__rocarea" + str(area) + ".anncom")
+
+print "\nTraining with gradient descent..."
 benchmark(train_committee)(com, traingd_block, inputs, targets, epochs, block_size = 10, stop_error_value = 0)
 
 Y = com.sim(inputs)
-[num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, targets)
-plt.legend("Pima_Training Committee Gradient Descent block size 10\n [Cross validation] Total performance = " + str(total_performance) + "%")
-plotroc(Y, targets, 1)
+area, best_cut = get_rocarea_and_best_cut(Y, targets)
+[num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, targets, cut = best_cut)
+print("Total number of data: " + str(len(targets)) + " (" + str(num_second) + " ones and " + str(num_first) + " zeros)")
+print("Number of misses: " + str(missed) + " (" + str(total_performance) + "% performance)")
+print("Specificity: " + str(num_correct_first) + "% (Success for class 0)")
+print("Sensitivity: " + str(num_correct_second) + "% (Success for class 1)")
+print("Roc Area: " + str(area) + "%")
 
+Y = com.sim(inputs)
+[num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, targets)
+#plt.legend("Pima_Training Committee Gradient Descent block size 10\n [Cross validation] Total performance = " + str(total_performance) + "%")
+area = plotroc(Y, targets, 1)
+
+
+save_committee(com, "/export/home/jonask/Projects/aNeuralN/ANNs/pimatrain_rocarea" + str(area) + ".anncom")
 
 #Estimate on test set now
+print("\nPredictions for test set:")
 Y_test = com.sim(test_inputs)
 for value in Y_test:
     print value[0]
     
-
 plt.show()

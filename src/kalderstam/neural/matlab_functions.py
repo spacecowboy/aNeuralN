@@ -196,6 +196,35 @@ def plotroc(Y, T, figure = 1):
         plt.plot([0, best_x],[100, best_y],'g-')
         
         return area
+
+def get_rocarea_and_best_cut(Y, T):
+    Y = Y.flatten()
+    T = T.flatten()
+    
+    if len(Y) != len(T):
+        logger.error("Y(" + str(len(Y)) + ") and T(" + str(len(T)) + ") are not the same length!")
+        raise TypeError
+    else:
+        #Sort them
+        zipped = zip(Y, T)
+        zipped.sort()
+        Y, T = zip(*zipped)
+        Y = numpy.array(Y)
+        T = numpy.array(T)
+        
+        x = numpy.array([])
+        y = numpy.array([])
+        cuts = numpy.array([])
+        for cut in Y:
+            [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T, cut)
+            
+            x = numpy.append(x, 100 - num_correct_first)
+            y = numpy.append(y, num_correct_second)
+            cuts = numpy.append(cuts, cut)
+
+        area, (best_x, best_y, best_cut) = __calc_area__(x, y, cuts)
+        
+        return area, best_cut
     
 def __calc_area__(x_array, y_array, cuts):
     """Find the largest value of Y where X is the same. """
