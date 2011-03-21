@@ -159,15 +159,6 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
         #sim_results = mp_nets_sim(population, input_array)
         sim_results = [net.sim(input_array) for net in population]
         for member, sim_result in zip(population, sim_results):
-#            error[member] = 0
-#            for input, output in zip(input_array, output_array):
-#                # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
-#                output = numpy.append(numpy.array([]), output)
-#                #Calc output
-#                result = member.update(input)
-#                #calc sum-square error
-#                error[member] += error_function(output, result)
-            #error[member] = error_function(output_array, member.sim(input_array))/len(output_array)
             error[member] = error_function(output_array, sim_result)/len(output_array)
             #compare with best
             if not best or error[member] < best_error:
@@ -214,7 +205,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
             #Output nodes
             #for mother_node, father_node in zip(mother.output_nodes, father.output_nodes):
             for output_number in range(len(mother.output_nodes)):
-                output = node(mother_node.activation_function)
+                output = node(mother.output_nodes[output_number].activation_function)
                 weights = {}
                 for hidden_number in range(len(mother.hidden_nodes)):
                     choice = sample([mother, father], 1)[0]
@@ -304,7 +295,7 @@ def train_evolutionary_sequential(net, input_array, output_array, epochs = 300, 
             #Output nodes
             #for mother_node, father_node in zip(mother.output_nodes, father.output_nodes):
             for output_number in range(len(mother.output_nodes)):
-                output = node(mother_node.activation_function)
+                output = node(mother.output_nodes[output_number].activation_function)
                 weights = {}
                 for hidden_number in range(len(mother.hidden_nodes)):
                     choice = sample([mother, father], 1)[0]
