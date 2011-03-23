@@ -13,13 +13,11 @@ def calc_betas(inputs):
         beta = numpy.ones(len(input)) #Start with 1
         distance = 2 #No idea what to start with
         slope = None
-        slope = (beta - 2*input).sum()
         
         while abs(slope) > 0.00001: #Some small limit close to zero
             prev_slope = slope
             beta += distance
             slope = None #Calc new slope
-            slope = (beta - 2*input).sum()
             if slope*prev_slope < 0:
                 #Different signs, we have passed the zero point, change directions and half the distance
                 distance /= -2
