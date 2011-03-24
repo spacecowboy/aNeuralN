@@ -75,7 +75,7 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
         
         for block in range(int(len(test_inputs) / block_size)):
             
-            #Set error to 0 on all nodes first
+            #Set corrections to 0 on all nodes first
             for node in net.get_all_nodes():
                 node.weight_corrections = {}
             
