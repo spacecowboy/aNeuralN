@@ -53,7 +53,7 @@ def __partition_function__(beta, risk_outputs):
 def calc_beta(outputs, timeslots):
     """Find the likelihood maximizing Beta numerically."""
     beta = 1 #Start with 1
-    distance = 2 #No idea what to start with
+    distance = 2.0 #No idea what to start with
     def get_slope(beta, outputs, timeslots):
         result = 0
         for s in timeslots:
@@ -64,7 +64,8 @@ def calc_beta(outputs, timeslots):
             
     slope = get_slope(beta, outputs, timeslots)
     
-    while abs(slope) > 0.00001: #Some small limit close to zero
+    while abs(slope) > 0.0001 : #Some small limit close to zero
+        print("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
         prev_slope = slope
         beta += distance
         slope = get_slope(beta, outputs, timeslots)
@@ -102,7 +103,7 @@ def total_error(target, result, inputs, beta, sigma):
 def derivative(beta, sigma, output_index, outputs, timeslots):
     """dE/d(Beta*Sigma) * d(Beta*Sigma)/dresult."""
     output = outputs[output_index]
-    return __derivative_error__(output, beta, sigma)*__derivative_betasigma__(beta, sigma, output_index, outputs, timeslots)
+    return __derivative_error__(beta, sigma)*__derivative_betasigma__(beta, sigma, output_index, outputs, timeslots)
 
 if __name__ == '__main__':
     outputs = [[i*2] for i in range(4)]
