@@ -127,6 +127,9 @@ class node:
         
     def output(self, inputs):
         return self.activation_function.function(self.input_sum(inputs))
+    
+    def output_derivative(self, inputs):
+        return self.activation_function.derivative(self.input_sum(inputs))
                 
 
 if __name__ == '__main__': 

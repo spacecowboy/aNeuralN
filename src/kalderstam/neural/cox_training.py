@@ -5,6 +5,8 @@ def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 1):
     for epoch in range(epochs):
         print("Epoch " + str(epoch))
         outputs = net.sim(inputs)
+        #Check if beta will converge here, if so, end training with error 0
+        """Beta divergence check here"""
         beta = calc_beta(outputs, timeslots)
         sigma = calc_sigma(outputs)
             
