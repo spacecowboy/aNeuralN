@@ -97,7 +97,7 @@ def get_risk_outputs(s, timeslots, outputs):
             risk_outputs.append(outputs[index])
     return numpy.array(risk_outputs)
 
-def total_error(target, result, inputs, beta, sigma):
+def total_error(beta, sigma):
     """E = ln(1 + exp(Delta - Beta*Sigma))."""
     return log(1 + exp(shift - beta*sigma))
 
