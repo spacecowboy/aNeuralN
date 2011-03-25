@@ -106,6 +106,7 @@ def derivative(beta, sigma, output_index, outputs, timeslots):
     output = outputs[output_index]
     return __derivative_error__(beta, sigma)*__derivative_betasigma__(beta, sigma, output_index, outputs, timeslots)
 
+#This is a test of the functionality in this file
 if __name__ == '__main__':
     outputs = [[i*2] for i in range(4)]
     timeslots = range(len(outputs))

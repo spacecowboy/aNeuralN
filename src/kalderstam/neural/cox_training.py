@@ -72,6 +72,7 @@ def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 1):
         
     return net
 
+#This is a test of the functionality in this file
 if __name__ == '__main__':
     from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
     loadsyn2, loadsyn3, plotroc
