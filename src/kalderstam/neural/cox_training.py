@@ -1,5 +1,5 @@
 from kalderstam.neural.error_functions.cox_error import derivative, calc_beta,\
-    calc_sigma, get_risk_outputs
+    calc_sigma, get_risk_outputs, total_error
     
 def beta_diverges(outputs, timeslots):
     diverging = True
@@ -14,7 +14,7 @@ def beta_diverges(outputs, timeslots):
                 diverging_negatively = False
     return (diverging or diverging_negatively)
 
-def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 1):
+def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
     for epoch in range(epochs):
         print("Epoch " + str(epoch))
         outputs = net.sim(inputs)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     
     #the function the network should try and approximate
     def sickness_sim(x):
-        return x[0]*3
+        return x[0]*3 + x[1]*6
     
     #the values the network have to go on
     def sickness_with_noise(x, noise_level = 1):
@@ -134,8 +134,18 @@ if __name__ == '__main__':
     print "output_before_training"
     print output_before_training
     
-    net = train_cox(net, x_array, timeslots, epochs = 10, learning_rate = 1)
+    outputs = net.sim(x_array)
+    beta = calc_beta(outputs, timeslots)
+    sigma = calc_sigma(outputs)
+    print("Error before training: " + str(total_error(beta, sigma)))
+        
+    net = train_cox(net, x_array, timeslots, epochs = 10, learning_rate = 0.1)
     
     output_after_training = net.sim(x_array)
     print "output_after_training"
     print output_after_training
+    
+    outputs = net.sim(x_array)
+    beta = calc_beta(outputs, timeslots)
+    sigma = calc_sigma(outputs)
+    print("Error after training: " + str(total_error(beta, sigma)))
