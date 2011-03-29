@@ -53,8 +53,11 @@ def __partition_function__(beta, risk_outputs):
 
 def calc_beta(outputs, timeslots):
     """Find the likelihood maximizing Beta numerically."""
-    beta = 1 #Start with 1
-    distance = 2.0 #No idea what to start with
+    beta = -20 #Start with something small
+    distance = 32.0 #Fairly large interval, we actually want to cross the zero
+    #For testing the interval method
+#        def get_slope(beta, *args):
+#            return -2*exp(-(beta-5)**2)*(beta-5)
     def get_slope(beta, outputs, timeslots):
         result = 0
         for s in timeslots:
@@ -64,21 +67,18 @@ def calc_beta(outputs, timeslots):
         return result
             
     slope = get_slope(beta, outputs, timeslots)
+    not_started = True
     
-    while abs(slope) > 0.0001 : #Some small limit close to zero
-        print("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
+    #print("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
+    while (slope < 0.0 or abs(slope) > 0.00000001 or not_started) and abs(distance) > 0.001: #Want positive beta, Some small limit close to zero, fix to make sure we try more than one value, stop when step size is too small
+        not_started = False
         prev_slope = slope
         beta += distance
         slope = get_slope(beta, outputs, timeslots)
         if slope*prev_slope < 0:
             #Different signs, we have passed the zero point, change directions and half the distance
             distance /= -2
-        elif (slope > 0 and slope < prev_slope) or (slope < 0 and slope > prev_slope):
-            #Do nothing, we are on the right track
-            pass
-        else:
-            #We are heading in the wrong direction, change
-            distance *= -1
+        #print("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
     
     return beta
 
@@ -108,6 +108,8 @@ def derivative(beta, sigma, output_index, outputs, timeslots):
 
 #This is a test of the functionality in this file
 if __name__ == '__main__':
+    
     outputs = [[i*2] for i in range(4)]
     timeslots = range(len(outputs))
+    #print(calc_beta(numpy.array(outputs), timeslots))
     print(calc_beta(numpy.array(outputs), timeslots))

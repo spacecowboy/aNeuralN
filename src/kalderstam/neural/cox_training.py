@@ -80,7 +80,7 @@ def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
 #This is a test of the functionality in this file
 if __name__ == '__main__':
     from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
-    loadsyn2, loadsyn3, plotroc
+    loadsyn2, loadsyn3, plotroc, plot_network_weights
     from kalderstam.util.filehandling import parse_file, save_network
     from kalderstam.util.decorators import benchmark
     from kalderstam.neural.network import build_feedforward, build_feedforward_committee
@@ -158,9 +158,15 @@ if __name__ == '__main__':
     outputs = net.sim(P)
     beta = calc_beta(outputs, timeslots)
     sigma = calc_sigma(outputs)
-    print("Error before training: " + str(total_error(beta, sigma)))
+    #print("Error before training: " + str(total_error(beta, sigma)))
+    
+    plot_network_weights(net, figure=1)
+    plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
-    net = train_cox(net, P, timeslots, epochs = 100, learning_rate = 0.1)
+    net = train_cox(net, P, timeslots, epochs = 100, learning_rate = 2)
+    
+    plot_network_weights(net, figure=2)
+    plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
     
     output_after_training = net.sim(P)
     print "output_after_training"
@@ -169,4 +175,6 @@ if __name__ == '__main__':
     outputs = net.sim(P)
     beta = calc_beta(outputs, timeslots)
     sigma = calc_sigma(outputs)
-    print("Error after training: " + str(total_error(beta, sigma)))
+    #print("Error after training: " + str(total_error(beta, sigma)))
+    
+    plt.show()

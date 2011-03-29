@@ -339,7 +339,7 @@ def hinton(W, maxWeight=None):
 
     plt.fill(numpy.array([0,width,width,0]),numpy.array([0,0,height,height]),'gray')
     plt.axis('off')
-    plt.axis('equal')
+    plt.axis('scaled')
     for x in xrange(width):
         for y in xrange(height):
             _x = x+1
