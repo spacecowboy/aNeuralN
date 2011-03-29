@@ -12,8 +12,8 @@ def read_data_file(filename):
     
     return inputs
 
-def parse_file(filename, targetcols = None, inputcols = None, ignorecols = [], ignorerows = []):
-    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows)
+def parse_file(filename, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
+    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows, normalize)
 
 def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
     """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
