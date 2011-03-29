@@ -292,6 +292,66 @@ def stat(Y, T, cut = 0.5):
         
         return [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed]
     
+def plot_network_weights(net, figure=1):
+    plt.figure(figure)
+    
+    #Get a weight matrix for the network
+    weights = []
+    for node in net.get_all_nodes():
+        nweights = []
+        #First check input nodes
+        for i in range(net.num_of_inputs):
+            if i in node.weights:
+                nweights.append(node.weights[i])
+            else:
+                nweights.append(0)
+        for lnode in net.get_all_nodes():
+            if lnode == node:
+                nweights.append(node.bias)
+            elif lnode in node.weights:
+                nweights.append(node.weights[lnode])
+            else:
+                nweights.append(0)
+        weights.append(nweights)
+    
+    weights = numpy.matrix(weights).T
+    #Plot it
+    hinton(weights)
+
+def _blob(x,y,area,colour):
+    """
+    Draws a square-shaped blob with the given area (< 1) at
+    the given coordinates.
+    """
+    hs = numpy.sqrt(area) / 2
+    xcorners = numpy.array([x - hs, x + hs, x + hs, x - hs])
+    ycorners = numpy.array([y - hs, y - hs, y + hs, y + hs])
+    plt.fill(xcorners, ycorners, colour, edgecolor=colour)
+
+def hinton(W, maxWeight=None):
+    """
+    Draws a Hinton diagram for visualizing a weight matrix.
+    """
+    #plt.clf()
+    height, width = W.shape
+    if not maxWeight:
+        maxWeight = 2**numpy.ceil(numpy.log(numpy.max(numpy.abs(W)))/numpy.log(2))
+
+    plt.fill(numpy.array([0,width,width,0]),numpy.array([0,0,height,height]),'gray')
+    plt.axis('off')
+    plt.axis('equal')
+    for x in xrange(width):
+        for y in xrange(height):
+            _x = x+1
+            _y = y+1
+            w = W[y,x]
+            if w > 0:
+                _blob(_x - 0.5, height - _y + 0.5, min(1,w/maxWeight),'white')
+            elif w < 0:
+                _blob(_x - 0.5, height - _y + 0.5, min(1,-w/maxWeight),'black')
+    
+    #plt.show()
+
 if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG)
     
@@ -310,7 +370,10 @@ if __name__ == '__main__':
     test, validation = get_validation_set(P, T, validation_size = 0)
     P, T = test
                 
-    net = build_feedforward(2, 1, 1)
+    net = build_feedforward(2, 3, 1)
+    
+    plot_network_weights(net, figure=3)
+    plt.title('Before training')
     
     net = traingd_block(net, test, validation, 100, block_size = 10, stop_error_value = False)
     
@@ -320,4 +383,8 @@ if __name__ == '__main__':
     
     plotroc(Y, T)
     plot2d2c(net, P, T, figure = 2)
+    
+    plot_network_weights(net, figure=4)
+    plt.title('After training')
+    
     plt.show()
