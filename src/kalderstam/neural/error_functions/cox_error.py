@@ -66,7 +66,7 @@ def calc_beta(outputs, timeslots):
     slope = get_slope(beta, outputs, timeslots)
     
     while abs(slope) > 0.0001 : #Some small limit close to zero
-        #print("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
+        print("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
         prev_slope = slope
         beta += distance
         slope = get_slope(beta, outputs, timeslots)

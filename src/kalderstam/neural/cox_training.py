@@ -1,5 +1,6 @@
 from kalderstam.neural.error_functions.cox_error import derivative, calc_beta,\
     calc_sigma, get_risk_outputs, total_error
+from kalderstam.util.decorators import benchmark
     
 def beta_diverges(outputs, timeslots):
     diverging = True
@@ -14,6 +15,7 @@ def beta_diverges(outputs, timeslots):
                 diverging_negatively = False
     return (diverging or diverging_negatively)
 
+@benchmark
 def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
     for epoch in range(epochs):
         print("Epoch " + str(epoch))
@@ -30,7 +32,10 @@ def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
             node.weight_corrections = {}
         
         #Iterate over all output indices
+        i = 0
         for input, output_index in zip(inputs, range(len(outputs))):
+            print("Patient: " + str(i))
+            i += 1
             #Set error to 0 on all nodes first
             for node in net.get_all_nodes():
                 node.error_gradient = 0
@@ -94,17 +99,18 @@ if __name__ == '__main__':
         #Add some noise
         return actual_values + noise_level*uniform(-1, 1)
     
-    def generate_timeslots(x_array):
+    def generate_timeslots(P, T):
         timeslots = numpy.array([], dtype = int)
-        for x_index in range(len(x_array)):
-            x = x_array[x_index]
+        for x_index in range(len(P)):
+            x = P[x_index]
+            time = T[x_index][0]
             if len(timeslots) == 0:
                 timeslots = numpy.insert(timeslots, 0, x_index)
             else:
                 added = False
                 #Find slot
                 for time_index in timeslots:
-                    if sickness_with_noise(x, noise_level=2) > sickness_with_noise(x_array[time_index], noise_level=2):
+                    if time < T[time_index][0]:
                         timeslots = numpy.insert(timeslots, time_index, x_index)
                         added = True
                         break
@@ -114,38 +120,53 @@ if __name__ == '__main__':
                 
         return timeslots
     
-    p = 2 #number of input covariates
+    p = 4 #number of input covariates
         
     net = build_feedforward(p, 2, 1)
     
-    num_of_patients = 50
-    x_array = numpy.array([[uniform(0, 10), uniform(0, 10)] for i in range(num_of_patients)])
-    print x_array
+    #Generate data set
+#    num_of_patients = 500
+#    x_array = numpy.array([[uniform(0, 1), uniform(0, 1), uniform(0, 1), uniform(0, 1)] for i in range(num_of_patients)])
+#    #print x_array
+#    
+#    target_times = []
+#    for x in x_array:
+#        target_times.append([5 - (sum(x))])
+#    #print target_times
+#    noise_times = []
+#    for x in x_array:
+#        noise_times.append([5 - (sum(x)) + uniform(-0.5, 0.5)])
+#    
+#    print("cov1\tcov2\tcov3\tcov4\ttime")
+#    for x, t in zip(x_array, target_times):
+#        print(str(x[0]) + "\t" + str(x[1]) + "\t" + str(x[2]) + "\t" + str(x[3]) + "\t" + str(t[0]))
+#    print("cov1\tcov2\tcov3\tcov4\ttime")
+#    for x, t in zip(x_array, noise_times):
+#        print(str(x[0]) + "\t" + str(x[1]) + "\t" + str(x[2]) + "\t" + str(x[3]) + "\t" + str(t[0]))
+
+    P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
+    print P
+    print T
     
-    real_targets = [sickness_sim(x) for x in x_array]
-    print real_targets
-    noise_targets = [sickness_with_noise(x, noise_level=3) for x in x_array]
-    print noise_targets
-    
-    timeslots = generate_timeslots(x_array)
+    timeslots = generate_timeslots(P, T)
     print timeslots
     
-    output_before_training = net.sim(x_array)
+    output_before_training = net.sim(P)
     print "output_before_training"
     print output_before_training
     
-    outputs = net.sim(x_array)
+    outputs = net.sim(P)
     beta = calc_beta(outputs, timeslots)
     sigma = calc_sigma(outputs)
     print("Error before training: " + str(total_error(beta, sigma)))
         
-    net = train_cox(net, x_array, timeslots, epochs = 10, learning_rate = 0.1)
+    net = train_cox(net, P, timeslots, epochs = 100, learning_rate = 0.1)
     
-    output_after_training = net.sim(x_array)
+    output_after_training = net.sim(P)
     print "output_after_training"
     print output_after_training
     
-    outputs = net.sim(x_array)
+    outputs = net.sim(P)
     beta = calc_beta(outputs, timeslots)
     sigma = calc_sigma(outputs)
     print("Error after training: " + str(total_error(beta, sigma)))
