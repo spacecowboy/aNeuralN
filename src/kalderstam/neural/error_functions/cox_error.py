@@ -1,5 +1,9 @@
 from numpy import log, exp
 import numpy
+from kalderstam.util.decorators import benchmark
+import logging
+
+logger = logging.getLogger('kalderstam.neural.error_functions')
 
 shift = 4 #Also known as Delta, it's the handwaving variable.
 #sigma = None #Must be calculated before training begins
@@ -69,8 +73,9 @@ def calc_beta(outputs, timeslots):
     slope = get_slope(beta, outputs, timeslots)
     not_started = True
     
-    #print("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
-    while (slope < 0.0 or abs(slope) > 0.00000001 or not_started) and abs(distance) > 0.001: #Want positive beta, Some small limit close to zero, fix to make sure we try more than one value, stop when step size is too small
+    logger.debug("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
+    #we will get overflow errors when beta goes above 710, but even 200 is completely unreasonable and means that beta will diverge. in that case, QUIT
+    while beta < 200 and (slope < 0.0 or abs(slope) > 0.00000001 or not_started) and abs(distance) > 0.001: #Want positive beta, Some small limit close to zero, fix to make sure we try more than one value, stop when step size is too small
         not_started = False
         prev_slope = slope
         beta += distance
@@ -78,8 +83,10 @@ def calc_beta(outputs, timeslots):
         if slope*prev_slope < 0:
             #Different signs, we have passed the zero point, change directions and half the distance
             distance /= -2
-        #print("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
+        logger.debug("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
     
+    if beta >= 200:
+        raise FloatingPointError('Beta is diverging')
     return beta
 
 def calc_sigma(outputs):
@@ -101,6 +108,7 @@ def total_error(beta, sigma):
     """E = ln(1 + exp(Delta - Beta*Sigma))."""
     return log(1 + exp(shift - beta*sigma))
 
+#@benchmark
 def derivative(beta, sigma, output_index, outputs, timeslots):
     """dE/d(Beta*Sigma) * d(Beta*Sigma)/dresult."""
     output = outputs[output_index]
@@ -108,6 +116,7 @@ def derivative(beta, sigma, output_index, outputs, timeslots):
 
 #This is a test of the functionality in this file
 if __name__ == '__main__':
+    numpy.seterr(all='raise')
     
     outputs = [[i*2] for i in range(4)]
     timeslots = range(len(outputs))

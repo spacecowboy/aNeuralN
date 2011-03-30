@@ -1,6 +1,9 @@
 from kalderstam.neural.error_functions.cox_error import derivative, calc_beta,\
     calc_sigma, get_risk_outputs, total_error
 from kalderstam.util.decorators import benchmark
+import logging
+
+logger = logging.getLogger('kalderstam.neural.cox_training')
     
 def beta_diverges(outputs, timeslots):
     diverging = True
@@ -17,14 +20,20 @@ def beta_diverges(outputs, timeslots):
 
 @benchmark
 def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
+    numpy.seterr(all='raise') #I want errors!
     for epoch in range(epochs):
-        print("Epoch " + str(epoch))
+        logger.debug("Epoch " + str(epoch))
         outputs = net.sim(inputs)
         #Check if beta will diverge here, if so, end training with error 0
         if beta_diverges(outputs, timeslots):
             #End training
+            logger.info('Beta diverges...')
             break
-        beta = calc_beta(outputs, timeslots)
+        try:
+            beta = calc_beta(outputs, timeslots)
+        except FloatingPointError as e:
+            print(str(e))
+            break #Stop training
         sigma = calc_sigma(outputs)
             
         #Set corrections to 0 on all nodes first
@@ -34,7 +43,7 @@ def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
         #Iterate over all output indices
         i = 0
         for input, output_index in zip(inputs, range(len(outputs))):
-            print("Patient: " + str(i))
+            logger.debug("Patient: " + str(i))
             i += 1
             #Set error to 0 on all nodes first
             for node in net.get_all_nodes():
@@ -89,6 +98,9 @@ if __name__ == '__main__':
     import numpy
     import matplotlib.pyplot as plt
     
+    numpy.seterr(all='raise')
+    logging.basicConfig(level = logging.DEBUG)
+    
     #the function the network should try and approximate
     def sickness_sim(x):
         return x[0]*3 + x[1]*6
@@ -123,58 +135,38 @@ if __name__ == '__main__':
     p = 4 #number of input covariates
         
     net = build_feedforward(p, 2, 1)
-    
-    #Generate data set
-#    num_of_patients = 500
-#    x_array = numpy.array([[uniform(0, 1), uniform(0, 1), uniform(0, 1), uniform(0, 1)] for i in range(num_of_patients)])
-#    #print x_array
-#    
-#    target_times = []
-#    for x in x_array:
-#        target_times.append([5 - (sum(x))])
-#    #print target_times
-#    noise_times = []
-#    for x in x_array:
-#        noise_times.append([5 - (sum(x)) + uniform(-0.5, 0.5)])
-#    
-#    print("cov1\tcov2\tcov3\tcov4\ttime")
-#    for x, t in zip(x_array, target_times):
-#        print(str(x[0]) + "\t" + str(x[1]) + "\t" + str(x[2]) + "\t" + str(x[3]) + "\t" + str(t[0]))
-#    print("cov1\tcov2\tcov3\tcov4\ttime")
-#    for x, t in zip(x_array, noise_times):
-#        print(str(x[0]) + "\t" + str(x[1]) + "\t" + str(x[2]) + "\t" + str(x[3]) + "\t" + str(t[0]))
 
     P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
+    #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     print P
     print T
     
     timeslots = generate_timeslots(P, T)
     print timeslots
     
-    output_before_training = net.sim(P)
-    print "output_before_training"
-    print output_before_training
-    
     outputs = net.sim(P)
+    print "output_before_training"
+    print outputs
+    
     beta = calc_beta(outputs, timeslots)
     sigma = calc_sigma(outputs)
-    #print("Error before training: " + str(total_error(beta, sigma)))
     
     plot_network_weights(net, figure=1)
     plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
     net = train_cox(net, P, timeslots, epochs = 100, learning_rate = 2)
+    outputs = net.sim(P)
     
     plot_network_weights(net, figure=2)
-    plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
+    try:
+        beta = calc_beta(outputs, timeslots)
+        sigma = calc_sigma(outputs)
+        error = total_error(beta, sigma)
+    except FloatingPointError:
+        error = 'Beta diverged'
+    plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(error))
     
-    output_after_training = net.sim(P)
     print "output_after_training"
-    print output_after_training
-    
-    outputs = net.sim(P)
-    beta = calc_beta(outputs, timeslots)
-    sigma = calc_sigma(outputs)
-    #print("Error after training: " + str(total_error(beta, sigma)))
+    print outputs
     
     plt.show()
