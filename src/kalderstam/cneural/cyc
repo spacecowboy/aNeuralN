@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cython hello.pyx
+
+# Compile the object file
+#gcc -c -fPIC -I/usr/local/include/python2.6/ hello.c
+
+# Link it into a shared library
+#gcc -shared hello.o -o hello.so
+
+gcc-4.3 -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing -I /usr/include/python2.6 -o hello.so hello.c
