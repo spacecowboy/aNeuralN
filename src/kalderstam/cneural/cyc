@@ -8,4 +8,5 @@ cython hello.pyx
 # Link it into a shared library
 #gcc -shared hello.o -o hello.so
 
-gcc-4.3 -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing -I /usr/include/python2.6 -o hello.so hello.c
+#Make sure to use 64-bit gcc or it will complain about LONG size or some shit
+gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing -I /usr/include/python2.6 -o hello.so hello.c
