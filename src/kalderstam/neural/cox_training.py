@@ -97,6 +97,7 @@ if __name__ == '__main__':
     import time
     import numpy
     import matplotlib.pyplot as plt
+    from kalderstam.neural.activation_functions import linear
     
     numpy.seterr(all='raise')
     logging.basicConfig(level = logging.DEBUG)
@@ -134,7 +135,7 @@ if __name__ == '__main__':
     
     p = 4 #number of input covariates
         
-    net = build_feedforward(p, 2, 1)
+    net = build_feedforward(p, 2, 1, output_function = linear())
 
     P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     plot_network_weights(net, figure=1)
     plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
-    net = train_cox(net, P, timeslots, epochs = 100, learning_rate = 2)
+    net = train_cox(net, P, timeslots, epochs = 10, learning_rate = 2)
     outputs = net.sim(P)
     
     plot_network_weights(net, figure=2)
