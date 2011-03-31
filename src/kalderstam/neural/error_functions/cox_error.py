@@ -75,7 +75,7 @@ def calc_beta(outputs, timeslots):
     
     logger.debug("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
     #we will get overflow errors when beta goes above 710, but even 200 is completely unreasonable and means that beta will diverge. in that case, QUIT
-    while beta < 200 and (slope < 0.0 or abs(slope) > 0.00000001 or not_started) and abs(distance) > 0.001: #Want positive beta, Some small limit close to zero, fix to make sure we try more than one value, stop when step size is too small
+    while beta < 200 and (abs(slope) > 0 or not_started) and abs(distance) > 0.001: #Want positive beta, Some small limit close to zero, fix to make sure we try more than one value, stop when step size is too small
         not_started = False
         prev_slope = slope
         beta += distance
