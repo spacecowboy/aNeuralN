@@ -6,6 +6,7 @@ from kalderstam.neural import training_functions
 from kalderstam.neural.network import build_feedforward, node, network
 from kalderstam.neural.matlab_functions import plotroc, plot2d2c, stat
 import matplotlib.pyplot as plt
+
 import numpy
 import logging
 from random import sample, random, uniform
