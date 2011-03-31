@@ -14,14 +14,14 @@ inputs = numpy.array(inputs)
 input_targets = inputs[1:, 4]
 input_targets = numpy.array(input_targets, dtype = 'float')
 
-with open('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/output_after_training_100_epochs_2.0.txt', 'r') as f:
-#with open('/home/gibson/jonask/100_epoch_2.1.txt', 'r') as f:
+#with open('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/output_after_training_10_epochs_2.0.txt', 'r') as f:
+with open('/home/gibson/jonask/100_epoch_2.3.txt', 'r') as f:
     outputs = [line.split() for line in f.readlines()]
     
 outputs = numpy.array([outputs], dtype = 'float')
 outputs = outputs.flatten()
 
-plt.title('Scatter plot for 10 epochs training (v2.0)')
+plt.title('Scatter plot for 100 epochs training (v2.3)')
 plt.xlabel('Survival time (with noise) years')
 plt.ylabel('Network output')
 plt.scatter(input_targets, outputs, c='g', marker='s')

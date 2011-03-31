@@ -1,5 +1,4 @@
-from numpy import log, exp
-import numpy
+from numpy import log, exp, array, seterr
 from kalderstam.util.decorators import benchmark
 import logging
 
@@ -102,7 +101,7 @@ def get_risk_outputs(s, timeslots, outputs):
             in_risk = True #Will make sure that events that come after this are added to the risk group
         if in_risk:
             risk_outputs.append(outputs[index])
-    return numpy.array(risk_outputs)
+    return array(risk_outputs)
 
 def total_error(beta, sigma):
     """E = ln(1 + exp(Delta - Beta*Sigma))."""
@@ -116,9 +115,9 @@ def derivative(beta, sigma, output_index, outputs, timeslots):
 
 #This is a test of the functionality in this file
 if __name__ == '__main__':
-    numpy.seterr(all='raise')
+    seterr(all='raise')
     
     outputs = [[i*2] for i in range(4)]
     timeslots = range(len(outputs))
     #print(calc_beta(numpy.array(outputs), timeslots))
-    print(calc_beta(numpy.array(outputs), timeslots))
+    print(calc_beta(array(outputs), timeslots))

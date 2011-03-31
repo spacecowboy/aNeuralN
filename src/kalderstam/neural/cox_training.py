@@ -155,7 +155,7 @@ if __name__ == '__main__':
     plot_network_weights(net, figure=1)
     plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
-    net = train_cox(net, P, timeslots, epochs = 10, learning_rate = 2)
+    net = train_cox(net, P, timeslots, epochs = 100, learning_rate = 2)
     outputs = net.sim(P)
     
     plot_network_weights(net, figure=2)
@@ -169,5 +169,11 @@ if __name__ == '__main__':
     
     print "output_after_training"
     print outputs
+    
+    plt.figure(3)
+    plt.title('Scatter plot')
+    plt.xlabel('Survival time (with noise) years')
+    plt.ylabel('Network output')
+    plt.scatter(T.flatten(), outputs.flatten(), c='g', marker='s')
     
     plt.show()
