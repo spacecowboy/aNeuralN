@@ -86,11 +86,10 @@ def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
         
     return net
 
-#This is a test of the functionality in this file
-if __name__ == '__main__':
+def test():
     from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
     loadsyn2, loadsyn3, plotroc, plot_network_weights
-    from kalderstam.util.filehandling import parse_file, save_network
+    from kalderstam.util.filehandling import parse_file, save_network, load_network
     from kalderstam.util.decorators import benchmark
     from kalderstam.neural.network import build_feedforward, build_feedforward_committee
     from random import uniform
@@ -135,10 +134,14 @@ if __name__ == '__main__':
     
     p = 4 #number of input covariates
         
-    net = build_feedforward(p, 2, 1, output_function = linear())
+    #net = build_feedforward(p, 2, 1, output_function = linear())
+    #save_network(net, '/home/gibson/jonask/test_net.ann')
+    net = load_network('/home/gibson/jonask/test_net.ann')
 
     P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
+    P = P[:100,:]
+    T = T[:100, :]
     print P
     print T
     
@@ -155,7 +158,7 @@ if __name__ == '__main__':
     plot_network_weights(net, figure=1)
     plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
-    net = train_cox(net, P, timeslots, epochs = 100, learning_rate = 2)
+    net = train_cox(net, P, timeslots, epochs = 1, learning_rate = 2)
     outputs = net.sim(P)
     
     plot_network_weights(net, figure=2)
@@ -175,5 +178,28 @@ if __name__ == '__main__':
     plt.xlabel('Survival time (with noise) years')
     plt.ylabel('Network output')
     plt.scatter(T.flatten(), outputs.flatten(), c='g', marker='s')
+
+#This is a test of the functionality in this file
+if __name__ == '__main__':
+    from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
+    loadsyn2, loadsyn3, plotroc, plot_network_weights
+    from kalderstam.util.filehandling import parse_file, save_network
+    from kalderstam.util.decorators import benchmark
+    from kalderstam.neural.network import build_feedforward, build_feedforward_committee
+    from random import uniform
+    import time
+    import numpy
+    import matplotlib.pyplot as plt
+    from kalderstam.neural.activation_functions import linear
+    
+    import pstats, cProfile
+    
+    numpy.seterr(all='raise')
+    logging.basicConfig(level = logging.DEBUG)
+
+    cProfile.runctx("test()", globals(), locals(), "Profile.prof")
+
+    s = pstats.Stats("Profile.prof")
+    s.strip_dirs().sort_stats("time").print_stats()
     
     plt.show()
