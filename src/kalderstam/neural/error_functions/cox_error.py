@@ -23,36 +23,23 @@ def __derivative_sigma__(sigma, output_index, outputs):
 
 def __derivative_beta__(beta, output_index, outputs, timeslots):
     """Eq. 14, derivative of Beta with respect to y(i)"""
-    return -__derivative_force_by_y__(beta, output_index, outputs, timeslots)/__derivative_force_by_beta__(beta, outputs, timeslots)
-
-def __derivative_force_by_beta__(beta, outputs, timeslots):
-    """Eq. 15 (and including 16), derivative of F with respect to Beta"""
-    result = 0
+    output = outputs[output_index]
+    beta_force = 0
+    y_force = 0
+    beta_out = exp(beta*output)
     for s in timeslots:
         risk_outputs = get_risk_outputs(s, timeslots, outputs)
-        result += -(exp(beta*risk_outputs)*risk_outputs**2).sum()/__partition_function__(beta, risk_outputs) + (__weighted_average__(beta, risk_outputs))**2
-    return -result
-
-def __derivative_force_by_y__(beta, output_index, outputs, timeslots):
-    """Eq. 17, derivative of F with respect to y(i)"""
-    output = outputs[output_index]
-    result = 0
-    for s in timeslots:
+        beta_risk = exp(beta*risk_outputs)
+        part_func = beta_risk.sum()
+        weighted_avg = (beta_risk*risk_outputs).sum()/part_func
+        beta_force += -(beta_risk*risk_outputs**2).sum()/part_func + weighted_avg**2
+        
         kronicker = 0
         if s == output_index:
             kronicker = 1
-        result += (kronicker - __deritative_weighted_avg__(beta, output, get_risk_outputs(s, timeslots, outputs)))
-    return result
-
-def __deritative_weighted_avg__(beta, output, risk_outputs):
-    """Eq. 18. derivative of the __weighted_average__ with respect to y(i)"""
-    return exp(beta*output)/__partition_function__(beta, risk_outputs)*(1 + beta*(output - __weighted_average__(beta, risk_outputs)))
+        y_force += kronicker - beta_out/part_func*(1 + beta*(output - weighted_avg))
     
-def __weighted_average__(beta, risk_outputs):
-    return (exp(beta*risk_outputs)*risk_outputs).sum()/__partition_function__(beta, risk_outputs)
-    
-def __partition_function__(beta, risk_outputs):
-    return (exp(beta*risk_outputs)).sum() #Multiply each element in risk_outputs with Beta, then let numpy sum it up for us
+    return -y_force/(-beta_force)
 
 def calc_beta(outputs, timeslots):
     """Find the likelihood maximizing Beta numerically."""
@@ -66,7 +53,10 @@ def calc_beta(outputs, timeslots):
         for s in timeslots:
             output = outputs[s]
             risk_outputs = get_risk_outputs(s, timeslots, outputs)
-            result += (output - __weighted_average__(beta, risk_outputs))
+            beta_risk = exp(beta*risk_outputs)
+            part_func = beta_risk.sum()
+            weighted_avg = (beta_risk*risk_outputs).sum()/part_func
+            result += (output - weighted_avg)
         return result
             
     slope = get_slope(beta, outputs, timeslots)

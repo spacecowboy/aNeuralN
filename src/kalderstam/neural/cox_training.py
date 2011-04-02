@@ -140,8 +140,8 @@ def test():
 
     P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
-    P = P[:100,:]
-    T = T[:100, :]
+    #P = P[:100,:]
+    #T = T[:100, :]
     print P
     print T
     
