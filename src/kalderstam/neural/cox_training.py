@@ -20,9 +20,9 @@ def beta_diverges(outputs, timeslots):
                 diverging_negatively = False
     return (diverging or diverging_negatively)
 
-@benchmark
-def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
+def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_targets), timeslots, epochs = 1, learning_rate = 2.0):
     numpy.seterr(all='raise') #I want errors!
+    inputs = test_inputs
     for epoch in range(epochs):
         logger.info("Epoch " + str(epoch))
         outputs = net.sim(inputs)
@@ -116,6 +116,7 @@ def test():
     import numpy
     import matplotlib.pyplot as plt
     from kalderstam.neural.activation_functions import linear
+    from kalderstam.neural.training_functions import train_committee
     
     numpy.seterr(all='raise')
     logging.basicConfig(level = logging.INFO)
@@ -155,7 +156,10 @@ def test():
         
     #net = build_feedforward(p, 2, 1, output_function = linear())
     #save_network(net, '/home/gibson/jonask/test_net.ann')
-    net = load_network('/home/gibson/jonask/test_net.ann')
+    #net = load_network('/home/gibson/jonask/test_net.ann')
+    
+    com = build_feedforward_committee(size = 4, input_number = p, hidden_number = 6, output_number = 1)
+    
 
     P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
@@ -167,20 +171,24 @@ def test():
     timeslots = generate_timeslots(P, T)
     print timeslots
     
-    outputs = net.sim(P)
+    #outputs = net.sim(P)
+    outputs = com.sim(P)
     print "output_before_training"
     print outputs
     
     #beta = calc_beta(outputs, timeslots)
     #sigma = calc_sigma(outputs)
     
-    plot_network_weights(net, figure=1)
+    #plot_network_weights(net, figure=1)
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
-    net = train_cox(net, P, timeslots, epochs = 50, learning_rate = 2)
-    outputs = net.sim(P)
+    #net = train_cox(net, P, timeslots, epochs = 50, learning_rate = 2)
+    #outputs = net.sim(P)
     
-    plot_network_weights(net, figure=2)
+    train_committee(com, train_cox, P, T, timeslots, epochs = 200, learning_rate = 2)
+    outputs = com.sim(P)
+    
+    #plot_network_weights(net, figure=2)
     #try:
     #    beta = calc_beta(outputs, timeslots)
     #    sigma = calc_sigma(outputs)
@@ -216,9 +224,10 @@ if __name__ == '__main__':
     numpy.seterr(all='raise')
     logging.basicConfig(level = logging.INFO)
 
-    cProfile.runctx("test()", globals(), locals(), "Profile.prof")
+    #cProfile.runctx("test()", globals(), locals(), "Profile.prof")
 
-    s = pstats.Stats("Profile.prof")
-    s.strip_dirs().sort_stats("time").print_stats()
+    #s = pstats.Stats("Profile.prof")
+    #s.strip_dirs().sort_stats("time").print_stats()
     
+    test()
     plt.show()

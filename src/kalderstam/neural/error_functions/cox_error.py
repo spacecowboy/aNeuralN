@@ -9,20 +9,20 @@ shift = 4 #Also known as Delta, it's the handwaving variable.
 #sigma = None #Must be calculated before training begins
 #beta = None #Must be calculated before training begins
 
-def __derivative_error__(beta, sigma):
+def derivative_error(beta, sigma):
     """dE/d(Beta*Sigma)"""
     return -(exp(shift - beta*sigma))/(1 + exp(shift - beta*sigma))
 
-def __derivative_betasigma__(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
+def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """Derivative of (Beta*Sigma) with respect to y(i)"""
-    return __derivative_beta__(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)*sigma + beta*__derivative_sigma__(sigma, output_index, outputs)
+    return derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)*sigma + beta*derivative_sigma(sigma, output_index, outputs)
 
-def __derivative_sigma__(sigma, output_index, outputs):
+def derivative_sigma(sigma, output_index, outputs):
     """Eq. 12, derivative of Sigma with respect to y(i)"""
     output = outputs[output_index]
     return (output - outputs.mean())/(len(outputs)*sigma)
 
-def __derivative_beta__(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
+def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """Eq. 14, derivative of Beta with respect to y(i)"""
     output = outputs[output_index]
     y_force = 0
@@ -35,23 +35,21 @@ def __derivative_beta__(beta, part_func, weighted_avg, beta_force, output_index,
     
     return -y_force/beta_force
 
+def get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots):
+    result = 0
+    for s in timeslots:
+        output = outputs[s]
+        risk_outputs[s] = get_risk_outputs(s, timeslots, outputs)
+        beta_risk[s] = exp(beta*risk_outputs[s])
+        part_func[s] = beta_risk[s].sum()
+        weighted_avg[s] = (beta_risk[s]*risk_outputs[s]).sum()/part_func[s]
+        result += (output - weighted_avg[s])
+    return result
+
 def calc_beta(outputs, timeslots):
     """Find the likelihood maximizing Beta numerically."""
     beta = -20 #Start with something small
     distance = 32.0 #Fairly large interval, we actually want to cross the zero
-    #For testing the interval method
-#        def get_slope(beta, *args):
-#            return -2*exp(-(beta-5)**2)*(beta-5)
-    def get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots):
-        result = 0
-        for s in timeslots:
-            output = outputs[s]
-            risk_outputs[s] = get_risk_outputs(s, timeslots, outputs)
-            beta_risk[s] = exp(beta*risk_outputs[s])
-            part_func[s] = beta_risk[s].sum()
-            weighted_avg[s] = (beta_risk[s]*risk_outputs[s]).sum()/part_func[s]
-            result += (output - weighted_avg[s])
-        return result
     
     risk_outputs = [None for i in range(len(timeslots))]
     beta_risk = [None for i in range(len(timeslots))]
@@ -100,8 +98,7 @@ def total_error(beta, sigma):
 #@benchmark
 def derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """dE/d(Beta*Sigma) * d(Beta*Sigma)/dresult."""
-    output = outputs[output_index]
-    return __derivative_error__(beta, sigma)*__derivative_betasigma__(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)
+    return derivative_error(beta, sigma)*derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)
 
 #This is a test of the functionality in this file
 if __name__ == '__main__':
