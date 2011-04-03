@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#Cant use spaces in bash
+name="${1%.pyx}"
+
+#cython hello.pyx
+cython -v -a "${name}.pyx"
+
+# Compile the object file
+#gcc -c -fPIC -I/usr/local/include/python2.6/ hello.c
+
+# Link it into a shared library
+#gcc -shared hello.o -o hello.so
+
+#Make sure to use 64-bit gcc or it will complain about LONG size or some shit
+gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing -I /usr/include/python2.6 -I /export/home/jonask/Downloads/numpy-1.5.1/build/src.linux-x86_64-2.7/numpy/core/include/numpy/ -I /export/home/jonask/Downloads/numpy-1.5.1/numpy/core/include -o "${name}.so" "${name}.c"
