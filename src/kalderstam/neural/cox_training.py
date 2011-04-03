@@ -2,6 +2,8 @@ from kalderstam.neural.error_functions.cox_error import derivative, calc_beta,\
     calc_sigma, get_risk_outputs, total_error
 from kalderstam.util.decorators import benchmark
 import logging
+from numpy import exp
+import numpy as np
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
     
@@ -25,15 +27,32 @@ def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
         logger.debug("Epoch " + str(epoch))
         outputs = net.sim(inputs)
         #Check if beta will diverge here, if so, end training with error 0
-        if beta_diverges(outputs, timeslots):
+        #if beta_diverges(outputs, timeslots):
             #End training
-            logger.info('Beta diverges...')
-            break
+        #    logger.info('Beta diverges...')
+        #    break
+        
         try:
-            beta = calc_beta(outputs, timeslots)
+            beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
         except FloatingPointError as e:
             print(str(e))
             break #Stop training
+        
+        #calculate parts of the error function here, which do not depend on patient specific output
+        #risk_outputs = [None for i in range(len(timeslots))]
+        #beta_risk = [None for i in range(len(timeslots))]
+        #part_func = np.zeros(len(timeslots))
+        #weighted_avg = np.zeros(len(timeslots))
+        beta_force = 0
+        #for s in timeslots:
+            #risk_outputs[s] = get_risk_outputs(s, timeslots, outputs)  
+            #beta_risk[s] = exp(beta*risk_outputs[s])
+            #part_func[s] = beta_risk[s].sum()
+            #weighted_avg[s] = (beta_risk[s]*risk_outputs[s]).sum()/part_func[s]
+            #beta_force += -(beta_risk[s]*risk_outputs[s]**2).sum()/part_func[s] + weighted_avg[s]**2
+        beta_force = sum([-(beta_risk[s]*risk_outputs[s]**2).sum()/part_func[s] + weighted_avg[s]**2 for s in timeslots])
+        beta_force *= -1
+        
         sigma = calc_sigma(outputs)
             
         #Set corrections to 0 on all nodes first
@@ -50,7 +69,7 @@ def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
                 node.error_gradient = 0
 
             #Set errors on output nodes first
-            for node, gradient in zip(net.output_nodes, derivative(beta, sigma, output_index, outputs, timeslots)):
+            for node, gradient in zip(net.output_nodes, derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)):
                 node.error_gradient = gradient
             
             #Iterate over the nodes and correct the weights
@@ -152,23 +171,23 @@ def test():
     print "output_before_training"
     print outputs
     
-    beta = calc_beta(outputs, timeslots)
-    sigma = calc_sigma(outputs)
+    #beta = calc_beta(outputs, timeslots)
+    #sigma = calc_sigma(outputs)
     
     plot_network_weights(net, figure=1)
-    plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
+    #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
     net = train_cox(net, P, timeslots, epochs = 1, learning_rate = 2)
     outputs = net.sim(P)
     
     plot_network_weights(net, figure=2)
-    try:
-        beta = calc_beta(outputs, timeslots)
-        sigma = calc_sigma(outputs)
-        error = total_error(beta, sigma)
-    except FloatingPointError:
-        error = 'Beta diverged'
-    plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(error))
+    #try:
+    #    beta = calc_beta(outputs, timeslots)
+    #    sigma = calc_sigma(outputs)
+    #    error = total_error(beta, sigma)
+    #except FloatingPointError:
+    #    error = 'Beta diverged'
+    #plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(error))
     
     print "output_after_training"
     print outputs
