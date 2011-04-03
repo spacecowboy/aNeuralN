@@ -24,7 +24,7 @@ def beta_diverges(outputs, timeslots):
 def train_cox(net, inputs, timeslots, epochs = 300, learning_rate = 0.1):
     numpy.seterr(all='raise') #I want errors!
     for epoch in range(epochs):
-        logger.debug("Epoch " + str(epoch))
+        logger.info("Epoch " + str(epoch))
         outputs = net.sim(inputs)
         #Check if beta will diverge here, if so, end training with error 0
         #if beta_diverges(outputs, timeslots):
@@ -118,7 +118,7 @@ def test():
     from kalderstam.neural.activation_functions import linear
     
     numpy.seterr(all='raise')
-    logging.basicConfig(level = logging.DEBUG)
+    logging.basicConfig(level = logging.INFO)
     
     #the function the network should try and approximate
     def sickness_sim(x):
@@ -177,7 +177,7 @@ def test():
     plot_network_weights(net, figure=1)
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
-    net = train_cox(net, P, timeslots, epochs = 1, learning_rate = 2)
+    net = train_cox(net, P, timeslots, epochs = 50, learning_rate = 2)
     outputs = net.sim(P)
     
     plot_network_weights(net, figure=2)
@@ -214,7 +214,7 @@ if __name__ == '__main__':
     import pstats, cProfile
     
     numpy.seterr(all='raise')
-    logging.basicConfig(level = logging.DEBUG)
+    logging.basicConfig(level = logging.INFO)
 
     cProfile.runctx("test()", globals(), locals(), "Profile.prof")
 
