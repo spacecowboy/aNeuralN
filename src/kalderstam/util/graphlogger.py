@@ -30,7 +30,7 @@ class graphlogger():
         self.line, = self.ax.plot([], [], style)
         self.ax.grid()
         self.clean_background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
-        self.draw_initial = True #Need to call draw once
+        self.ax.set_ylim(-0.0001, 0.0001)
         
     def infoplot(self, *args, **kwargs):
         if logging_level <= info:
@@ -56,6 +56,7 @@ class graphlogger():
                 x_val = 0
             else:
                 x_val = self.x_values[len(self.x_values) - 1] + 1
+                
         x = float(x_val)
         y = float(y_val)
         
@@ -106,6 +107,6 @@ if __name__ == '__main__':
     set_logging_level(debug)
     #logger.interactive()
     for x in range(100):
-        y = np.sin(x)
+        y = 0.2*np.sin(x)
         logger.infoplot(y_val = y)
     logger.show()

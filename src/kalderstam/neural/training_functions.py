@@ -4,57 +4,14 @@ from random import sample, random, uniform
 from kalderstam.neural.network import build_feedforward, node, network
 from kalderstam.neural.error_functions import sum_squares
 from kalderstam.util.filehandling import get_validation_set
+import kalderstam.util.graphlogger as glogger
 
 logger = logging.getLogger('kalderstam.neural.training_functions')
+grapher = glogger.getGraphLogger('Training error', 'r-')
+gradientgrapher = glogger.getGraphLogger('Gradient', 'b-')
 
 def train_committee(com, train_func, input_array, target_array, *train_args, **train_kwargs):
     return mp_train_committee(com, train_func, input_array, target_array, *train_args, **train_kwargs)
-
-def traingd(net, input_array, output_array, epochs = 300, learning_rate = 0.1, error_derivative = sum_squares.derivative):
-    """Train using Gradient Descent."""
-    
-    for epoch in range(0, int(epochs)):
-        #Iterate over training data
-        logger.debug('Epoch ' + str(epoch))
-        error_sum = 0
-        #Train in random order
-        for input, output in sample(zip(input_array, output_array), len(input_array)):
-            # Support both [1, 2, 3] and [[1], [2], [3]] for single output node case
-            output = numpy.append(numpy.array([]), output)
-                
-            #Calc output
-            result = net.update(input)
-                
-            #Set error to 0 on all nodes first
-            for node in net.get_all_nodes():
-                node.error_gradient = 0
-            
-            #Set errors on output nodes first
-            for node, gradient in zip(net.output_nodes, error_derivative(output, result)):
-                node.error_gradient = gradient
-                error_sum += (gradient ** 2).sum()
-            
-            #Iterate over the nodes and correct the weights
-            for node in net.output_nodes + net.hidden_nodes:
-                #Calculate local error gradient
-                node.error_gradient *= node.activation_derivative(node.input_sum(input))
-                #Propagate the error backwards and then update the weight
-                for back_node, back_weight in node.weights.items():
-                    try:
-                        index = int(back_node)
-                        node.weights[back_node] = back_weight + learning_rate * node.error_gradient * input[index]
-                        #print 'Input value used: ' + str(weight) + '*' + str(input[index])
-                    except ValueError:
-                        back_node.error_gradient += back_weight * node.error_gradient
-                        node.weights[back_node] = back_weight + learning_rate * node.error_gradient * back_node.output(input)
-                #Finally, bias
-                node.bias = node.bias + learning_rate * node.error_gradient * node.bias
-                
-        #normalize error
-        error_sum /= len(net.output_nodes)
-        error_sum /= len(output_array)
-        logger.debug("Error = " + str(error_sum))
-    return net
 
 def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative, error_function = sum_squares.total_error, stop_error_value = 0):
     """Train using Gradient Descent."""
@@ -93,6 +50,7 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
 
                 #Set errors on output nodes first
                 for node, gradient in zip(net.output_nodes, error_derivative(target, result)):
+                    gradientgrapher.debugplot(gradient)
                     node.error_gradient = gradient
                 
                 #Iterate over the nodes and correct the weights
@@ -131,6 +89,7 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
         if len(test_inputs > 0):
             test_results = net.sim(test_inputs)
             test_error = error_function(test_targets, test_results)/len(test_targets)
+            grapher.debugplot(test_error)
             logger.debug("Test Error = " + str(test_error))
             if test_error <= stop_error_value:
                 break
@@ -222,6 +181,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 population[child_index].output_nodes.append(output)
         
         logger.info("Generation " + str(generation) + ", best so far: " + str(best_error))
+        grapher.debugplot(best_error)
                 
     #finally, return the best network
     return best
@@ -351,6 +311,7 @@ if __name__ == '__main__':
     except:
         pass
         
+    
     P, T = loadsyn3(100)
     p, t = P, T
     #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Ecg1664_trn.dat", 39, ignorecols = 40)

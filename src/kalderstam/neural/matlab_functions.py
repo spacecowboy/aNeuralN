@@ -294,7 +294,7 @@ def stat(Y, T, cut = 0.5):
     
 def plot_network_weights(net, figure=None):
     plt.figure(figure)
-    
+    max = None
     #Get a weight matrix for the network
     weights = []
     for node in net.get_all_nodes():
@@ -302,13 +302,25 @@ def plot_network_weights(net, figure=None):
         #First check input nodes
         for i in range(net.num_of_inputs):
             if i in node.weights:
+                if max == None:
+                    max = node.weights[i]
+                if node.weights[i] > abs(max):
+                    max = node.weights[i]
                 nweights.append(node.weights[i])
             else:
                 nweights.append(0)
         for lnode in net.get_all_nodes():
             if lnode == node:
+                if max == None:
+                    max = node.bias
+                if node.bias > abs(max):
+                    max = node.bias
                 nweights.append(node.bias)
             elif lnode in node.weights:
+                if max == None:
+                    max = node.weights[lnode]
+                if node.weights[lnode] > abs(max):
+                    max = node.weights[lnode]
                 nweights.append(node.weights[lnode])
             else:
                 nweights.append(0)
@@ -317,6 +329,8 @@ def plot_network_weights(net, figure=None):
     weights = numpy.matrix(weights).T
     #Plot it
     hinton(weights)
+    #Say what the max value is
+    plt.title("Max abs(weight) = " + str(max))
 
 def _blob(x,y,area,colour):
     """
@@ -385,6 +399,6 @@ if __name__ == '__main__':
     plot2d2c(net, P, T, figure = 2)
     
     plot_network_weights(net, figure=4)
-    plt.title('After training')
+    #plt.title('After training')
     
     plt.show()

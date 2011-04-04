@@ -123,10 +123,10 @@ def test():
     import numpy
     import matplotlib.pyplot as plt
     from kalderstam.neural.activation_functions import linear
-    from kalderstam.neural.training_functions import train_committee, traingd_block
+    #from kalderstam.neural.training_functions import train_committee, traingd_block, train_evolutionary
     
     numpy.seterr(all='raise')
-    logging.basicConfig(level = logging.INFO)
+    logging.basicConfig(level = logging.DEBUG)
     glogger.set_logging_level(glogger.debug)
     
     #the function the network should try and approximate
@@ -162,22 +162,21 @@ def test():
     
     p = 4 #number of input covariates
         
-    #net = build_feedforward(p, 2, 1, output_function = linear())
+    #net = build_feedforward(p, 4, 1, output_function = linear())
+    net = build_feedforward(p, 2, 1, hidden_function = linear(), output_function = linear())
     #save_network(net, '/home/gibson/jonask/test_net.ann')
-    net = load_network('/home/gibson/jonask/test_net.ann')
+    #net = load_network('/home/gibson/jonask/test_net.ann')
     
     #com = build_feedforward_committee(size = 4, input_number = p, hidden_number = 6, output_number = 1)
     
+    #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_no_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P = P[:100,:]
     #T = T[:100, :]
-    print P
-    print T
     
     timeslots = generate_timeslots(P, T)
-    print timeslots
     
     outputs = net.sim(P)
     #outputs = com.sim(P)
@@ -187,10 +186,18 @@ def test():
     beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
     sigma = calc_sigma(outputs)
     
+    #Make beta positive
+    #if beta < 0:
+    #    for n, w in net.output_nodes[0].weights.iteritems:
+    #        net.output_nodes[0].weights[n] = -w
+    #    beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
+    
     plot_network_weights(net)
-    plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
+    #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
-    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 2, learning_rate = 2)
+    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 200, learning_rate = 2)
+    #net = traingd_block(net, (P,T), (None, None), epochs = 25, learning_rate = 1, block_size = 0)
+    #net = train_evolutionary(net, (P,T), (None, None), epochs = 500, random_range = 1)
     outputs = net.sim(P)
     
     #train_committee(com, traingd_block, P, T, epochs = 100, block_size = 10)
@@ -204,7 +211,7 @@ def test():
         error = total_error(beta, sigma)
     except FloatingPointError:
         error = 'Beta diverged'
-    plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(error))
+    #plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(error))
     
     #print "output_after_training"
     #print outputs

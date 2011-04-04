@@ -5,6 +5,8 @@ import kalderstam.util.graphlogger as glogger
 
 logger = logging.getLogger('kalderstam.neural.error_functions')
 dbetalogger = glogger.getGraphLogger('beta derivative', 'r+')
+dsigmalogger = glogger.getGraphLogger('sigma derivative', 'b+')
+dbetasigmalogger = glogger.getGraphLogger('betasigma derivative', 'g+')
 
 shift = 4 #Also known as Delta, it's the handwaving variable.
 #sigma = None #Must be calculated before training begins
@@ -16,12 +18,16 @@ def derivative_error(beta, sigma):
 
 def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """Derivative of (Beta*Sigma) with respect to y(i)"""
-    return derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)*sigma + beta*derivative_sigma(sigma, output_index, outputs)
+    bs = derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)*sigma + beta*derivative_sigma(sigma, output_index, outputs)
+    dbetasigmalogger.debugplot(bs)
+    return bs
 
 def derivative_sigma(sigma, output_index, outputs):
     """Eq. 12, derivative of Sigma with respect to y(i)"""
     output = outputs[output_index]
-    return (output - outputs.mean())/(len(outputs)*sigma)
+    ds = (output - outputs.mean())/(len(outputs)*sigma)
+    dsigmalogger.debugplot(ds)
+    return ds
 
 def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """Eq. 14, derivative of Beta with respect to y(i)"""
