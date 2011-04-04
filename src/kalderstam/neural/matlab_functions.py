@@ -292,7 +292,7 @@ def stat(Y, T, cut = 0.5):
         
         return [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed]
     
-def plot_network_weights(net, figure=1):
+def plot_network_weights(net, figure=None):
     plt.figure(figure)
     
     #Get a weight matrix for the network

@@ -67,7 +67,7 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
     
     for epoch in range(0, int(epochs)):
         #Iterate over training data
-        logger.debug('Epoch ' + str(epoch))
+        logger.info('Epoch ' + str(epoch))
         #error_sum = 0
         block_size = int(block_size)
         if block_size < 1 or block_size > len(test_inputs): #if 0, then equivalent to batch. 1 is equivalent to online
@@ -221,7 +221,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 output.connect_nodes(hidden_nodes, weights)
                 population[child_index].output_nodes.append(output)
         
-        logger.debug("Generation " + str(generation) + ", best so far: " + str(best_error))
+        logger.info("Generation " + str(generation) + ", best so far: " + str(best_error))
                 
     #finally, return the best network
     return best

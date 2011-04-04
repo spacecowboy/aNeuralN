@@ -4,8 +4,12 @@ from kalderstam.util.decorators import benchmark
 import logging
 from numpy import exp
 import numpy as np
+import kalderstam.util.graphlogger as glogger
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
+betalogger = glogger.getGraphLogger('Beta vs Epochs')
+betaforcelogger = glogger.getGraphLogger('BetaForce vs Epochs', 'bs')
+sigmalogger = glogger.getGraphLogger('Sigma vs Epochs', 'bs')
     
 def beta_diverges(outputs, timeslots):
     diverging = True
@@ -34,6 +38,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
         
         try:
             beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
+            betalogger.debugplot(beta)
         except FloatingPointError as e:
             print(str(e))
             break #Stop training
@@ -52,8 +57,10 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
             #beta_force += -(beta_risk[s]*risk_outputs[s]**2).sum()/part_func[s] + weighted_avg[s]**2
         beta_force = sum([-(beta_risk[s]*risk_outputs[s]**2).sum()/part_func[s] + weighted_avg[s]**2 for s in timeslots])
         beta_force *= -1
+        betaforcelogger.debugplot(beta_force)
         
         sigma = calc_sigma(outputs)
+        sigmalogger.debugplot(sigma)
             
         #Set corrections to 0 on all nodes first
         for node in net.get_all_nodes():
@@ -116,14 +123,15 @@ def test():
     import numpy
     import matplotlib.pyplot as plt
     from kalderstam.neural.activation_functions import linear
-    from kalderstam.neural.training_functions import train_committee
+    from kalderstam.neural.training_functions import train_committee, traingd_block
     
     numpy.seterr(all='raise')
     logging.basicConfig(level = logging.INFO)
+    glogger.set_logging_level(glogger.debug)
     
     #the function the network should try and approximate
     def sickness_sim(x):
-        return x[0]*3 + x[1]*6
+        return 6 - (x[0]*0.25 + x[1]*0.50 + x[2]*0.75 + x[3])
     
     #the values the network have to go on
     def sickness_with_noise(x, noise_level = 1):
@@ -156,12 +164,12 @@ def test():
         
     #net = build_feedforward(p, 2, 1, output_function = linear())
     #save_network(net, '/home/gibson/jonask/test_net.ann')
-    #net = load_network('/home/gibson/jonask/test_net.ann')
+    net = load_network('/home/gibson/jonask/test_net.ann')
     
-    com = build_feedforward_committee(size = 4, input_number = p, hidden_number = 6, output_number = 1)
+    #com = build_feedforward_committee(size = 4, input_number = p, hidden_number = 6, output_number = 1)
     
-
-    P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
+    P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
+    #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P = P[:100,:]
     #T = T[:100, :]
@@ -171,36 +179,37 @@ def test():
     timeslots = generate_timeslots(P, T)
     print timeslots
     
-    #outputs = net.sim(P)
-    outputs = com.sim(P)
-    print "output_before_training"
-    print outputs
+    outputs = net.sim(P)
+    #outputs = com.sim(P)
+    #print "output_before_training"
+    #print outputs
     
-    #beta = calc_beta(outputs, timeslots)
-    #sigma = calc_sigma(outputs)
+    beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
+    sigma = calc_sigma(outputs)
     
-    #plot_network_weights(net, figure=1)
-    #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
+    plot_network_weights(net)
+    plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
         
-    #net = train_cox(net, P, timeslots, epochs = 50, learning_rate = 2)
-    #outputs = net.sim(P)
+    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 2, learning_rate = 2)
+    outputs = net.sim(P)
     
-    train_committee(com, train_cox, P, T, timeslots, epochs = 200, learning_rate = 2)
-    outputs = com.sim(P)
+    #train_committee(com, traingd_block, P, T, epochs = 100, block_size = 10)
+    #train_committee(com, train_cox, P, T, timeslots, epochs = 10, learning_rate = 2)
+    #outputs = com.sim(P)
     
-    #plot_network_weights(net, figure=2)
-    #try:
-    #    beta = calc_beta(outputs, timeslots)
-    #    sigma = calc_sigma(outputs)
-    #    error = total_error(beta, sigma)
-    #except FloatingPointError:
-    #    error = 'Beta diverged'
-    #plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(error))
+    plot_network_weights(net)
+    try:
+        beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
+        sigma = calc_sigma(outputs)
+        error = total_error(beta, sigma)
+    except FloatingPointError:
+        error = 'Beta diverged'
+    plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(error))
     
-    print "output_after_training"
-    print outputs
+    #print "output_after_training"
+    #print outputs
     
-    plt.figure(3)
+    plt.figure()
     plt.title('Scatter plot')
     plt.xlabel('Survival time (with noise) years')
     plt.ylabel('Network output')
@@ -223,6 +232,7 @@ if __name__ == '__main__':
     
     numpy.seterr(all='raise')
     logging.basicConfig(level = logging.INFO)
+    glogger.set_logging_level(glogger.debug)
 
     #cProfile.runctx("test()", globals(), locals(), "Profile.prof")
 

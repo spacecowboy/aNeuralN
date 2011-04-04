@@ -1,9 +1,10 @@
-from numpy import log, exp, array, seterr
-from kalderstam.util.decorators import benchmark
+from numpy import log, exp, array
 import logging
 import numpy as np
+import kalderstam.util.graphlogger as glogger
 
 logger = logging.getLogger('kalderstam.neural.error_functions')
+dbetalogger = glogger.getGraphLogger('beta derivative', 'r+')
 
 shift = 4 #Also known as Delta, it's the handwaving variable.
 #sigma = None #Must be calculated before training begins
@@ -33,7 +34,9 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
             kronicker = 1
         y_force += kronicker - beta_out/part_func[s]*(1 + beta*(output - weighted_avg[s]))
     
-    return -y_force/beta_force
+    res = -y_force/beta_force
+    dbetalogger.debugplot(y_val = res)
+    return res
 
 def get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots):
     result = 0
@@ -48,8 +51,8 @@ def get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, t
 
 def calc_beta(outputs, timeslots):
     """Find the likelihood maximizing Beta numerically."""
-    beta = -20 #Start with something small
-    distance = 32.0 #Fairly large interval, we actually want to cross the zero
+    beta = 20 #Start with something small
+    distance = -7.0 #Fairly large interval, we actually want to cross the zero
     
     risk_outputs = [None for i in range(len(timeslots))]
     beta_risk = [None for i in range(len(timeslots))]
@@ -74,11 +77,14 @@ def calc_beta(outputs, timeslots):
     
     if beta >= 200:
         raise FloatingPointError('Beta is diverging')
+    logger.info("Beta = " + str(beta))
     return beta, risk_outputs, beta_risk, part_func, weighted_avg
 
 def calc_sigma(outputs):
     """Standard deviation, just use numpy for it. need ALL results, from net.sim(inputs)"""
-    return outputs.std()
+    sigma = outputs.std()
+    logger.info("Sigma = " + str(sigma))
+    return sigma
 
 def get_risk_outputs(s, timeslots, outputs):
     """s corresponds to the index of an output in outputs"""
@@ -95,16 +101,6 @@ def total_error(beta, sigma):
     """E = ln(1 + exp(Delta - Beta*Sigma))."""
     return log(1 + exp(shift - beta*sigma))
 
-#@benchmark
 def derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """dE/d(Beta*Sigma) * d(Beta*Sigma)/dresult."""
     return derivative_error(beta, sigma)*derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)
-
-#This is a test of the functionality in this file
-if __name__ == '__main__':
-    seterr(all='raise')
-    
-    outputs = [[i*2] for i in range(4)]
-    timeslots = range(len(outputs))
-    #print(calc_beta(numpy.array(outputs), timeslots))
-    print(calc_beta(array(outputs), timeslots))
