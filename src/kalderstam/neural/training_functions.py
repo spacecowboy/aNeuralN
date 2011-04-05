@@ -50,7 +50,7 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
 
                 #Set errors on output nodes first
                 for node, gradient in zip(net.output_nodes, error_derivative(target, result)):
-                    gradientgrapher.debugplot(gradient)
+                    gradientgrapher.debugPlot(gradient)
                     node.error_gradient = gradient
                 
                 #Iterate over the nodes and correct the weights
@@ -89,7 +89,7 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
         if len(test_inputs > 0):
             test_results = net.sim(test_inputs)
             test_error = error_function(test_targets, test_results)/len(test_targets)
-            grapher.debugplot(test_error)
+            grapher.debugPlot(test_error)
             logger.debug("Test Error = " + str(test_error))
             if test_error <= stop_error_value:
                 break
@@ -181,7 +181,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 population[child_index].output_nodes.append(output)
         
         logger.info("Generation " + str(generation) + ", best so far: " + str(best_error))
-        grapher.debugplot(best_error)
+        grapher.debugPlot(best_error)
                 
     #finally, return the best network
     return best
