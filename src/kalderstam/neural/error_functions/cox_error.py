@@ -46,9 +46,10 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
 
 def get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots):
     result = 0
-    for s in timeslots:
+    for time_index in range(len(timeslots)):
+        s = timeslots[time_index]
         output = outputs[s]
-        risk_outputs[s] = get_risk_outputs(s, timeslots, outputs)
+        risk_outputs[s] = get_risk_outputs(time_index, timeslots, outputs)
         try:
             beta_risk[s] = exp(beta * risk_outputs[s])
         except FloatingPointError as e:
@@ -98,15 +99,12 @@ def calc_sigma(outputs):
     logger.info("Sigma = " + str(sigma))
     return sigma
 
-def get_risk_outputs(s, timeslots, outputs):
+def get_risk_outputs(time_index, timeslots, outputs):
     """s corresponds to the index of an output in outputs"""
     risk_outputs = []
-    in_risk = False
-    for index in timeslots:
-        if s == index:
-            in_risk = True #Will make sure that events that come after this are added to the risk group
-        if in_risk:
-            risk_outputs.append(outputs[index])
+    for index in range(time_index, len(timeslots)):
+        s = timeslots[index]
+        risk_outputs.append(outputs[s])
     return array(risk_outputs)
 
 def total_error(beta, sigma):

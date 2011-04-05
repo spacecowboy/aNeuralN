@@ -186,7 +186,7 @@ def test():
     plot_network_weights(net)
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
 
-    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 200, learning_rate = 20)
+    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 3, learning_rate = 20)
 
     #net = traingd_block(net, (P, T), (None, None), epochs = 50, learning_rate = 0.1, block_size = 20)
     #net = train_evolutionary(net, (P,T), (None, None), epochs = 500, random_range = 1)
@@ -237,10 +237,10 @@ if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO)
     glogger.setLoggingLevel(glogger.debug)
 
-    #cProfile.runctx("test()", globals(), locals(), "Profile.prof")
+    cProfile.runctx("test()", globals(), locals(), "Profile.prof")
 
-    #s = pstats.Stats("Profile.prof")
-    #s.strip_dirs().sort_stats("time").print_stats()
+    s = pstats.Stats("Profile.prof")
+    s.strip_dirs().sort_stats("time").print_stats()
 
-    test()
+    #test()
     plt.show()
