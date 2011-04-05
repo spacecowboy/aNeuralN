@@ -9,7 +9,7 @@ def read_data_file(filename):
     """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
     with open(filename, 'r') as f:
         inputs = [line.split() for line in f.readlines()]
-    
+
     return inputs
 
 def parse_file(filename, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
@@ -27,7 +27,7 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
     except TypeError:
         #targetcols is alreayd a list
         pass
-    
+
     if not inputcols:
         inputcols = range(len(inputs[0]))
         destroycols = []
@@ -39,9 +39,9 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
             destroycols.append(int(ignorecols)) #Only if it's an int
         except TypeError:
             destroycols.extend(ignorecols)
-            
+
         inputcols = numpy.delete(inputcols, destroycols, 0)
-        
+
     for line in range(len(inputs)):
         if len(targetcols) == 0:
             all_cols = inputs[line, inputcols]
@@ -55,28 +55,35 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
             except ValueError: #This row contains crap, get rid of it
                 ignorerows.append(line)
                 break #skip to next line
-    
+
     inputs = numpy.delete(inputs, ignorerows, 0)
-    
+
     targets = numpy.array(inputs[:, targetcols], dtype = 'float64')
     inputs = numpy.array(inputs[:, inputcols], dtype = 'float64')
-    
+
     if normalize:
-        #First we must determine which columns have real values in them
-        #Basically, we if it isn't a binary value by comparing to 0 and 1
-        for col in range(len(inputs[0])):
-            real = False
-            for value in inputs[:, col]:
-                if value != 0 and value != 1:
-                    real = True
-                    break #No point in continuing now that we know they're real
-            if real:
-                #Subtract the mean and divide by the standard deviation
-                inputs[:, col] = (inputs[:, col] - numpy.mean(inputs[:, col])) / numpy.std(inputs[:, col])
-    
+        inputs = normalizeArray(inputs)
+
     #Now divide the input into test and validation parts
-    
+
     return inputs, targets
+
+def normalizeArray(array):
+    '''Returns a new array, will not modify existing array.'''
+    inputs = numpy.copy(array)
+    #First we must determine which columns have real values in them
+    #Basically, we if it isn't a binary value by comparing to 0 and 1
+    for col in range(len(inputs[0])):
+        real = False
+        for value in inputs[:, col]:
+            if value != 0 and value != 1:
+                real = True
+                break #No point in continuing now that we know they're real
+        if real:
+            #Subtract the mean and divide by the standard deviation
+            inputs[:, col] = (inputs[:, col] - numpy.mean(inputs[:, col])) / numpy.std(inputs[:, col])
+
+    return inputs
 
 def get_validation_set(inputs, targets, validation_size = 0.2):
     if validation_size < 0 or validation_size > 1:
@@ -92,12 +99,12 @@ def get_validation_set(inputs, targets, validation_size = 0.2):
         else:
             validation_inputs.append(inputs[row])
             validation_targets.append(targets[row])
-    
+
     test_inputs = numpy.array(test_inputs, dtype = 'float64')
     test_targets = numpy.array(test_targets, dtype = 'float64')
     validation_inputs = numpy.array(validation_inputs, dtype = 'float64')
     validation_targets = numpy.array(validation_targets, dtype = 'float64')
-    
+
     return ((test_inputs, test_targets), (validation_inputs, validation_targets))
 
 def get_stratified_validation_set(inputs, targets, validation_size = 0.2):
@@ -130,7 +137,7 @@ def get_stratified_validation_set(inputs, targets, validation_size = 0.2):
     test_targets = numpy.array(test_targets, dtype = 'float64')
     validation_inputs = numpy.array(validation_inputs, dtype = 'float64')
     validation_targets = numpy.array(validation_targets, dtype = 'float64')
-    
+
     return ((test_inputs, test_targets), (validation_inputs, validation_targets))
 
 def save_committee(com, filename = None):
@@ -138,7 +145,7 @@ def save_committee(com, filename = None):
     if not filename:
         filename = "com_" + str(hash(com)) + ".anncom"
         filename = path.join(path.expanduser("~"), filename)
-    
+
     """Open a file to write to"""
     with open(filename, 'w') as f:
         net_number = 0
@@ -178,26 +185,26 @@ def save_committee(com, filename = None):
                 """End with empty line since it's nicer that way"""
                 f.write("\n")
     """And we're done!"""
-    
+
 def load_committee(filename):
     """Create the committee"""
     com = network.committee()
-    
+
     nodes = {}
     node_weights = {}
-    
+
     """Current node we're working on"""
     current_net = None
     current_node = None
     function = None
-    
+
     """Read file"""
     with open(filename, 'r') as f:
         """Parse row by row"""
         for line in f.readlines():
             """Skip empty lines"""
             if not re.search('^\s*$', line):
-                
+
                 """check if id for current_node"""
                 m = re.search('\<(net_\d+)\>', line)
                 if m:
@@ -207,19 +214,19 @@ def load_committee(filename):
                     nodes[current_net] = {}
                     node_weights[current_net] = {}
                     continue
-                
+
                 """check if id for current_node"""
                 m = re.search('\[(\w+_\d+)\]', line)
                 if m:
                     current_node = m.group(1)
                     continue
-                
+
                 """check activation_function name"""
                 m = re.search('activation_function\s*=\s*([\w\d]+)', line)
                 if m:
                     function = get_function(m.group(1))
                     continue
-                
+
                 """check bias"""
                 m = re.search('bias\s*=\s*([-\d\.]*)', line)
                 if m:
@@ -231,7 +238,7 @@ def load_committee(filename):
                     nodes[current_net][current_node] = network.node(active = function, bias = value)
                     node_weights[current_net][current_node] = {}
                     continue
-                
+
                 """check weights"""
                 m = re.search('(\w+_\d+):([-\d\.]*)', line)
                 if m:
@@ -245,7 +252,7 @@ def load_committee(filename):
                     if back_node.startswith('input') and back_node not in nodes:
                         nodes[current_net][back_node] = int(back_node.strip('input_'))
                     continue
-    
+
     """Now iterate over the hashes and connect the nodes for real"""
     for net in com.nets:
         for node_name, node in nodes[net].items():
@@ -260,7 +267,7 @@ def load_committee(filename):
                     net.hidden_nodes.append(nodes[net][node_name])
                 else:
                     net.output_nodes.append(nodes[net][node_name])
-            
+
     """Done! return committee!"""
     return com
 
@@ -269,7 +276,7 @@ def save_network(net, filename = None):
     if not filename:
         filename = "net_" + str(hash(net)) + ".ann"
         filename = path.join(path.expanduser("~"), filename)
-    
+
     """Open a file to write to"""
     with open(filename, 'w') as f:
         for node in net.get_all_nodes():
@@ -305,13 +312,13 @@ def save_network(net, filename = None):
             """End with empty line since it's nicer that way"""
             f.write("\n")
     """And we're done!"""
-    
+
 def load_network(filename):
     """Create a network"""
     net = network.network()
     nodes = {}
     node_weights = {}
-    
+
     """Read file"""
     with open(filename, 'r') as f:
         """Current node we're working on"""
@@ -321,19 +328,19 @@ def load_network(filename):
         for line in f.readlines():
             """Skip empty lines"""
             if not re.search('^\s*$', line):
-                
+
                 """check if id for current_node"""
                 m = re.search('\[(\w+_\d+)\]', line)
                 if m:
                     current_node = m.group(1)
                     continue
-                
+
                 """check activation_function name"""
                 m = re.search('activation_function\s*=\s*([\w\d]+)', line)
                 if m:
                     function = get_function(m.group(1))
                     continue
-                
+
                 """check bias"""
                 m = re.search('bias\s*=\s*([-\d\.]*)', line)
                 if m:
@@ -345,7 +352,7 @@ def load_network(filename):
                     nodes[current_node] = network.node(active = function, bias = value)
                     node_weights[current_node] = {}
                     continue
-                
+
                 """check weights"""
                 m = re.search('(\w+_\d+):([-\d\.]*)', line)
                 if m:
@@ -359,7 +366,7 @@ def load_network(filename):
                     if back_node.startswith('input') and back_node not in nodes:
                         nodes[back_node] = int(back_node.strip('input_'))
                     continue
-    
+
     """Now iterate over the hashes and connect the nodes for real"""
     for node_name, node in nodes.items():
         """Not for inputs"""
@@ -373,52 +380,52 @@ def load_network(filename):
                 net.hidden_nodes.append(nodes[node_name])
             else:
                 net.output_nodes.append(nodes[node_name])
-            
+
     """Done! return net!"""
     return net
-                    
-    
-if __name__ == '__main__':   
+
+
+if __name__ == '__main__':
     print("Testing network saving/loading")
-    
+
     from kalderstam.neural.network import build_feedforward, build_feedforward_committee
     net = build_feedforward()
-     
+
     results1 = net.update([1, 2])
-    
+
     print results1
-    
+
     filename = path.join(path.expanduser("~"), "test.ann")
     print "saving and reloading"
     save_network(net, filename)
-    
+
     net = load_network(filename)
     results2 = net.update([1, 2])
     print results2
-    
+
     assert(abs(results1[0] - results2[0]) < 0.0001) #float doesn't handle absolutes so well
     print("Good, now testing committee...")
-    
+
     com = build_feedforward_committee()
     results1 = com.update([1, 2])
     print results1
-    
+
     filename = path.join(path.expanduser("~"), "test.anncom")
     print "saving and reloading"
-    
+
     save_committee(com, filename)
-    
+
     com = load_committee(filename)
     results2 = com.update([1, 2])
     print results2
-    
+
     assert(abs(results1[0] - results2[0]) < 0.0001) #float doesn't handle absolutes so well
-    
+
     print("Results are good. Testing input parsing....")
     filename = path.join(path.expanduser("~"), "ann_input_data_test_file.txt")
     print("First, split the file into a test set(80%) and validation set(20%)...")
-    inputs, targets = parse_file(filename, targetcols = 5, ignorecols = [0,1,4], ignorerows = [])
-    test, validation = get_validation_set(inputs, targets, validation_size=0.5)
+    inputs, targets = parse_file(filename, targetcols = 5, ignorecols = [0, 1, 4], ignorerows = [])
+    test, validation = get_validation_set(inputs, targets, validation_size = 0.5)
     print(len(test[0]))
     print(len(test[1]))
     print(len(validation[0]))
@@ -430,7 +437,7 @@ if __name__ == '__main__':
     assert(len(validation[0]) > 0)
     assert(len(validation[1]) > 0)
     print("Went well, now expecting a zero size validation set...")
-    test, validation = get_validation_set(inputs, targets, validation_size=0)
+    test, validation = get_validation_set(inputs, targets, validation_size = 0)
     print(len(test[0]))
     print(len(test[1]))
     print(len(validation[0]))
@@ -442,7 +449,7 @@ if __name__ == '__main__':
     assert(len(validation[0]) == 0)
     assert(len(validation[1]) == 0)
     print("As expected. Now a 100% validation set...")
-    test, validation = get_validation_set(inputs, targets, validation_size=1)
+    test, validation = get_validation_set(inputs, targets, validation_size = 1)
     print(len(test[0]))
     print(len(test[1]))
     print(len(validation[0]))
@@ -466,12 +473,12 @@ if __name__ == '__main__':
     assert(len(validation[0]) > 0)
     assert(len(validation[1]) > 0)
     print("Test with no targets, the no inputs")
-    inputs, targets = parse_file(filename, ignorecols = [0,1,4], ignorerows = [])
+    inputs, targets = parse_file(filename, ignorecols = [0, 1, 4], ignorerows = [])
     assert((targets.size) == 0)
     assert((inputs.size) > 0)
-    inputs, targets = parse_file(filename, targetcols = 3, ignorecols = [0,1, 2,4, 5, 6,7 ,8, 9], ignorerows = [])
+    inputs, targets = parse_file(filename, targetcols = 3, ignorecols = [0, 1, 2, 4, 5, 6, 7 , 8, 9], ignorerows = [])
     assert((targets.size) > 0)
     assert((inputs.size) == 0)
-    
+
     print("All tests completed successfully!")
-    
+
