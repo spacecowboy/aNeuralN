@@ -1,7 +1,7 @@
 from numpy import log, exp, array
 import logging
 import numpy as np
-import kalderstam.util.graphlogger as glogger
+#import kalderstam.util.graphlogger as glogger
 
 logger = logging.getLogger('kalderstam.neural.error_functions')
 
@@ -12,20 +12,20 @@ shift = 4 #Also known as Delta, it's the handwaving variable.
 def derivative_error(beta, sigma):
     """dE/d(Beta*Sigma)"""
     de = -(exp(shift - beta * sigma)) / (1 + exp(shift - beta * sigma))
-    glogger.debugPlot('Error derivative', de, style = 'r.')
+    #glogger.debugPlot('Error derivative', de, style = 'r.')
     return de
 
 def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """Derivative of (Beta*Sigma) with respect to y(i)"""
     bs = derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots) * sigma + beta * derivative_sigma(sigma, output_index, outputs)
-    glogger.debugPlot('BetaSigma derivative', bs, style = 'g+')
+    #glogger.debugPlot('BetaSigma derivative', bs, style = 'g+')
     return bs
 
 def derivative_sigma(sigma, output_index, outputs):
     """Eq. 12, derivative of Sigma with respect to y(i)"""
     output = outputs[output_index]
     ds = (output - outputs.mean()) / (len(outputs) * sigma)
-    glogger.debugPlot('Sigma derivative', ds, style = 'b+')
+    #glogger.debugPlot('Sigma derivative', ds, style = 'b+')
     return ds
 
 def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
@@ -34,14 +34,14 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
     y_force = 0
     beta_out = exp(beta * output)
     for s in timeslots:
-        glogger.debugPlot('Partition function', part_func[s], style = 'b+')
+        #glogger.debugPlot('Partition function', part_func[s], style = 'b+')
         kronicker = 0
         if s == output_index:
             kronicker = 1
         y_force += kronicker - beta_out / part_func[s] * (1 + beta * (output - weighted_avg[s]))
 
     res = -y_force / beta_force
-    glogger.debugPlot('Beta derivative', res, style = 'r+')
+    #glogger.debugPlot('Beta derivative', res, style = 'r+')
     return res
 
 def get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots):
