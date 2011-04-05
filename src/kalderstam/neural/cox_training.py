@@ -5,6 +5,8 @@ import logging
 from numpy import exp
 import numpy as np
 import kalderstam.util.graphlogger as glogger
+from kalderstam.neural.training_functions import traingd_block
+from kalderstam.util.filehandling import normalizeArray
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
 
@@ -55,7 +57,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
             #beta_force += -(beta_risk[s]*risk_outputs[s]**2).sum()/part_func[s] + weighted_avg[s]**2
         beta_force = sum([-(beta_risk[s] * risk_outputs[s] ** 2).sum() / part_func[s] + weighted_avg[s] ** 2 for s in timeslots])
         beta_force *= -1
-        glogger.debugPlot('BetaForce vs Epochs', beta, style = 'bs')
+        #glogger.debugPlot('BetaForce vs Epochs', beta, style = 'bs')
 
         sigma = calc_sigma(outputs)
         glogger.debugPlot('Sigma vs Epochs', sigma, style = 'bs')
@@ -75,7 +77,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
 
             #Set errors on output nodes first
             for node, gradient in zip(net.output_nodes, derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)):
-                glogger.debugPlot('Gradient', gradient, style = 'b.')
+                #glogger.debugPlot('Gradient', gradient, style = 'b.')
                 node.error_gradient = gradient
 
             #Iterate over the nodes and correct the weights
@@ -125,16 +127,6 @@ def test():
 
     #numpy.seterr(all = 'raise')
 
-    #the function the network should try and approximate
-    def sickness_sim(x):
-        return 6 - (x[0] * 0.25 + x[1] * 0.50 + x[2] * 0.75 + x[3])
-
-    #the values the network have to go on
-    def sickness_with_noise(x, noise_level = 1):
-        actual_values = sickness_sim(x)
-        #Add some noise
-        return actual_values + noise_level * uniform(-1, 1)
-
     def generate_timeslots(P, T):
         timeslots = numpy.array([], dtype = int)
         for x_index in range(len(P)):
@@ -158,15 +150,18 @@ def test():
 
     p = 4 #number of input covariates
 
-    #net = build_feedforward(p, 4, 1, output_function = linear())
-    net = build_feedforward(p, 2, 1, hidden_function = linear(), output_function = linear())
+    net = build_feedforward(p, 8, 1, output_function = linear(1))
+    #net = build_feedforward(p, 8, 1)
+    #net = build_feedforward(p, 1, 1, hidden_function = linear(), output_function = linear())
     #save_network(net, '/home/gibson/jonask/test_net.ann')
     #net = load_network('/home/gibson/jonask/test_net.ann')
 
     #com = build_feedforward_committee(size = 4, input_number = p, hidden_number = 6, output_number = 1)
 
-    #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_no_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
-    P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_with_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+    #P, T = parse_file('/home/gibson/jonask/my_tweaked_fake_data_with_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+    P, T = parse_file('/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+    #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_no_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+    #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_with_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
     #P = P[:100,:]
@@ -191,10 +186,13 @@ def test():
     plot_network_weights(net)
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
 
-    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 200, learning_rate = 2)
-    #net = traingd_block(net, (P,T), (None, None), epochs = 25, learning_rate = 1, block_size = 0)
+    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 200, learning_rate = 20)
+
+    #net = traingd_block(net, (P, T), (None, None), epochs = 50, learning_rate = 0.1, block_size = 20)
     #net = train_evolutionary(net, (P,T), (None, None), epochs = 500, random_range = 1)
     outputs = net.sim(P)
+    #if normalized, restore it
+    #outputs[:, 0] = numpy.std(T) * outputs[:, 0] + numpy.mean(T)
 
     #train_committee(com, traingd_block, P, T, epochs = 100, block_size = 10)
     #train_committee(com, train_cox, P, T, timeslots, epochs = 10, learning_rate = 2)
@@ -216,7 +214,10 @@ def test():
     plt.title('Scatter plot')
     plt.xlabel('Survival time (with noise) years')
     plt.ylabel('Network output')
-    plt.scatter(T.flatten(), outputs.flatten(), c = 'g', marker = 's')
+    try:
+        plt.scatter(T.flatten(), outputs.flatten(), c = 'g', marker = 's')
+    except:
+        pass
 
 #This is a test of the functionality in this file
 if __name__ == '__main__':
