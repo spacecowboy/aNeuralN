@@ -7,8 +7,9 @@ import numpy as np
 
 loggers = {}
 nothing = 0
-info = 1
-debug = 2
+error = 1
+info = 2
+debug = 3
 logging_level = nothing
 
 def getGraphLogger(name = None, style = 'gs'):
