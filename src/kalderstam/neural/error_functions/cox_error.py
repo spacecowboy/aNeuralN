@@ -21,6 +21,8 @@ def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, outpu
     """Derivative of (Beta*Sigma) with respect to y(i)"""
     bs = ccox.derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots) * sigma + beta * derivative_sigma(sigma, output_index, outputs)
     #glogger.debugPlot('BetaSigma derivative', bs, style = 'g+')
+    if np.isnan(bs) or np.isinf(bs):
+        raise FloatingPointError('Derivative BetaSigma is Nan or Inf: ' + str(bs))
     return bs
 
 def derivative_sigma(sigma, output_index, outputs):
