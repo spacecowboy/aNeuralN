@@ -41,7 +41,8 @@ def get_slope(double beta, risk_outputs, beta_risk, np.ndarray[np.float64_t, ndi
 
     return result
     
-cdef get_risk_outputs(int time_index, timeslots, outputs):
+#@cython.profile(False)
+cdef np.ndarray[np.float64_t, ndim=1] get_risk_outputs(int time_index, timeslots, outputs):
     """s corresponds to the index of an output in outputs"""
     cdef int s, index, total_length = 0
     total_length = timeslots.shape[0]
