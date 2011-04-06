@@ -42,9 +42,8 @@ def get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, t
     
 cdef get_risk_outputs(int time_index, timeslots, outputs):
     """s corresponds to the index of an output in outputs"""
-    #cdef Py_ssize_t i, j
     cdef int s, index, total_length = 0
-    total_length = len(timeslots)
+    total_length = timeslots.shape[0]
     risk_outputs = np.zeros(total_length - time_index, dtype=np.float)
     for index in range(time_index, total_length):
         s = timeslots[index]
