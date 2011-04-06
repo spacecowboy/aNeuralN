@@ -4,6 +4,7 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+@cython.boundscheck(False) # turn of bounds-checking for entire function
 def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """Eq. 14, derivative of Beta with respect to y(i)"""
     cdef double output, y_force, beta_out, res
@@ -21,7 +22,8 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
     res = -y_force / beta_force
     #glogger.debugPlot('Beta derivative', res, style = 'r+')
     return res
-    
+
+@cython.boundscheck(False) # turn of bounds-checking for entire function    
 def get_slope(double beta, risk_outputs, beta_risk, np.ndarray[np.float64_t, ndim=1] part_func, np.ndarray[np.float64_t, ndim=1] weighted_avg, np.ndarray[np.float64_t, ndim=2] outputs, np.ndarray[np.int_t, ndim=1] timeslots):
     cdef Py_ssize_t time_index, s
     cdef np.float64_t output, result = 0
@@ -41,7 +43,7 @@ def get_slope(double beta, risk_outputs, beta_risk, np.ndarray[np.float64_t, ndi
 
     return result
     
-#@cython.profile(False)
+@cython.boundscheck(False) # turn of bounds-checking for entire function
 cdef np.ndarray[np.float64_t, ndim=1] get_risk_outputs(int time_index, timeslots, outputs):
     """s corresponds to the index of an output in outputs"""
     cdef int s, index, total_length = 0
