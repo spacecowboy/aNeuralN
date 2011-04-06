@@ -27,7 +27,7 @@ def write_file(filename, x, T):
             F.write(str(Tval) + "\n")
 
 #the function the network should try and approximate
-def sickness_sim(x_array):
+def nonlinear_target(x_array):
     T = np.zeros(len(x_array))
     for i in range(len(x_array)):
         x = x_array[i]
@@ -36,5 +36,16 @@ def sickness_sim(x_array):
         T[i] = 10 - (x[0] + x[1] + x[2] + x[3]) + 5 * (x[0] * x[3])
     return T
 
+#the function the network should try and approximate
+def linear_target(x_array):
+    T = np.zeros(len(x_array))
+    for i in range(len(x_array)):
+        x = x_array[i]
+        #T[i] = -(x[0] + x[1] + x[2] + x[3])
+        #T[i] = 5 * (x[0] * x[3])
+        T[i] = 6 - (x[0] + x[1] + x[2] + x[3])
+    return T
+
 if __name__ == "__main__":
-    make_input('/home/gibson/jonask/tweaked_fake_data_no_noise.txt', '/home/gibson/jonask/tweaked_fake_data_with_noise.txt', 1.5, sickness_sim, 500)
+    name = 'nonlineartarget'
+    make_input('/home/gibson/jonask/' + name + '_no_noise.txt', '/home/gibson/jonask/' + name + '_with_noise.txt', 1.5, nonlinear_target, 500)
