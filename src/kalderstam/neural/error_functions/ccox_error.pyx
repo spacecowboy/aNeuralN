@@ -22,11 +22,12 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
     #glogger.debugPlot('Beta derivative', res, style = 'r+')
     return res
     
-def get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots):
-    result = 0
-    for time_index in range(len(timeslots)):
+def get_slope(double beta, risk_outputs, beta_risk, np.ndarray[np.float64_t, ndim=1] part_func, np.ndarray[np.float64_t, ndim=1] weighted_avg, np.ndarray[np.float64_t, ndim=2] outputs, np.ndarray[np.int_t, ndim=1] timeslots):
+    cdef Py_ssize_t time_index, s
+    cdef np.float64_t output, result = 0
+    for time_index in range(timeslots.shape[0]):
         s = timeslots[time_index]
-        output = outputs[s]
+        output = outputs[s, 0]
         risk_outputs[s] = get_risk_outputs(time_index, timeslots, outputs)
         try:
             beta_risk[s] = np.exp(beta * risk_outputs[s])
@@ -47,5 +48,5 @@ cdef get_risk_outputs(int time_index, timeslots, outputs):
     risk_outputs = np.zeros(total_length - time_index, dtype=np.float)
     for index in range(time_index, total_length):
         s = timeslots[index]
-        risk_outputs[index - time_index] = outputs[s]
+        risk_outputs[index - time_index] = outputs[s, 0]
     return risk_outputs
