@@ -6,9 +6,9 @@ import numpy
 import matplotlib.pyplot as plt
 from kalderstam.neural.activation_functions import linear
 from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
-from kalderstam.neural.training_functions import traingd_block
 import kalderstam.util.graphlogger as glogger
 import logging
+from kalderstam.neural.cox_training import train_cox
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
 
@@ -38,16 +38,10 @@ def test(net, filename, epochs):
     #P = P[:100,:]
     #T = T[:100, :]
 
-    #timeslots = generate_timeslots(P, T)
-
-    #outputs = net.sim(P)
-
-    #beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
-    #sigma = calc_sigma(outputs)
+    timeslots = generate_timeslots(P, T)
 
     try:
-        #net = train_cox(net, (P, T), (None, None), timeslots, epochs = 500, learning_rate = 5)
-        net = traingd_block(net, (P, T), (None, None), epochs = epochs, learning_rate = 0.1, block_size = 0)
+        net = train_cox(net, (P, T), (None, None), timeslots, epochs, learning_rate = 5)
     except FloatingPointError:
         print('Aaawww....')
     outputs = net.sim(P)
@@ -60,6 +54,7 @@ def test(net, filename, epochs):
     plt.ylabel('Network output')
     try:
         plt.scatter(T.flatten(), outputs.flatten(), c = 'g', marker = 's')
+        plt.plot(T.flatten(), T.flatten(), 'r-')
     except:
         pass
 
@@ -69,12 +64,12 @@ if __name__ == "__main__":
 
     p = 4 #number of input covariates
     net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
-    #net = build_feedforward(p, 8, 1, output_function = linear(1))
+    #net = build_feedforward(p, 10, 1, output_function = linear())
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
     while True:
-        test(net, lineartarget_nn, 1)
+        test(net, lineartarget_nn, 20)
         plt.show()

@@ -53,6 +53,7 @@ def test(net, filename, epochs):
     plt.ylabel('Network output')
     try:
         plt.scatter(T.flatten(), outputs.flatten(), c = 'g', marker = 's')
+        plt.plot(T.flatten(), T.flatten(), 'r-')
     except:
         pass
 
@@ -62,12 +63,12 @@ if __name__ == "__main__":
 
     p = 4 #number of input covariates
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
-    net = build_feedforward(p, 2, 1, output_function = linear())
+    net = build_feedforward(p, 10, 1, output_function = linear())
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
     while True:
-        test(net, lineartarget_nn, 20)
+        test(net, nonlineartarget_wn, 500)
         plt.show()
