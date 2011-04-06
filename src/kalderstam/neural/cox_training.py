@@ -62,6 +62,8 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
         sigma = calc_sigma(outputs)
         glogger.debugPlot('Sigma vs Epochs', sigma, style = 'bs')
 
+        glogger.debugPlot('Sigma * Beta vs Epochs', beta * sigma, style = 'gs')
+
         #Set corrections to 0 on all nodes first
         for node in net.get_all_nodes():
             node.weight_corrections = {}
@@ -188,7 +190,10 @@ def test():
     plot_network_weights(net)
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
 
-    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 100, learning_rate = 10)
+    try:
+        net = train_cox(net, (P, T), (None, None), timeslots, epochs = 500, learning_rate = 5)
+    except FloatingPointError:
+        print('Aaawww....')
 
     #net = traingd_block(net, (P, T), (None, None), epochs = 50, learning_rate = 0.1, block_size = 20)
     #net = train_evolutionary(net, (P,T), (None, None), epochs = 500, random_range = 1)
