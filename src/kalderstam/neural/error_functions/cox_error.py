@@ -2,6 +2,8 @@ from numpy import log, exp, array
 import logging
 import numpy as np
 #import kalderstam.util.graphlogger as glogger
+#cython file
+import ccox_error as ccox
 
 logger = logging.getLogger('kalderstam.neural.error_functions')
 
@@ -17,7 +19,7 @@ def derivative_error(beta, sigma):
 
 def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
     """Derivative of (Beta*Sigma) with respect to y(i)"""
-    bs = derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots) * sigma + beta * derivative_sigma(sigma, output_index, outputs)
+    bs = ccox.derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots) * sigma + beta * derivative_sigma(sigma, output_index, outputs)
     #glogger.debugPlot('BetaSigma derivative', bs, style = 'g+')
     return bs
 
@@ -72,7 +74,7 @@ def calc_beta(outputs, timeslots):
     part_func = np.zeros(len(timeslots))
     weighted_avg = np.zeros(len(timeslots))
 
-    slope = get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots)
+    slope = ccox.get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots)
 
     not_started = True
 
@@ -82,7 +84,7 @@ def calc_beta(outputs, timeslots):
         not_started = False
         prev_slope = slope
         beta += distance
-        slope = get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots)
+        slope = ccox.get_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots)
         if slope * prev_slope < 0:
             #Different signs, we have passed the zero point, change directions and half the distance
             distance /= -2
@@ -101,11 +103,12 @@ def calc_sigma(outputs):
 
 def get_risk_outputs(time_index, timeslots, outputs):
     """s corresponds to the index of an output in outputs"""
-    risk_outputs = []
-    for index in range(time_index, len(timeslots)):
+    total_length = len(timeslots)
+    risk_outputs = np.zeros(total_length - time_index, dtype = float)
+    for index in range(time_index, total_length):
         s = timeslots[index]
-        risk_outputs.append(outputs[s])
-    return array(risk_outputs)
+        risk_outputs[index - time_index] = outputs[s]
+    return risk_outputs
 
 def total_error(beta, sigma):
     """E = ln(1 + exp(Delta - Beta*Sigma))."""
