@@ -158,12 +158,14 @@ def test():
 
     #com = build_feedforward_committee(size = 4, input_number = p, hidden_number = 6, output_number = 1)
 
-    #P, T = parse_file('/home/gibson/jonask/my_tweaked_fake_data_with_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
-    P, T = parse_file('/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
-    #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_no_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
-    #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_with_noise.txt', targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
-    #P, T = parse_file('/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
-    #P, T = parse_file('/home/gibson/jonask/fake_survival_data_very_small.txt', targetcols = [4], inputcols = [0,1,2,3], ignorecols = [], ignorerows = [], normalize = False)
+    filename = '/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt'
+    #filename = '/home/gibson/jonask/my_tweaked_fake_data_with_noise.txt'
+    #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_no_noise.txt'
+    #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_with_noise.txt'
+    #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt'
+    #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_no_noise.txt'
+
+    P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
     #P = P[:100,:]
     #T = T[:100, :]
 
@@ -186,7 +188,7 @@ def test():
     plot_network_weights(net)
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
 
-    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 3, learning_rate = 20)
+    net = train_cox(net, (P, T), (None, None), timeslots, epochs = 100, learning_rate = 10)
 
     #net = traingd_block(net, (P, T), (None, None), epochs = 50, learning_rate = 0.1, block_size = 20)
     #net = train_evolutionary(net, (P,T), (None, None), epochs = 500, random_range = 1)
@@ -211,8 +213,8 @@ def test():
     #print outputs
 
     plt.figure()
-    plt.title('Scatter plot')
-    plt.xlabel('Survival time (with noise) years')
+    plt.title('Scatter plot\n' + filename)
+    plt.xlabel('Survival time years')
     plt.ylabel('Network output')
     try:
         plt.scatter(T.flatten(), outputs.flatten(), c = 'g', marker = 's')
@@ -237,10 +239,10 @@ if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO)
     glogger.setLoggingLevel(glogger.debug)
 
-    cProfile.runctx("test()", globals(), locals(), "Profile.prof")
+    #cProfile.runctx("test()", globals(), locals(), "Profile.prof")
 
-    s = pstats.Stats("Profile.prof")
-    s.strip_dirs().sort_stats("time").print_stats()
+    #s = pstats.Stats("Profile.prof")
+    #s.strip_dirs().sort_stats("time").print_stats()
 
-    #test()
+    test()
     plt.show()
