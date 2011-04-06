@@ -75,23 +75,15 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
                     #Finally, correct the bias
                     if "bias" not in node.weight_corrections:
                         node.weight_corrections["bias"] = []
-                    node.weight_corrections["bias"].append(node.error_gradient * node.bias)
+                    node.weight_corrections["bias"].append(node.error_gradient)
 
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
                 #Calculate weight update
                 for back_node, back_weight in node.weights.items():
-                    corr = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
-                    if numpy.isnan(corr):
-                        pass
-                    else:
-                        node.weights[back_node] = corr
+                    node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
                 #Don't forget bias
-                corr = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
-                if numpy.isnan(corr):
-                    pass
-                else:
-                    node.bias = corr
+                node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
 
         #Calculate error of the network and print
 

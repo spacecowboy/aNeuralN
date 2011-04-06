@@ -103,7 +103,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
                 #Finally, correct the bias
                 if "bias" not in node.weight_corrections:
                     node.weight_corrections["bias"] = []
-                node.weight_corrections["bias"].append(node.error_gradient * node.bias)
+                node.weight_corrections["bias"].append(node.error_gradient)
 
         #Iterate over the nodes and correct the weights
         for node in net.output_nodes + net.hidden_nodes:
