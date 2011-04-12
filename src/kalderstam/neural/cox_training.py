@@ -65,6 +65,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
         glogger.debugPlot('Sigma vs Epochs', sigma, style = 'bs')
 
         glogger.debugPlot('Sigma * Beta vs Epochs', beta * sigma, style = 'gs')
+        logger.info('Beta*Sigma = ' + str(sigma * beta))
 
         #Set corrections to 0 on all nodes first
         for node in net.get_all_nodes():

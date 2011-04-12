@@ -93,13 +93,13 @@ def calc_beta(outputs, timeslots, risk_groups):
 
     if abs(beta) >= 200:
         raise FloatingPointError('Beta is diverging')
-    logger.info("Beta = " + str(beta))
+    logger.debug("Beta = " + str(beta))
     return beta, beta_risk, part_func, weighted_avg
 
 def calc_sigma(outputs):
     """Standard deviation, just use numpy for it. need ALL results, from net.sim(inputs)"""
     sigma = outputs.std()
-    logger.info("Sigma = " + str(sigma))
+    logger.debug("Sigma = " + str(sigma))
     return sigma
 
 def get_risk_outputs(time_index, timeslots, outputs):

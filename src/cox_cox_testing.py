@@ -79,12 +79,14 @@ def test(net, filename, epochs, learning_rate):
     timeslots_target = generate_timeslots(T)
     timeslots_network = generate_timeslots(outputs)
 
-    plt.figure()
-    plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(learning_rate))
-    plt.xlabel('Target timeslots')
-    plt.ylabel('Network timeslots')
-    plt.scatter(timeslots_target, timeslots_network, c = 'g', marker = 's')
-    plt.plot(timeslots_target, timeslots_target, 'r-')
+#    plt.figure()
+#    plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(learning_rate))
+#    plt.xlabel('Target timeslots')
+#    plt.ylabel('Network timeslots')
+#    plt.scatter(timeslots_target, timeslots_network, c = 'g', marker = 's')
+#    plt.plot(timeslots_target, timeslots_target, 'r-')
+
+    return net
 
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
@@ -98,7 +100,19 @@ if __name__ == "__main__":
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    #while True:
-    test(net, lineartarget_nn, 2, 0.1)
 
+    net = test(net, lineartarget_nn, 600, 0.1)
+
+    P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+
+    outputs = net.sim(P)
+    timeslots_target = generate_timeslots(T)
+    timeslots_network = generate_timeslots(outputs)
+
+    plt.figure()
+    plt.title('Scatter between index ordering, epochs:rate | ')
+    plt.xlabel('Target timeslots')
+    plt.ylabel('Network timeslots')
+    plt.scatter(timeslots_target, timeslots_network, c = 'g', marker = 's')
+    plt.plot(timeslots_target, timeslots_target, 'r-')
     plt.show()
