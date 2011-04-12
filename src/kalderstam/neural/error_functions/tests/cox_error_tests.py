@@ -40,24 +40,6 @@ class Test(unittest.TestCase):
                 else:
                     prev = i
 
-    def testTemp(self):
-        outputs, timeslots = self.generateRandomTestData(2000)
-        benchmark(self.temp1)(outputs, timeslots)
-        benchmark(self.temp2)(outputs, timeslots)
-        benchmark(self.temp3)(outputs, timeslots)
-        assert() #To view print outs
-
-    def temp1(self, outputs, timeslots):
-        risk_groups = get_risk_groups(timeslots)
-        for s in range(len(timeslots)):
-            risk_outputs = outputs[risk_groups[s], 0]
-    def temp2(self, outputs, timeslots):
-        for time_index in range(len(timeslots)):
-            a = pyget_risk_outputs(time_index, timeslots, outputs)
-    def temp3(self, outputs, timeslots):
-        for time_index in range(len(timeslots)):
-            a = cget_risk_outputs(time_index, timeslots, outputs)
-
     def testCythonDerivative_beta(self):
         """Make sure the cython code returns the same values as python code."""
         outputs, timeslots = self.generateRandomTestData(100)
