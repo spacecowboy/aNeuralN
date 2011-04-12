@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
         benchmark(self.temp1)(outputs, timeslots)
         benchmark(self.temp2)(outputs, timeslots)
         benchmark(self.temp3)(outputs, timeslots)
-        assert()
+        assert() #To view print outs
 
     def temp1(self, outputs, timeslots):
         risk_groups = get_risk_groups(timeslots)
@@ -96,9 +96,9 @@ class Test(unittest.TestCase):
 
         risk_groups = get_risk_groups(timeslots)
 
-        pyslope = benchmark(pyget_slope)(beta, risk_groups, pybeta_risk, pypart_func, pyweighted_avg, outputs, timeslots)
-        cslope = benchmark(cget_slope)(beta, crisk_outputs, cbeta_risk, cpart_func, cweighted_avg, outputs, timeslots)
-        assert()
+        pyslope = pyget_slope(beta, risk_groups, pybeta_risk, pypart_func, pyweighted_avg, outputs, timeslots)
+        cslope = cget_slope(beta, crisk_outputs, cbeta_risk, cpart_func, cweighted_avg, outputs, timeslots)
+
         #Check equality between all returned values
         #print(pyslope, pyslope.__class__)
         #print(cslope, cslope.__class__)
