@@ -9,6 +9,7 @@ from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
 from kalderstam.neural.training_functions import traingd_block
 import kalderstam.util.graphlogger as glogger
 import logging
+from kalderstam.util.numpyhelp import indexOf
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
 

@@ -66,7 +66,7 @@ def get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, ti
 
     return result
 
-def calc_beta(outputs, timeslots):
+def calc_beta(outputs, timeslots, risk_groups):
     """Find the likelihood maximizing Beta numerically."""
     beta = 60 #Start with something small
     distance = -7.0 #Fairly large interval, we actually want to cross the zero
@@ -74,8 +74,6 @@ def calc_beta(outputs, timeslots):
     beta_risk = [None for i in range(len(timeslots))]
     part_func = np.zeros(len(timeslots))
     weighted_avg = np.zeros(len(timeslots))
-
-    risk_groups = get_risk_groups(timeslots)
 
     slope = get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
 
@@ -96,7 +94,7 @@ def calc_beta(outputs, timeslots):
     if abs(beta) >= 200:
         raise FloatingPointError('Beta is diverging')
     logger.info("Beta = " + str(beta))
-    return beta, risk_groups, beta_risk, part_func, weighted_avg
+    return beta, beta_risk, part_func, weighted_avg
 
 def calc_sigma(outputs):
     """Standard deviation, just use numpy for it. need ALL results, from net.sim(inputs)"""

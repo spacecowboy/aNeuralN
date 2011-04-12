@@ -1,5 +1,5 @@
 from kalderstam.neural.error_functions.cox_error import derivative, calc_beta, \
-    calc_sigma, get_risk_outputs, total_error
+    calc_sigma, get_risk_outputs, total_error, get_risk_groups
 from kalderstam.util.decorators import benchmark
 import logging
 from numpy import exp
@@ -27,6 +27,8 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
     np.seterr(all = 'raise') #I want errors!
     np.seterr(under = 'warn') #Except for underflows, just equate them to zero...
     inputs = test_inputs
+    outputs = net.sim(inputs)
+    risk_groups = get_risk_groups(timeslots)
     for epoch in range(epochs):
         logger.info("Epoch " + str(epoch))
         outputs = net.sim(inputs)
@@ -37,7 +39,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
         #    break
 
         try:
-            beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
+            beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
             glogger.debugPlot('Beta vs Epochs', beta, style = 'bs')
         except FloatingPointError as e:
             print(str(e))
@@ -55,7 +57,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
             #part_func[s] = beta_risk[s].sum()
             #weighted_avg[s] = (beta_risk[s]*risk_outputs[s]).sum()/part_func[s]
             #beta_force += -(beta_risk[s]*risk_outputs[s]**2).sum()/part_func[s] + weighted_avg[s]**2
-        beta_force = sum([-(beta_risk[s] * risk_outputs[s] ** 2).sum() / part_func[s] + weighted_avg[s] ** 2 for s in timeslots])
+        beta_force = sum([-np.sum(beta_risk[s] * outputs[risk_groups[s]] ** 2) / part_func[s] + weighted_avg[s] ** 2 for s in timeslots])
         beta_force *= -1
         #glogger.debugPlot('BetaForce vs Epochs', beta, style = 'bs')
 
@@ -191,7 +193,7 @@ def test():
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
 
     try:
-        net = train_cox(net, (P, T), (None, None), timeslots, epochs = 500, learning_rate = 5)
+        net = train_cox(net, (P, T), (None, None), timeslots, epochs = 10, learning_rate = 5)
     except FloatingPointError:
         print('Aaawww....')
 
@@ -244,10 +246,10 @@ if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO)
     glogger.setLoggingLevel(glogger.debug)
 
-    #cProfile.runctx("test()", globals(), locals(), "Profile.prof")
+    cProfile.runctx("test()", globals(), locals(), "Profile.prof")
 
-    #s = pstats.Stats("Profile.prof")
-    #s.strip_dirs().sort_stats("time").print_stats()
+    s = pstats.Stats("Profile.prof")
+    s.strip_dirs().sort_stats("time").print_stats()
 
-    test()
-    plt.show()
+    #test()
+    #plt.show()

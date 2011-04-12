@@ -140,12 +140,13 @@ class Test(unittest.TestCase):
         #Check that it diverges if given a perfect ordering
         outputs = np.array([[i] for i in np.linspace(0, 3, 100)])
         timeslots = np.arange(100) #0-99
+        risk_groups = get_risk_groups(timeslots)
         #outputs, timeslots = self.generateRandomTestData(10)
         print outputs
         print timeslots
         diverged = False
         try:
-            beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
+            beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
         except FloatingPointError:
             print("Diverged")
             diverged = True
@@ -159,7 +160,7 @@ class Test(unittest.TestCase):
         #print outputs
         #print timeslots
         try:
-            beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
+            beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
         except FloatingPointError:
             print("Diverged, when it shouldn't")
             assert()

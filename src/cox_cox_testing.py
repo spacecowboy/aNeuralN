@@ -9,22 +9,24 @@ from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
 import kalderstam.util.graphlogger as glogger
 import logging
 from kalderstam.neural.cox_training import train_cox
+from kalderstam.util.numpyhelp import indexOf
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
 
-def generate_timeslots(P, T):
+def generate_timeslots(T):
     timeslots = numpy.array([], dtype = int)
-    for x_index in range(len(P)):
-        x = P[x_index]
+    for x_index in range(len(T)):
         time = T[x_index][0]
         if len(timeslots) == 0:
             timeslots = numpy.insert(timeslots, 0, x_index)
         else:
             added = False
             #Find slot
-            for time_index in timeslots:
-                if time < T[time_index][0]:
-                    timeslots = numpy.insert(timeslots, time_index, x_index)
+            for index in range(len(timeslots)):
+                time_index = timeslots[index]
+                time2 = T[time_index, 0]
+                if time < T[time_index, 0]:
+                    timeslots = numpy.insert(timeslots, index, x_index)
                     added = True
                     break
             if not added:
@@ -33,15 +35,30 @@ def generate_timeslots(P, T):
 
     return timeslots
 
-def test(net, filename, epochs):
+def generate_timeslots2(T):
+    '''Slower, and can't trust IndexOf in case two outputs have the same value.
+    But logically this is what generate_timeslots does.'''
+    timeslots = numpy.zeros(len(T), dtype = int)
+    sorted_T = numpy.sort(T, axis = 0)
+    for i in range(len(timeslots)):
+        timeslots[i] = indexOf(T, sorted_T[i])[0]
+
+    return timeslots
+
+def test(net, filename, epochs, learning_rate):
+    logger.info("Running test for: " + str(epochs) + ", rate: " + str(learning_rate))
     P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
     #P = P[:100,:]
     #T = T[:100, :]
 
-    timeslots = generate_timeslots(P, T)
+    timeslots = generate_timeslots(T)
+    timeslots2 = generate_timeslots2(T)
+    #Just to make sure it's correct when testing
+    for x, y in zip(timeslots, timeslots2):
+        assert(x == y)
 
     try:
-        net = train_cox(net, (P, T), (None, None), timeslots, epochs, learning_rate = 5)
+        net = train_cox(net, (P, T), (None, None), timeslots, epochs, learning_rate = learning_rate)
     except FloatingPointError:
         print('Aaawww....')
     outputs = net.sim(P)
@@ -49,7 +66,7 @@ def test(net, filename, epochs):
     plot_network_weights(net)
 
     plt.figure()
-    plt.title('Scatter plot sum square error\n' + filename)
+    plt.title('Scatter plot cox error\n' + filename)
     plt.xlabel('Survival time years')
     plt.ylabel('Network output')
     try:
@@ -57,10 +74,21 @@ def test(net, filename, epochs):
         plt.plot(T.flatten(), T.flatten(), 'r-')
     except:
         pass
+    #Manual test
+    outputs = net.sim(P)
+    timeslots_target = generate_timeslots(T)
+    timeslots_network = generate_timeslots(outputs)
+
+    plt.figure()
+    plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(learning_rate))
+    plt.xlabel('Target timeslots')
+    plt.ylabel('Network timeslots')
+    plt.scatter(timeslots_target, timeslots_network, c = 'g', marker = 's')
+    plt.plot(timeslots_target, timeslots_target, 'r-')
 
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
-    glogger.setLoggingLevel(glogger.debug)
+    glogger.setLoggingLevel(glogger.info)
 
     p = 4 #number of input covariates
     net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
@@ -70,6 +98,7 @@ if __name__ == "__main__":
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    while True:
-        test(net, lineartarget_nn, 20)
-        plt.show()
+    #while True:
+    test(net, lineartarget_nn, 2, 0.1)
+
+    plt.show()
