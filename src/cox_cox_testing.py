@@ -8,32 +8,10 @@ from kalderstam.neural.activation_functions import linear
 from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
 import kalderstam.util.graphlogger as glogger
 import logging
-from kalderstam.neural.cox_training import train_cox
+from kalderstam.neural.cox_training import train_cox, generate_timeslots
 from kalderstam.util.numpyhelp import indexOf
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
-
-def generate_timeslots(T):
-    timeslots = numpy.array([], dtype = int)
-    for x_index in range(len(T)):
-        time = T[x_index][0]
-        if len(timeslots) == 0:
-            timeslots = numpy.insert(timeslots, 0, x_index)
-        else:
-            added = False
-            #Find slot
-            for index in range(len(timeslots)):
-                time_index = timeslots[index]
-                time2 = T[time_index, 0]
-                if time < T[time_index, 0]:
-                    timeslots = numpy.insert(timeslots, index, x_index)
-                    added = True
-                    break
-            if not added:
-                #Reached the end, insert here
-                timeslots = numpy.append(timeslots, x_index)
-
-    return timeslots
 
 def generate_timeslots2(T):
     '''Slower, and can't trust IndexOf in case two outputs have the same value.
@@ -90,7 +68,7 @@ def test(net, filename, epochs, learning_rate):
 
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
-    glogger.setLoggingLevel(glogger.info)
+    glogger.setLoggingLevel(glogger.debug)
 
     p = 4 #number of input covariates
     net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
@@ -101,7 +79,7 @@ if __name__ == "__main__":
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
 
-    net = test(net, lineartarget_nn, 600, 0.1)
+    net = test(net, lineartarget_nn, 500, 10)
 
     P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
 

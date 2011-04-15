@@ -10,6 +10,27 @@ from kalderstam.util.filehandling import normalizeArray
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
 
+def generate_timeslots(T):
+    timeslots = np.array([], dtype = int)
+    for x_index in range(len(T)):
+        time = T[x_index][0]
+        if len(timeslots) == 0:
+            timeslots = np.insert(timeslots, 0, x_index)
+        else:
+            added = False
+            #Find slot
+            for index in range(len(timeslots)):
+                time_index = timeslots[index]
+                if time < T[time_index, 0]:
+                    timeslots = np.insert(timeslots, index, x_index)
+                    added = True
+                    break
+            if not added:
+                #Reached the end, insert here
+                timeslots = np.append(timeslots, x_index)
+
+    return timeslots
+
 def beta_diverges(outputs, timeslots):
     diverging = True
     diverging_negatively = True
@@ -23,6 +44,17 @@ def beta_diverges(outputs, timeslots):
                 diverging_negatively = False
     return (diverging or diverging_negatively)
 
+def plot_correctly_ordered(outputs, timeslots):
+    timeslots_network = generate_timeslots(outputs)
+
+    #Now count number of correctly ordered indices
+    count = 0
+    for i, j in zip(timeslots, timeslots_network):
+        if i == j:
+            count += 1
+    glogger.debugPlot('Number of correctly ordered outputs', y = count, style = 'r-')
+    logger.info('Number of correctly ordered outputs: ' + str(count))
+
 def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_targets), timeslots, epochs = 1, learning_rate = 2.0):
     np.seterr(all = 'raise') #I want errors!
     np.seterr(under = 'warn') #Except for underflows, just equate them to zero...
@@ -32,6 +64,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
     for epoch in range(epochs):
         logger.info("Epoch " + str(epoch))
         outputs = net.sim(inputs)
+        plot_correctly_ordered(outputs, timeslots)
         #Check if beta will diverge here, if so, end training with error 0
         #if beta_diverges(outputs, timeslots):
             #End training
@@ -45,19 +78,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
             print(str(e))
             break #Stop training
 
-        #calculate parts of the error function here, which do not depend on patient specific output
-        #risk_outputs = [None for i in range(len(timeslots))]
-        #beta_risk = [None for i in range(len(timeslots))]
-        #part_func = np.zeros(len(timeslots))
-        #weighted_avg = np.zeros(len(timeslots))
-        beta_force = 0
-        #for s in timeslots:
-            #risk_outputs[s] = get_risk_outputs(s, timeslots, outputs)  
-            #beta_risk[s] = exp(beta*risk_outputs[s])
-            #part_func[s] = beta_risk[s].sum()
-            #weighted_avg[s] = (beta_risk[s]*risk_outputs[s]).sum()/part_func[s]
-            #beta_force += -(beta_risk[s]*risk_outputs[s]**2).sum()/part_func[s] + weighted_avg[s]**2
-        beta_force = sum([-np.sum(beta_risk[s] * outputs[risk_groups[s]] ** 2) / part_func[s] + weighted_avg[s] ** 2 for s in timeslots])
+        beta_force = sum([np.sum(beta_risk[s] * outputs[risk_groups[s]] ** 2) / part_func[s] - weighted_avg[s] ** 2 for s in timeslots])
         beta_force *= -1
         #glogger.debugPlot('BetaForce vs Epochs', beta, style = 'bs')
 

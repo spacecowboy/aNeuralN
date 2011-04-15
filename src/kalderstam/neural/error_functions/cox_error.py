@@ -13,7 +13,8 @@ shift = 4 #Also known as Delta, it's the handwaving variable.
 
 def derivative_error(beta, sigma):
     """dE/d(Beta*Sigma)"""
-    de = -(exp(shift - beta * sigma)) / (1 + exp(shift - beta * sigma))
+    exp_value = exp(shift - beta * sigma)
+    de = -exp_value / (1 + exp_value)
     #glogger.debugPlot('Error derivative', de, style = 'r.')
     return de
 
@@ -37,12 +38,17 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
     output = outputs[output_index, 0]
     y_force = 0
     beta_out = exp(beta * output)
+    in_risk_group = False
     for s in timeslots:
         #glogger.debugPlot('Partition function', part_func[s], style = 'b+')
+        #
         kronicker = 0
         if s == output_index:
             kronicker = 1
-        y_force += kronicker - beta_out / part_func[s] * (1 + beta * (output - weighted_avg[s]))
+            in_risk_group = True
+        if in_risk_group: #If output_index is not in the risk group, dy_part is zero (and kronicker-delta must also be zero of course), so no need to waste computation
+            dy_part = beta_out / part_func[s] * (1 + beta * (output - weighted_avg[s]))
+            y_force += kronicker - dy_part
 
     res = -y_force / beta_force
     #glogger.debugPlot('Beta derivative', res, style = 'r+')
@@ -81,7 +87,7 @@ def calc_beta(outputs, timeslots, risk_groups):
 
     logger.debug("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
     #we will get overflow errors when beta goes above 710, but even 200 is completely unreasonable and means that beta will diverge. in that case, QUIT
-    while abs(beta) < 200 and (abs(slope) > 0 or not_started) and abs(distance) > 0.001: #Want positive beta, Some small limit close to zero, fix to make sure we try more than one value, stop when step size is too small
+    while abs(beta) < 200 and (abs(slope) > 0 or not_started) and abs(distance) > 0.0001: #Want positive beta, Some small limit close to zero, fix to make sure we try more than one value, stop when step size is too small
         not_started = False
         prev_slope = slope
         beta += distance

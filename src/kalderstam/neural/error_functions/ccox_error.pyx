@@ -11,13 +11,16 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
     cdef int s, kronicker
     output = outputs[output_index]
     y_force = 0
+    in_risk_group = False
     beta_out = np.exp(beta * output)
     for s in timeslots:
         #glogger.debugPlot('Partition function', part_func[s], style = 'b+')
         kronicker = 0
         if s == output_index:
             kronicker = 1
-        y_force += kronicker - beta_out / part_func[s] * (1 + beta * (output - weighted_avg[s]))
+            in_risk_group = True
+        if in_risk_group: #If output_index is not in the risk group, dy_part is zero (and kronicker-delta must also be zero of course), so no need to waste computation
+            y_force += kronicker - beta_out / part_func[s] * (1 + beta * (output - weighted_avg[s]))
 
     res = -y_force / beta_force
     #glogger.debugPlot('Beta derivative', res, style = 'r+')

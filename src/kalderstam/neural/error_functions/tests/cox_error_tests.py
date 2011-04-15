@@ -51,7 +51,7 @@ class Test(unittest.TestCase):
         part_func = np.zeros(len(timeslots))
         weighted_avg = np.zeros(len(timeslots))
 
-        slope = cget_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots)
+        cget_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots)
         beta_force = sum([-(beta_risk[s] * risk_outputs[s] ** 2).sum() / part_func[s] + weighted_avg[s] ** 2 for s in timeslots])
         beta_force *= -1
 
@@ -141,7 +141,7 @@ class Test(unittest.TestCase):
         outputs = np.array([[i] for i in np.linspace(0, 3, 100)])
         timeslots = np.arange(100) #0-99
         risk_groups = get_risk_groups(timeslots)
-        #outputs, timeslots = self.generateRandomTestData(10)
+
         print outputs
         print timeslots
         diverged = False
@@ -149,25 +149,26 @@ class Test(unittest.TestCase):
             beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
         except FloatingPointError:
             print("Diverged")
-            diverged = True
+            diverged = True #It should diverge in this case
         assert(diverged)
         #Just change one value, and it should now no longer diverge
-        temp = outputs[38]
-        outputs[38] = outputs[97]
-        outputs[97] = temp
-        #outputs, timeslots = self.generateFixedData(3, np.array([[4.1], [1.01], [5.2]]))
-        #outputs, timeslots = self.generateRandomTestData(10)
-        #print outputs
-        #print timeslots
+        outputs[38], outputs[97] = outputs[97], outputs[38]
+
         try:
             beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
         except FloatingPointError:
             print("Diverged, when it shouldn't")
             assert()
-        #assert()
 
-    def testDerivative(self):
-        pass
+        #Now test that beta is actually a reasonable results
+        #That means that F(Beta) = 0 (or very close to zero at least)
+        F_result = 0
+        for s in timeslots:
+            F_result += outputs[s] - weighted_avg[s]
+        print(str(F_result))
+        assert(round(F_result, 5) == 0)
+
+    def testDerivativeSigma():
 
 
 if __name__ == "__main__":
