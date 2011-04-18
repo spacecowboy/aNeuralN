@@ -8,7 +8,8 @@ import numpy as np
 from ..cox_error import get_risk_outputs as pyget_risk_outputs, get_slope as pyget_slope, derivative_beta as pyderivative_beta, calc_beta
 from ..ccox_error import get_risk_outputs as cget_risk_outputs, get_slope as cget_slope, derivative_beta as cderivative_beta #@UnresolvedImport
 from kalderstam.util.numpyhelp import indexOf
-from kalderstam.neural.error_functions.cox_error import get_risk_groups
+from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
+    calc_sigma, derivative_sigma, shift, derivative_error
 from _xmlplus.xpath.XPathParser import SELF
 from kalderstam.util.decorators import benchmark
 
@@ -58,7 +59,7 @@ class Test(unittest.TestCase):
         for output_index in range(len(outputs)):
             cder = cderivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)
             pyder = pyderivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)
-            print(cder, pyder)
+            #print(cder, pyder)
             assert(isinstance(pyder, cder.__class__))
             assert(round(cder, 8) == round(pyder, 8))
 
@@ -92,27 +93,27 @@ class Test(unittest.TestCase):
         for i, c in zip(range(len(crisk_outputs)), crisk_outputs):
             p = outputs[risk_groups[i], 0]
             assert(isinstance(p, c.__class__))
-            print(p, p.__class__)
-            print(c, c.__class__)
+            #print(p, p.__class__)
+            #print(c, c.__class__)
             for pp, cc in zip(p, c):
-                print(pp, cc)
+                #print(pp, cc)
                 assert(isinstance(pp, cc.__class__))
                 assert(pp == cc)
         #Beta risk
         for p, c in zip(pybeta_risk, cbeta_risk):
             assert(isinstance(p, c.__class__))
             for pp, cc in zip(p, c):
-                print(pp, cc)
+                #print(pp, cc)
                 assert(isinstance(pp, cc.__class__))
                 assert(pp == cc)
         #part_func
         for p, c in zip(pypart_func, cpart_func):
-            print(p, c)
+            #print(p, c)
             assert(isinstance(p, c.__class__))
             assert(p == c)
         #weighted average
         for p, c in zip(pyweighted_avg, cweighted_avg):
-            print(p, c)
+            #print(p, c)
             assert(isinstance(p, c.__class__))
             assert(p == c)
 
@@ -142,13 +143,13 @@ class Test(unittest.TestCase):
         timeslots = np.arange(100) #0-99
         risk_groups = get_risk_groups(timeslots)
 
-        print outputs
-        print timeslots
+        #print outputs
+        #print timeslots
         diverged = False
         try:
             beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
         except FloatingPointError:
-            print("Diverged")
+            #print("Diverged")
             diverged = True #It should diverge in this case
         assert(diverged)
         #Just change one value, and it should now no longer diverge
@@ -157,7 +158,7 @@ class Test(unittest.TestCase):
         try:
             beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
         except FloatingPointError:
-            print("Diverged, when it shouldn't")
+            #print("Diverged, when it shouldn't")
             assert()
 
         #Now test that beta is actually a reasonable results
@@ -165,11 +166,28 @@ class Test(unittest.TestCase):
         F_result = 0
         for s in timeslots:
             F_result += outputs[s] - weighted_avg[s]
-        print(str(F_result))
+        #print(str(F_result))
         assert(round(F_result, 5) == 0)
 
-    def testDerivativeSigma():
+    def testDerivativeSigma(self):
+        outputs, timeslots = self.generateRandomTestData(100)
+        sigma = calc_sigma(outputs)
+        avg = outputs.sum() / len(outputs)
+        #First calculate it manually, then compare with function
+        for i in range(len(outputs)):
+            output = outputs[i]
+            ds = (output - avg) / (len(outputs) * sigma)
+            assert(ds == derivative_sigma(sigma, i, outputs))
 
+    def testDerivativeError(self):
+        outputs, timeslots = self.generateRandomTestData(100)
+        sigma = calc_sigma(outputs)
+        risk_groups = get_risk_groups(timeslots)
+        beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+
+        testDE = -np.exp(shift - beta * sigma) / (np.exp(shift - beta * sigma) + 1)
+
+        assert(testDE == derivative_error(beta, sigma))
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
