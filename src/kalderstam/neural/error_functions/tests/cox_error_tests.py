@@ -91,6 +91,22 @@ class Test(unittest.TestCase):
 
         assert(testDE == derivative_error(beta, sigma))
 
+    def testBetaForce(self):
+        outputs, timeslots = self.generateRandomTestData(100)
+        sigma = calc_sigma(outputs)
+        risk_groups = get_risk_groups(timeslots)
+        beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+        beta_force = get_beta_force(beta_risk, part_func, weighted_avg, outputs, timeslots, risk_groups)
+
+        exp_value = np.exp(beta * outputs)
+        exp_value_yi = exp_value * outputs
+        exp_value_yi2 = exp_value_yi * outputs
+
+        dFdB = -(exp_value_yi.sum() / exp_value.sum())**2 - exp_value_yi2.sum() / exp_value.sum()
+
+        print(dFdB, beta_force)
+        assert(round(dFdB, 8) == round(beta_force, 8))
+
     def testDerivativeBeta(self):
         outputs, timeslots = self.generateRandomTestData(100)
         sigma = calc_sigma(outputs)
@@ -117,7 +133,7 @@ class Test(unittest.TestCase):
                 dFdYi += delta - dWdYi
 
             dBdYi = -dFdYi / dFdB
-            method_value = derivative_beta(beta, part_func, weighted_avg, beta_force, i, outputs, timeslots)
+            method_value = derivative_beta(beta, part_func, weighted_avg, beta_force, i, outputs, timeslots, risk_groups)
             print(dBdYi, method_value)
             assert(dBdYi == method_value)
 

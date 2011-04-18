@@ -8,8 +8,11 @@ import ccox_error as ccox
 logger = logging.getLogger('kalderstam.neural.error_functions')
 
 shift = 4 #Also known as Delta, it's the handwaving variable.
-#sigma = None #Must be calculated before training begins
-#beta = None #Must be calculated before training begins
+
+def get_beta_force(beta_risk, part_func, weighted_avg, outputs, timeslots, risk_groups):
+    beta_force = sum([np.sum(beta_risk[s] * outputs[risk_groups[s]] ** 2) / part_func[s] - weighted_avg[s] ** 2 for s in timeslots])
+    beta_force *= -1
+    return beta_force
 
 def derivative_error(beta, sigma):
     """dE/d(Beta*Sigma)"""
@@ -18,9 +21,9 @@ def derivative_error(beta, sigma):
     #glogger.debugPlot('Error derivative', de, style = 'r.')
     return de
 
-def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
+def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
     """Derivative of (Beta*Sigma) with respect to y(i)"""
-    bs = ccox.derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots) * sigma + beta * derivative_sigma(sigma, output_index, outputs) #@UndefinedVariable
+    bs = ccox.derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups) * sigma + beta * derivative_sigma(sigma, output_index, outputs) #@UndefinedVariable
     #glogger.debugPlot('BetaSigma derivative', bs, style = 'g+')
     if np.isnan(bs) or np.isinf(bs):
         raise FloatingPointError('Derivative BetaSigma is Nan or Inf: ' + str(bs))
@@ -33,7 +36,7 @@ def derivative_sigma(sigma, output_index, outputs):
     #glogger.debugPlot('Sigma derivative', ds, style = 'b+')
     return ds
 
-def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
+def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
     """Eq. 14, derivative of Beta with respect to y(i)"""
     output = outputs[output_index, 0]
     y_force = 0
@@ -45,10 +48,11 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
         kronicker = 0
         if s == output_index:
             kronicker = 1
-            in_risk_group = True
-        if in_risk_group: #If output_index is not in the risk group, dy_part is zero (and kronicker-delta must also be zero of course), so no need to waste computation
-            dy_part = beta_out / part_func[s] * (1 + beta * (output - weighted_avg[s]))
-            y_force += kronicker - dy_part
+        if output_index in risk_groups[s]:
+            dy_part = beta_out / part_func[s] * (1 + beta * (output + weighted_avg[s]))
+        else:
+            dy_part = 0
+        y_force += kronicker - dy_part
 
     res = -y_force / beta_force
     #glogger.debugPlot('Beta derivative', res, style = 'r+')
@@ -127,6 +131,6 @@ def total_error(beta, sigma):
     """E = ln(1 + exp(Delta - Beta*Sigma))."""
     return log(1 + exp(shift - beta * sigma))
 
-def derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots):
+def derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
     """dE/d(Beta*Sigma) * d(Beta*Sigma)/dresult."""
-    return derivative_error(beta, sigma) * derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)
+    return derivative_error(beta, sigma) * derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
