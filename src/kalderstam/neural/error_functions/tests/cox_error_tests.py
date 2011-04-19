@@ -54,7 +54,14 @@ class Test(unittest.TestCase):
 
 
     def testCalc_beta(self):
-        """Calculate beta for a predetermined optimal value"""
+        """Calculate beta for a predetermined optimal value.
+        The more patients you have, the larger the value of Beta will be before it diverges.
+        Should actually limit calculations to NO MORE than 100 patients. Even that is above my comfort zone really.
+        Something else that determines the magnitude of Beta is the "disorder" in the outputs.
+        If two outputs are wrong total, and are "close" in the set, then Beta will be alot larger compared to
+        two outputs which are wrong but "far away" in the set. The reason is simply because if they are far apart,
+        more risk groups will be affected. If they are close, most risk groups will actually be entirely correct.
+        Causing beta to grow."""
         #Check that it diverges if given a perfect ordering
         outputs = np.array([[i] for i in np.linspace(0, 3, 100)])
         timeslots = np.arange(100) #0-99
@@ -71,12 +78,16 @@ class Test(unittest.TestCase):
         assert(diverged)
         #Just change one value, and it should now no longer diverge
         outputs[38], outputs[97] = outputs[97], outputs[38]
+        #outputs[8], outputs[3] = outputs[3], outputs[8]
 
         try:
             beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
         except FloatingPointError:
             #print("Diverged, when it shouldn't")
             assert()
+        #If you want to view the value of beta in different cases of "disorder", uncomment two lines below
+        #print(beta)
+        #assert()
 
         #Now test that beta is actually a reasonable results
         #That means that F(Beta) = 0 (or very close to zero at least)

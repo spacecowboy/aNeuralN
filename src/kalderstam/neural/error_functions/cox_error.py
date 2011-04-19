@@ -82,8 +82,8 @@ def get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, ti
 
 def calc_beta(outputs, timeslots, risk_groups):
     """Find the likelihood maximizing Beta numerically."""
-    beta = 60 #Start with something small
-    distance = -7.0 #Fairly large interval, we actually want to cross the zero
+    beta = 0.1 #Start with something small
+    distance = 7.0 #Fairly large interval, we actually want to cross the zero
 
     beta_risk = [None for i in range(len(timeslots))]
     part_func = np.zeros(len(timeslots))
@@ -103,6 +103,9 @@ def calc_beta(outputs, timeslots, risk_groups):
         if slope * prev_slope < 0:
             #Different signs, we have passed the zero point, change directions and half the distance
             distance /= -2
+        elif abs(slope) > abs(prev_slope):
+            #If the new slope is bigger than the last, we are going in the wrong direction
+            distance *= -1
         logger.debug("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
 
     if abs(beta) >= 200:

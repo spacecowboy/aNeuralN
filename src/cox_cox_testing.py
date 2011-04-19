@@ -78,7 +78,7 @@ if __name__ == "__main__":
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    epochs = 1000
+    epochs = 2000
     rate = 0.25
     net = test(net, lineartarget_nn, epochs, rate)
 
