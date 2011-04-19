@@ -1,5 +1,5 @@
 from kalderstam.neural.error_functions.cox_error import derivative, calc_beta, \
-    calc_sigma, get_risk_outputs, total_error, get_risk_groups
+    calc_sigma, get_risk_outputs, total_error, get_risk_groups, get_beta_force
 from kalderstam.util.decorators import benchmark
 import logging
 from numpy import exp
@@ -30,19 +30,6 @@ def generate_timeslots(T):
                 timeslots = np.append(timeslots, x_index)
 
     return timeslots
-
-def beta_diverges(outputs, timeslots):
-    diverging = True
-    diverging_negatively = True
-    #Check every timeslot and thus every riskgroup
-    for s in timeslots:
-        risk_outputs = get_risk_outputs(s, timeslots, outputs)
-        for risk in risk_outputs[1:]: #First one will always be s
-            if outputs[s] < risk: #It's not the largest, no risk for positive divergence
-                diverging = False
-            if outputs[s] > risk: #It's not the smallest, no risk for negative divergence
-                diverging_negatively = False
-    return (diverging or diverging_negatively)
 
 def plot_correctly_ordered(outputs, timeslots):
     timeslots_network = generate_timeslots(outputs)
@@ -78,8 +65,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
             print(str(e))
             break #Stop training
 
-        beta_force = sum([np.sum(beta_risk[s] * outputs[risk_groups[s]] ** 2) / part_func[s] - weighted_avg[s] ** 2 for s in timeslots])
-        beta_force *= -1
+        beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
         #glogger.debugPlot('BetaForce vs Epochs', beta, style = 'bs')
 
         sigma = calc_sigma(outputs)
@@ -102,7 +88,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
                 node.error_gradient = 0
 
             #Set errors on output nodes first
-            for node, gradient in zip(net.output_nodes, derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)):
+            for node, gradient in zip(net.output_nodes, derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)):
                 #glogger.debugPlot('Gradient', gradient, style = 'b.')
                 node.error_gradient = gradient
 
@@ -133,8 +119,10 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
         for node in net.output_nodes + net.hidden_nodes:
             #Calculate weight update
             for back_node, back_weight in node.weights.items():
+                glogger.debugPlot('Weight correction without learning rate', abs(np.mean(node.weight_corrections[back_node])), style = 'g-')
                 node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
             #Don't forget bias
+            glogger.debugPlot('Weight correction without learning rate', abs(np.mean(node.weight_corrections["bias"])), style = 'g-')
             node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
 
     return net
@@ -177,12 +165,6 @@ def test():
     p = 4 #number of input covariates
 
     net = build_feedforward(p, 8, 1, output_function = linear(1))
-    #net = build_feedforward(p, 8, 1)
-    #net = build_feedforward(p, 1, 1, hidden_function = linear(), output_function = linear())
-    #save_network(net, '/home/gibson/jonask/test_net.ann')
-    #net = load_network('/home/gibson/jonask/test_net.ann')
-
-    #com = build_feedforward_committee(size = 4, input_number = p, hidden_number = 6, output_number = 1)
 
     filename = '/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt'
     #filename = '/home/gibson/jonask/my_tweaked_fake_data_with_noise.txt'
@@ -198,18 +180,6 @@ def test():
     timeslots = generate_timeslots(P, T)
 
     outputs = net.sim(P)
-    #outputs = com.sim(P)
-    #print "output_before_training"
-    #print outputs
-
-    beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
-    sigma = calc_sigma(outputs)
-
-    #Make beta positive
-    #if beta < 0:
-    #    for n, w in net.output_nodes[0].weights.iteritems:
-    #        net.output_nodes[0].weights[n] = -w
-    #    beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
 
     plot_network_weights(net)
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
@@ -219,27 +189,10 @@ def test():
     except FloatingPointError:
         print('Aaawww....')
 
-    #net = traingd_block(net, (P, T), (None, None), epochs = 50, learning_rate = 0.1, block_size = 20)
-    #net = train_evolutionary(net, (P,T), (None, None), epochs = 500, random_range = 1)
     outputs = net.sim(P)
-    #if normalized, restore it
-    #outputs[:, 0] = numpy.std(T) * outputs[:, 0] + numpy.mean(T)
 
-    #train_committee(com, traingd_block, P, T, epochs = 100, block_size = 10)
-    #train_committee(com, train_cox, P, T, timeslots, epochs = 10, learning_rate = 2)
-    #outputs = com.sim(P)
 
     plot_network_weights(net)
-    try:
-        beta, risk_outputs, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots)
-        sigma = calc_sigma(outputs)
-        error = total_error(beta, sigma)
-    except FloatingPointError:
-        error = 'Beta diverged'
-    #plt.title('After training, [hidden, output] vs [input, hidden, output\nError = ' + str(error))
-
-    #print "output_after_training"
-    #print outputs
 
     plt.figure()
     plt.title('Scatter plot\n' + filename)

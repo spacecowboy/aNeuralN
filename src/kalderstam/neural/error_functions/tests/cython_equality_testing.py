@@ -4,7 +4,8 @@ Created on Apr 18, 2011
 @author: jonask
 '''
 import unittest
-from kalderstam.neural.error_functions.cox_error import get_risk_groups
+from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
+    get_beta_force
 from ..cox_error import get_risk_outputs as pyget_risk_outputs, get_slope as pyget_slope, derivative_beta as pyderivative_beta, calc_beta
 from ..ccox_error import get_risk_outputs as cget_risk_outputs, get_slope as cget_slope, derivative_beta as cderivative_beta #@UnresolvedImport
 import numpy as np
@@ -32,19 +33,19 @@ class Test(unittest.TestCase):
 
         beta = 0.79 #Start with something small
 
+        risk_groups = get_risk_groups(timeslots)
         risk_outputs = [None for i in range(len(timeslots))]
         beta_risk = [None for i in range(len(timeslots))]
         part_func = np.zeros(len(timeslots))
         weighted_avg = np.zeros(len(timeslots))
 
         cget_slope(beta, risk_outputs, beta_risk, part_func, weighted_avg, outputs, timeslots)
-        beta_force = sum([-(beta_risk[s] * risk_outputs[s] ** 2).sum() / part_func[s] + weighted_avg[s] ** 2 for s in timeslots])
-        beta_force *= -1
+        beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
 
         for output_index in range(len(outputs)):
-            cder = cderivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)
-            pyder = pyderivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots)
-            #print(cder, pyder)
+            cder = cderivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
+            pyder = pyderivative_beta(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
+            print(cder, pyder)
             assert(isinstance(pyder, cder.__class__))
             assert(round(cder, 8) == round(pyder, 8))
 

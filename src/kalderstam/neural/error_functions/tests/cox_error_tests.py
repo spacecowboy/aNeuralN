@@ -7,36 +7,51 @@ import unittest
 import numpy as np
 from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
     calc_sigma, derivative_sigma, shift, derivative_error, calc_beta, \
-    get_beta_force, derivative_beta
+    get_beta_force, derivative_beta, get_y_force
 from kalderstam.util.numpyhelp import indexOf
+from random import sample
 
 class Test(unittest.TestCase):
 
     def generateRandomTestData(self, number):
         outputs = np.random.random((number, 1))
-        return self.generateFixedData(number, outputs)
+        timeslots = np.array([num for num in sample(range(len(outputs)), len(outputs))])
+
+        return (outputs, timeslots)
 
     def generateFixedData(self, number, outputs):
         timeslots = np.arange(number)
-#        sorted_outputs = np.sort(outputs, axis = 0)
-#        timeslots = np.zeros(number, dtype = int)
-#        for i in range(len(timeslots)):
-#            timeslots[i] = indexOf(outputs, sorted_outputs[i])[0]
 
         return (outputs, timeslots)
 
     def testGetRiskGroups(self):
-        """For this data, the risk groups should just be 0,1,2,3. 1,2,3. 2,3. 3. etc"""
         outputs, timeslots = self.generateRandomTestData(50)
         risk_groups = get_risk_groups(timeslots)
         print risk_groups
-        for group in risk_groups:
-            prev = group[0]
-            for i in group[1:]:
-                if prev > i:
-                    assert()
-                else:
-                    prev = i
+        for group, start_index in zip(risk_groups, range(len(timeslots))):
+            for ri, ti in zip(group, timeslots[start_index:]):
+                assert(ri == ti)
+
+    def testPartFunc(self):
+        outputs, timeslots = self.generateRandomTestData(100)
+        risk_groups = get_risk_groups(timeslots)
+        beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+
+        for z, risk_group in zip(part_func, risk_groups):
+            testz = np.sum(np.exp(beta * outputs[risk_group]))
+            print(z, testz)
+            assert(z == testz)
+
+    def testWeightedAverage(self):
+        outputs, timeslots = self.generateRandomTestData(100)
+        risk_groups = get_risk_groups(timeslots)
+        beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+
+        for w, z, risk_group in zip(weighted_avg, part_func, risk_groups):
+            testw = 1 / z * np.sum(np.exp(beta * outputs[risk_group]) * outputs[risk_group])
+            print(w, testw)
+            assert(round(w, 10) == round(testw, 10))
+
 
     def testCalc_beta(self):
         """Calculate beta for a predetermined optimal value"""
@@ -91,49 +106,65 @@ class Test(unittest.TestCase):
 
         assert(testDE == derivative_error(beta, sigma))
 
-    def testBetaForce(self):
+    def testYForce(self):
         outputs, timeslots = self.generateRandomTestData(100)
-        sigma = calc_sigma(outputs)
         risk_groups = get_risk_groups(timeslots)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
-        beta_force = get_beta_force(beta_risk, part_func, weighted_avg, outputs, timeslots, risk_groups)
 
-        exp_value = np.exp(beta * outputs)
-        exp_value_yi = exp_value * outputs
-        exp_value_yi2 = exp_value_yi * outputs
+        for output_index in range(len(outputs)):
+            #Do the derivative for every Yi
+            output = outputs[output_index, 0]
+            test_yforce = 0
+            for es, risk_group, z, w in zip(timeslots, risk_groups, part_func, weighted_avg):
+                if es == output_index:
+                    delta = 1
+                else:
+                    delta = 0
+                if output_index in risk_group:
+                    wpart = np.exp(beta * output) / z * (1 + beta * (output + w))
+                else:
+                    wpart = 0
+                test_yforce += delta - wpart
 
-        dFdB = -(exp_value_yi.sum() / exp_value.sum())**2 - exp_value_yi2.sum() / exp_value.sum()
+            yforce = get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
 
-        print(dFdB, beta_force)
-        assert(round(dFdB, 8) == round(beta_force, 8))
+            print(test_yforce, yforce)
+            assert(test_yforce == yforce)
+
+
+    def testBetaForce(self):
+        outputs, timeslots = self.generateRandomTestData(100)
+        risk_groups = get_risk_groups(timeslots)
+        beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+
+        testbeta_force = 0
+        for risk_group, z, w in zip(risk_groups, part_func, weighted_avg):
+            exp_value = np.exp(beta * outputs[risk_group])
+            exp_value_yi = exp_value * outputs[risk_group]
+            exp_value_yi2 = exp_value_yi * outputs[risk_group]
+
+            testbeta_force += -(exp_value_yi.sum() / exp_value.sum())**2 - exp_value_yi2.sum() / exp_value.sum()
+
+        testbeta_force *= -1
+
+        betaforce = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
+
+        print(testbeta_force, betaforce)
+        assert(round(testbeta_force, 10) == round(betaforce, 10))
 
     def testDerivativeBeta(self):
         outputs, timeslots = self.generateRandomTestData(100)
         sigma = calc_sigma(outputs)
         risk_groups = get_risk_groups(timeslots)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
-        beta_force = get_beta_force(beta_risk, part_func, weighted_avg, outputs, timeslots, risk_groups)
+        beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
 
-        exp_value = np.exp(beta * outputs)
-        exp_value_yi = exp_value * outputs
-        exp_value_yi2 = exp_value_yi * outputs
+        for output_index in range(len(outputs)):
+            output = outputs[output_index, 0]
+            y_force = get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
 
-        dFdB = -(exp_value_yi.sum() / exp_value.sum())**2 - exp_value_yi2.sum() / exp_value.sum()
-        for i in range(len(outputs)):
-            output = outputs[i, 0]
-            dFdYi = 0
-            for s in range(len(outputs)):
-                delta = 0
-                if i == s:
-                    delta = 1
-                if i in risk_groups[s]:
-                    dWdYi = np.exp(beta * output) / part_func[s] * (1 + beta * output + beta * weighted_avg[s])
-                else:
-                    dWdYi = 0
-                dFdYi += delta - dWdYi
-
-            dBdYi = -dFdYi / dFdB
-            method_value = derivative_beta(beta, part_func, weighted_avg, beta_force, i, outputs, timeslots, risk_groups)
+            dBdYi = -y_force / beta_force
+            method_value = derivative_beta(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
             print(dBdYi, method_value)
             assert(dBdYi == method_value)
 

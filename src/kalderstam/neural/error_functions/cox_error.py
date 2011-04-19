@@ -9,9 +9,11 @@ logger = logging.getLogger('kalderstam.neural.error_functions')
 
 shift = 4 #Also known as Delta, it's the handwaving variable.
 
-def get_beta_force(beta_risk, part_func, weighted_avg, outputs, timeslots, risk_groups):
-    beta_force = sum([np.sum(beta_risk[s] * outputs[risk_groups[s]] ** 2) / part_func[s] - weighted_avg[s] ** 2 for s in timeslots])
-    beta_force *= -1
+def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
+    beta_force = 0
+    for risk_group, z, w in zip(risk_groups, part_func, weighted_avg):
+        beta_force += 1 / z * np.sum(np.exp(beta * outputs[risk_group]) * outputs[risk_group] ** 2) + w ** 2
+
     return beta_force
 
 def derivative_error(beta, sigma):
@@ -36,27 +38,29 @@ def derivative_sigma(sigma, output_index, outputs):
     #glogger.debugPlot('Sigma derivative', ds, style = 'b+')
     return ds
 
-def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
-    """Eq. 14, derivative of Beta with respect to y(i)"""
+def get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups):
     output = outputs[output_index, 0]
     y_force = 0
-    beta_out = exp(beta * output)
-    in_risk_group = False
-    for s in timeslots:
+    for es, risk_group, z, w in zip(timeslots, risk_groups, part_func, weighted_avg):
         #glogger.debugPlot('Partition function', part_func[s], style = 'b+')
         #
         kronicker = 0
-        if s == output_index:
+        if es == output_index:
             kronicker = 1
-        if output_index in risk_groups[s]:
-            dy_part = beta_out / part_func[s] * (1 + beta * (output + weighted_avg[s]))
+        if output_index in risk_group:
+            dy_part = np.exp(beta * output) / z * (1 + beta * (output + w))
         else:
             dy_part = 0
         y_force += kronicker - dy_part
+    return y_force
 
-    res = -y_force / beta_force
+def derivative_beta(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups):
+    """Eq. 14, derivative of Beta with respect to y(i)"""
     #glogger.debugPlot('Beta derivative', res, style = 'r+')
-    return res
+
+    y_force = get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
+    beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
+    return - y_force / beta_force
 
 def get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots):
     result = 0
@@ -65,14 +69,14 @@ def get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, ti
         output = outputs[s, 0]
         risk_outputs = outputs[risk_groups[time_index], 0]
         try:
-            beta_risk[s] = exp(beta * risk_outputs)
+            beta_risk[time_index] = exp(beta * risk_outputs)
         except FloatingPointError as e:
             logger.error("In get_slope for calc_beta: \n if beta is 40 and risk_output is -23, we will get an underflow.\n Setting numpy.seterr(under = 'warn') or 'ignore', will do set it to zero in that case.")
             raise(e)
 
-        part_func[s] = np.sum(beta_risk[s])
-        weighted_avg[s] = np.sum(beta_risk[s] * risk_outputs) / part_func[s]
-        result += (output - weighted_avg[s])
+        part_func[time_index] = np.sum(beta_risk[time_index])
+        weighted_avg[time_index] = np.sum(beta_risk[time_index] * risk_outputs) / part_func[time_index]
+        result += (output - weighted_avg[time_index])
 
     return result
 

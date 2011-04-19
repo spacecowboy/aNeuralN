@@ -78,8 +78,9 @@ if __name__ == "__main__":
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-
-    net = test(net, lineartarget_nn, 500, 10)
+    epochs = 100
+    rate = 100
+    net = test(net, lineartarget_nn, epochs, rate)
 
     P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
 
@@ -88,9 +89,9 @@ if __name__ == "__main__":
     timeslots_network = generate_timeslots(outputs)
 
     plt.figure()
-    plt.title('Scatter between index ordering, epochs:rate | ')
+    plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(rate))
     plt.xlabel('Target timeslots')
     plt.ylabel('Network timeslots')
-    plt.scatter(timeslots_target, timeslots_network, c = 'g', marker = 's')
     plt.plot(timeslots_target, timeslots_target, 'r-')
+    plt.scatter(timeslots_target, timeslots_network, c = 'g', marker = 's')
     plt.show()
