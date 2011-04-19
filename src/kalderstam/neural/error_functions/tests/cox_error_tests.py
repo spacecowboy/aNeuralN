@@ -87,6 +87,7 @@ class Test(unittest.TestCase):
         assert(round(F_result, 5) == 0)
 
     def testDerivativeSigma(self):
+        """Verified to be correct."""
         outputs, timeslots = self.generateRandomTestData(100)
         sigma = calc_sigma(outputs)
         avg = outputs.sum() / len(outputs)
@@ -97,16 +98,18 @@ class Test(unittest.TestCase):
             assert(ds == derivative_sigma(sigma, i, outputs))
 
     def testDerivativeError(self):
+        """Verified to be correct."""
         outputs, timeslots = self.generateRandomTestData(100)
         sigma = calc_sigma(outputs)
         risk_groups = get_risk_groups(timeslots)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
 
-        testDE = -np.exp(shift - beta * sigma) / (np.exp(shift - beta * sigma) + 1)
+        testDE = -np.exp(shift - beta * sigma) / (1 + np.exp(shift - beta * sigma))
 
         assert(testDE == derivative_error(beta, sigma))
 
     def testYForce(self):
+        """Verified to be correct."""
         outputs, timeslots = self.generateRandomTestData(100)
         risk_groups = get_risk_groups(timeslots)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
@@ -121,7 +124,7 @@ class Test(unittest.TestCase):
                 else:
                     delta = 0
                 if output_index in risk_group:
-                    wpart = np.exp(beta * output) / z * (1 + beta * (output + w))
+                    wpart = np.exp(beta * output) / z * (1 + beta * (output - w))
                 else:
                     wpart = 0
                 test_yforce += delta - wpart
@@ -133,6 +136,7 @@ class Test(unittest.TestCase):
 
 
     def testBetaForce(self):
+        """Verified to be correct."""
         outputs, timeslots = self.generateRandomTestData(100)
         risk_groups = get_risk_groups(timeslots)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
@@ -143,7 +147,7 @@ class Test(unittest.TestCase):
             exp_value_yi = exp_value * outputs[risk_group]
             exp_value_yi2 = exp_value_yi * outputs[risk_group]
 
-            testbeta_force += -(exp_value_yi.sum() / exp_value.sum())**2 - exp_value_yi2.sum() / exp_value.sum()
+            testbeta_force += -(exp_value_yi.sum() / exp_value.sum())**2 + exp_value_yi2.sum() / exp_value.sum()
 
         testbeta_force *= -1
 

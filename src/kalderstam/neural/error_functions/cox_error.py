@@ -12,9 +12,25 @@ shift = 4 #Also known as Delta, it's the handwaving variable.
 def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
     beta_force = 0
     for risk_group, z, w in zip(risk_groups, part_func, weighted_avg):
-        beta_force += 1 / z * np.sum(np.exp(beta * outputs[risk_group]) * outputs[risk_group] ** 2) + w ** 2
+        beta_force += -1 / z * np.sum(np.exp(beta * outputs[risk_group]) * outputs[risk_group] ** 2) + w ** 2
 
     return beta_force
+
+def get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups):
+    output = outputs[output_index, 0]
+    y_force = 0
+    for es, risk_group, z, w in zip(timeslots, risk_groups, part_func, weighted_avg):
+        #glogger.debugPlot('Partition function', part_func[s], style = 'b+')
+        #
+        kronicker = 0
+        if es == output_index:
+            kronicker = 1
+        if output_index in risk_group:
+            dy_part = np.exp(beta * output) / z * (1 + beta * (output - w))
+        else:
+            dy_part = 0
+        y_force += kronicker - dy_part
+    return y_force
 
 def derivative_error(beta, sigma):
     """dE/d(Beta*Sigma)"""
@@ -37,22 +53,6 @@ def derivative_sigma(sigma, output_index, outputs):
     ds = (output - outputs.mean()) / (len(outputs) * sigma)
     #glogger.debugPlot('Sigma derivative', ds, style = 'b+')
     return ds
-
-def get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups):
-    output = outputs[output_index, 0]
-    y_force = 0
-    for es, risk_group, z, w in zip(timeslots, risk_groups, part_func, weighted_avg):
-        #glogger.debugPlot('Partition function', part_func[s], style = 'b+')
-        #
-        kronicker = 0
-        if es == output_index:
-            kronicker = 1
-        if output_index in risk_group:
-            dy_part = np.exp(beta * output) / z * (1 + beta * (output + w))
-        else:
-            dy_part = 0
-        y_force += kronicker - dy_part
-    return y_force
 
 def derivative_beta(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups):
     """Eq. 14, derivative of Beta with respect to y(i)"""
