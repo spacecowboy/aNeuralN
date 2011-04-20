@@ -72,14 +72,15 @@ if __name__ == "__main__":
 
     p = 4 #number of input covariates
     net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
+    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
     #net = build_feedforward(p, 10, 1, output_function = linear())
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    epochs = 2000
-    rate = 0.25
+    epochs = 20
+    rate = 10
     net = test(net, lineartarget_nn, epochs, rate)
 
     P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
@@ -87,11 +88,15 @@ if __name__ == "__main__":
     outputs = net.sim(P)
     timeslots_target = generate_timeslots(T)
     timeslots_network = generate_timeslots(outputs)
+    network_timeslot_indices = []
+    for output_index in timeslots_network:
+        timeslot_index = indexOf(timeslots_target, output_index)
+        network_timeslot_indices.append(timeslot_index)
 
     plt.figure()
     plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(rate))
     plt.xlabel('Target timeslots')
     plt.ylabel('Network timeslots')
     plt.plot(timeslots_target, timeslots_target, 'r-')
-    plt.scatter(timeslots_target, timeslots_network, c = 'g', marker = 's')
+    plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
     plt.show()
