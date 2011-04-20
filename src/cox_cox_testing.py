@@ -21,7 +21,7 @@ def generate_timeslots2(T):
     for i in range(len(timeslots)):
         timeslots[i] = indexOf(T, sorted_T[i])[0]
 
-    return timeslots
+    return timeslots[::-1]
 
 def test(net, filename, epochs, learning_rate):
     logger.info("Running test for: " + str(epochs) + ", rate: " + str(learning_rate))
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    epochs = 20
+    epochs = 50
     rate = 10
     net = test(net, lineartarget_nn, epochs, rate)
 

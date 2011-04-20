@@ -9,6 +9,7 @@ from kalderstam.neural.training_functions import traingd_block
 from kalderstam.util.filehandling import normalizeArray
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
+prev_timeslots_network = None
 
 def generate_timeslots(T):
     timeslots = np.array([], dtype = int)
@@ -21,7 +22,7 @@ def generate_timeslots(T):
             #Find slot
             for index in range(len(timeslots)):
                 time_index = timeslots[index]
-                if time < T[time_index, 0]:
+                if time > T[time_index, 0]:
                     timeslots = np.insert(timeslots, index, x_index)
                     added = True
                     break
@@ -33,14 +34,29 @@ def generate_timeslots(T):
 
 def plot_correctly_ordered(outputs, timeslots):
     timeslots_network = generate_timeslots(outputs)
-
+    global prev_timeslots_network
+    if prev_timeslots_network == None:
+        prev_timeslots_network = timeslots_network
     #Now count number of correctly ordered indices
     count = 0
-    for i, j in zip(timeslots, timeslots_network):
+    diff = 0
+    for i, j, prev in zip(timeslots, timeslots_network, prev_timeslots_network):
         if i == j:
             count += 1
-    glogger.debugPlot('Number of correctly ordered outputs', y = count, style = 'r-')
-    logger.info('Number of correctly ordered outputs: ' + str(count))
+        if j != prev:
+            diff += 1
+
+    glogger.debugPlot('Network ordering difference', y = diff, style = 'r-')
+    logger.info('Network ordering difference: ' + str(diff))
+    prev_timeslots_network = timeslots_network
+
+    countreversed = 0
+    for i, j in zip(timeslots[::-1], timeslots_network):
+        if i == j:
+            countreversed += 1
+    correct = max(count, countreversed)
+    glogger.debugPlot('Number of correctly ordered outputs', y = correct, style = 'r-')
+    logger.info('Number of correctly ordered outputs: ' + str(correct))
 
 def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_targets), timeslots, epochs = 1, learning_rate = 2.0):
     np.seterr(all = 'raise') #I want errors!
@@ -119,10 +135,10 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
         for node in net.output_nodes + net.hidden_nodes:
             #Calculate weight update
             for back_node, back_weight in node.weights.items():
-                glogger.debugPlot('Weight correction without learning rate', abs(np.mean(node.weight_corrections[back_node])), style = 'g-')
+                #glogger.debugPlot('Weight correction without learning rate', np.mean(node.weight_corrections[back_node]), style = 'g-')
                 node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
             #Don't forget bias
-            glogger.debugPlot('Weight correction without learning rate', abs(np.mean(node.weight_corrections["bias"])), style = 'g-')
+            #glogger.debugPlot('Weight correction without learning rate', np.mean(node.weight_corrections["bias"]), style = 'g-')
             node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
 
     return net

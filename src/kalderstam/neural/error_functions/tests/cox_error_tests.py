@@ -63,7 +63,7 @@ class Test(unittest.TestCase):
         more risk groups will be affected. If they are close, most risk groups will actually be entirely correct.
         Causing beta to grow."""
         #Check that it diverges if given a perfect ordering
-        outputs = np.array([[i] for i in np.linspace(0, 3, 100)])
+        outputs = np.array([[i] for i in np.linspace(0, -5, 100)])
         timeslots = np.arange(100) #0-99
         risk_groups = get_risk_groups(timeslots)
 
