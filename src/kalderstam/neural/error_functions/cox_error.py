@@ -76,6 +76,9 @@ def get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, ti
 
         part_func[time_index] = np.sum(beta_risk[time_index])
         weighted_avg[time_index] = np.sum(beta_risk[time_index] * risk_outputs) / part_func[time_index]
+        if np.isnan(weighted_avg[time_index]):
+            #When beta is small enough, part_func will be zero. This means weighted avg is something divided by zero. raise exception
+            raise FloatingPointError('Weighted avg (in get_slope) encountered a division by zero. Beta must be really small, Beta = ' + str(beta))
         result += (output - weighted_avg[time_index])
 
     return result
