@@ -54,15 +54,6 @@ def test(net, filename, epochs, learning_rate):
         pass
     #Manual test
     outputs = net.sim(P)
-    timeslots_target = generate_timeslots(T)
-    timeslots_network = generate_timeslots(outputs)
-
-#    plt.figure()
-#    plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(learning_rate))
-#    plt.xlabel('Target timeslots')
-#    plt.ylabel('Network timeslots')
-#    plt.scatter(timeslots_target, timeslots_network, c = 'g', marker = 's')
-#    plt.plot(timeslots_target, timeslots_target, 'r-')
 
     return net
 
@@ -72,7 +63,7 @@ if __name__ == "__main__":
 
     p = 4 #number of input covariates
     net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
-    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
+    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
     #net = build_feedforward(p, 10, 1, output_function = linear())
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
