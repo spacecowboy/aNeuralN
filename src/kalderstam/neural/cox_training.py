@@ -92,7 +92,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
             apply_weight_corrections(net, -learning_rate)
             corrected = False
             #Half the learning rate
-            learning_rate *= 0.5
+            learning_rate *= -0.5
             #And "redo" this epoch
             logger.info('Halfing the learning rate: ' + str(learning_rate))
             continue
