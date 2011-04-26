@@ -55,8 +55,8 @@ def plot_correctly_ordered(outputs, timeslots):
         if i == j:
             countreversed += 1
     correct = max(count, countreversed)
-    glogger.debugPlot('Number of correctly ordered outputs', y = correct, style = 'r-')
-    logger.info('Number of correctly ordered outputs: ' + str(correct))
+    #glogger.debugPlot('Number of correctly ordered outputs', y = correct, style = 'r-')
+    #logger.info('Number of correctly ordered outputs: ' + str(correct))
 
 def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_targets), timeslots, epochs = 1, learning_rate = 2.0):
     np.seterr(all = 'raise') #I want errors!
@@ -86,6 +86,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
 
         sigma = calc_sigma(outputs)
         glogger.debugPlot('Sigma vs Epochs', sigma, style = 'bs')
+        glogger.debugPlot('Total error', total_error(beta, sigma), style = 'b-')
 
         glogger.debugPlot('Sigma * Beta vs Epochs', beta * sigma, style = 'gs')
         logger.info('Beta*Sigma = ' + str(sigma * beta))

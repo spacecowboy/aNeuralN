@@ -1,5 +1,5 @@
 from kalderstam.neural.matlab_functions import plot_network_weights
-from kalderstam.util.filehandling import parse_file, load_network
+from kalderstam.util.filehandling import parse_file, load_network, save_network
 from kalderstam.neural.network import build_feedforward
 import time
 import numpy
@@ -62,7 +62,9 @@ if __name__ == "__main__":
     glogger.setLoggingLevel(glogger.debug)
 
     p = 4 #number of input covariates
-    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
+    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
+    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_OMEGA.ann')
+    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
     #net = build_feedforward(p, 10, 1, output_function = linear())
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
@@ -70,8 +72,9 @@ if __name__ == "__main__":
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    epochs = 50
-    rate = 10
+    epochs = 300
+    rates = [40.0, 20.0, 15.0, 10.0, 5.0, 2.0, 1.0, 0.5]
+    rate = 0.5
     net = test(net, lineartarget_nn, epochs, rate)
 
     P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
