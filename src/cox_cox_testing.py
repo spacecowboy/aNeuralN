@@ -62,8 +62,9 @@ if __name__ == "__main__":
     glogger.setLoggingLevel(glogger.debug)
 
     p = 4 #number of input covariates
-    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
-    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_OMEGA.ann')
+    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
+    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_ALPHA.ann')
+    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_OMEGA.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
     #net = build_feedforward(p, 10, 1, output_function = linear())
@@ -72,9 +73,8 @@ if __name__ == "__main__":
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    epochs = 300
-    rates = [40.0, 20.0, 15.0, 10.0, 5.0, 2.0, 1.0, 0.5]
-    rate = 0.5
+    epochs = 30
+    rate = 10
     net = test(net, lineartarget_nn, epochs, rate)
 
     P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)

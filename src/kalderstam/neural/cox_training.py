@@ -64,10 +64,11 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
     inputs = test_inputs
     outputs = net.sim(inputs)
     risk_groups = get_risk_groups(timeslots)
+    prev_error = None
+    corrected = False
     for epoch in range(epochs):
         logger.info("Epoch " + str(epoch))
         outputs = net.sim(inputs)
-        plot_correctly_ordered(outputs, timeslots)
         #Check if beta will diverge here, if so, end training with error 0
         #if beta_diverges(outputs, timeslots):
             #End training
@@ -76,20 +77,35 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
 
         try:
             beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
-            glogger.debugPlot('Beta vs Epochs', beta, style = 'bs')
         except FloatingPointError as e:
             print(str(e))
             break #Stop training
 
-        beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
-        #glogger.debugPlot('BetaForce vs Epochs', beta, style = 'bs')
-
         sigma = calc_sigma(outputs)
-        glogger.debugPlot('Sigma vs Epochs', sigma, style = 'bs')
-        glogger.debugPlot('Total error', total_error(beta, sigma), style = 'b-')
 
-        glogger.debugPlot('Sigma * Beta vs Epochs', beta * sigma, style = 'gs')
+        current_error = total_error(beta, sigma)
+
+        if (prev_error == None or current_error <= prev_error):
+            prev_error = current_error
+        elif corrected:
+            #Undo the weight correction
+            apply_weight_corrections(net, -learning_rate)
+            corrected = False
+            #Half the learning rate
+            learning_rate *= 0.5
+            #And "redo" this epoch
+            logger.info('Halfing the learning rate: ' + str(learning_rate))
+            continue
+
+        if corrected: #Only plot if the weight change was successful
+            plot_correctly_ordered(outputs, timeslots)
+            glogger.debugPlot('Total error', total_error(beta, sigma), style = 'b-')
+            glogger.debugPlot('Sigma * Beta vs Epochs', beta * sigma, style = 'g-')
+            glogger.debugPlot('Sigma vs Epochs', sigma, style = 'b-')
+            glogger.debugPlot('Beta vs Epochs', beta, style = 'b-')
         logger.info('Beta*Sigma = ' + str(sigma * beta))
+
+        beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
 
         #Set corrections to 0 on all nodes first
         for node in net.get_all_nodes():
@@ -132,17 +148,19 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
                     node.weight_corrections["bias"] = []
                 node.weight_corrections["bias"].append(node.error_gradient)
 
-        #Iterate over the nodes and correct the weights
-        for node in net.output_nodes + net.hidden_nodes:
-            #Calculate weight update
-            for back_node, back_weight in node.weights.items():
-                #glogger.debugPlot('Weight correction without learning rate', np.mean(node.weight_corrections[back_node]), style = 'g-')
-                node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
-            #Don't forget bias
-            #glogger.debugPlot('Weight correction without learning rate', np.mean(node.weight_corrections["bias"]), style = 'g-')
-            node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
+        apply_weight_corrections(net, learning_rate)
+        corrected = True
 
     return net
+
+def apply_weight_corrections(net, learning_rate):
+    #Iterate over the nodes and correct the weights
+    for node in net.output_nodes + net.hidden_nodes:
+        #Calculate weight update
+        for back_node, back_weight in node.weights.items():
+            node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
+        #Don't forget bias
+        node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
 
 def test():
     from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
