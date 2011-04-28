@@ -46,7 +46,7 @@ if __name__ == "__main__":
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
     epochs = 100
-    rate = 20
+    rate = 1
 
 
     P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
@@ -63,6 +63,7 @@ if __name__ == "__main__":
     for index in timeslots[1:]:
         outputs_two[index, 0] = outputs_two[prev_index, 0] - 0.1
         prev_index = index
+    outputs_two += 20
     #Change value of one
     first = timeslots[0]
     print(timeslots[0])
@@ -96,8 +97,9 @@ if __name__ == "__main__":
     plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
     plt.show()
 
-    for i in [1, -1]: #Do it twice!
-        rate *= i
+    for i in range(1, 100):
+        #rate *= (-1) ** i
+        #rate *= i
         test(outputs, lineartarget_nn, epochs, rate, P, T)
 
         timeslots_target = generate_timeslots(T)
