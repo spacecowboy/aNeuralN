@@ -208,7 +208,7 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
 
         #Iterate over all output indices
         i = 0
-        for output_index in range(len(outputs)):
+        for output_index in [17]:#range(len(outputs)):
             logger.debug("Patient: " + str(i))
             i += 1
 
