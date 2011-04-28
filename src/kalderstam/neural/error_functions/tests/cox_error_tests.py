@@ -158,7 +158,7 @@ class Test(unittest.TestCase):
             exp_value_yi = exp_value * outputs[risk_group]
             exp_value_yi2 = exp_value_yi * outputs[risk_group]
 
-            testbeta_force += -(exp_value_yi.sum() / exp_value.sum())**2 + exp_value_yi2.sum() / exp_value.sum()
+            testbeta_force += 1 / exp_value.sum() * exp_value_yi2.sum() - (exp_value_yi.sum() / exp_value.sum()) ** 2
 
         testbeta_force *= -1
 

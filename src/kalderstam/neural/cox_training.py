@@ -162,6 +162,64 @@ def apply_weight_corrections(net, learning_rate):
         #Don't forget bias
         node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
 
+def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
+    np.seterr(all = 'raise') #I want errors!
+    np.seterr(under = 'warn') #Except for underflows, just equate them to zero...
+    risk_groups = get_risk_groups(timeslots)
+    prev_error = None
+    corrected = False
+    der_value = np.zeros_like(outputs)
+    for epoch in range(epochs):
+        logger.info("Epoch " + str(epoch))
+
+        try:
+            beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+        except FloatingPointError as e:
+            print(str(e))
+            break #Stop training
+
+        sigma = calc_sigma(outputs)
+
+        current_error = total_error(beta, sigma)
+
+        if (prev_error == None or current_error <= prev_error):
+            prev_error = current_error
+        elif corrected:
+            #Undo the weight correction
+            outputs -= learning_rate * der_value
+            corrected = False
+            #Half the learning rate
+            learning_rate *= 0.5
+            #if abs(learning_rate) < 0.01:
+            #    learning_rate *= -1000
+            #And "redo" this epoch
+            logger.info('Halfing the learning rate: ' + str(learning_rate))
+            continue
+
+#        if corrected: #Only plot if the weight change was successful
+        plot_correctly_ordered(outputs, timeslots)
+        glogger.debugPlot('Total error', total_error(beta, sigma), style = 'b-')
+        glogger.debugPlot('Sigma * Beta vs Epochs', beta * sigma, style = 'g-')
+        glogger.debugPlot('Sigma vs Epochs', sigma, style = 'b-')
+        glogger.debugPlot('Beta vs Epochs', beta, style = 'b-')
+        logger.info('Beta*Sigma = ' + str(sigma * beta))
+
+        beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
+
+        #Iterate over all output indices
+        i = 0
+        for output_index in range(len(outputs)):
+            logger.debug("Patient: " + str(i))
+            i += 1
+
+            der_value[output_index] = derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
+        #"FIX" output
+        outputs += learning_rate * der_value
+
+        corrected = True
+
+    return outputs
+
 def test():
     from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
     loadsyn2, loadsyn3, plotroc, plot_network_weights
