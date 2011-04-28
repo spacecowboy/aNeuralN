@@ -77,13 +77,7 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
                         node.weight_corrections["bias"] = []
                     node.weight_corrections["bias"].append(node.error_gradient)
 
-            #Iterate over the nodes and correct the weights
-            for node in net.output_nodes + net.hidden_nodes:
-                #Calculate weight update
-                for back_node, back_weight in node.weights.items():
-                    node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
-                #Don't forget bias
-                node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
+            apply_weight_corrections(net, learning_rate)
 
         #Calculate error of the network and print
 
@@ -103,6 +97,15 @@ def traingd_block(net, (test_inputs, test_targets), (validation_inputs, validati
                 break
 
     return net
+
+def apply_weight_corrections(net, learning_rate):
+    #Iterate over the nodes and correct the weights
+    for node in net.output_nodes + net.hidden_nodes:
+        #Calculate weight update
+        for back_node, back_weight in node.weights.items():
+            node.weights[back_node] = back_weight - learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
+        #Don't forget bias
+        node.bias = node.bias - learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
 
 def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 3, top_number = 5, error_function = sum_squares.total_error, *args):
     """Creates more networks and evolves the best it can.
