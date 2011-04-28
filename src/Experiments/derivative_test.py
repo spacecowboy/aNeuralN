@@ -45,8 +45,8 @@ if __name__ == "__main__":
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    epochs = 25
-    rate = -40
+    epochs = 100
+    rate = 20
 
 
     P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
@@ -64,15 +64,37 @@ if __name__ == "__main__":
         outputs_two[index, 0] = outputs_two[prev_index, 0] - 0.1
         prev_index = index
     #Change value of one
+    first = timeslots[0]
     print(timeslots[0])
+    last = timeslots[99]
     print(timeslots[99])
-    target_index = 17
+    target_index = [first, last]
 
-    outputs_two[target_index] += 10
+    #outputs_two[target_index] -= 5
+    outputs_two[first] -= 5
+    outputs_two[last] += 5
 
-    print('value: ' + str(outputs_two[target_index]))
+    print('value: ' + str(outputs_two[target_index, 0]))
 
     outputs = outputs_two
+
+
+    #Begin by showing the ordering
+    timeslots_target = generate_timeslots(T)
+    timeslots_network = generate_timeslots(outputs)
+    network_timeslot_indices = []
+    for output_index in timeslots_network:
+        timeslot_index = indexOf(timeslots_target, output_index)
+        network_timeslot_indices.append(timeslot_index)
+
+    print('value: ' + str(outputs_two[target_index, 0]))
+    plt.figure()
+    plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(rate))
+    plt.xlabel('Target timeslots')
+    plt.ylabel('Network timeslots')
+    plt.plot(timeslots_target, timeslots_target, 'r-')
+    plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
+    plt.show()
 
     for i in [1, -1]: #Do it twice!
         rate *= i
@@ -85,7 +107,7 @@ if __name__ == "__main__":
             timeslot_index = indexOf(timeslots_target, output_index)
             network_timeslot_indices.append(timeslot_index)
 
-        print('value: ' + str(outputs_two[target_index]))
+        print('value: ' + str(outputs_two[target_index, 0]))
         plt.figure()
         plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(rate))
         plt.xlabel('Target timeslots')

@@ -182,8 +182,11 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
 
         current_error = total_error(beta, sigma)
 
-        if (prev_error == None or current_error <= prev_error):
+        if (prev_error == None or current_error <= prev_error or current_error > prev_error):
             prev_error = current_error
+            #Try increasing the rate, but less than below
+            #learning_rate *= 1.2
+            #logger.info('learning rate increased: ' + str(learning_rate))
         elif corrected:
             #Undo the weight correction
             outputs -= learning_rate * der_value
@@ -208,15 +211,33 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
 
         #Iterate over all output indices
         i = 0
-        for output_index in [17]:#range(len(outputs)):
+        for output_index in [77]:#range(len(outputs)):
             logger.debug("Patient: " + str(i))
             i += 1
 
             der_value[output_index] = derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
         #"FIX" output
         outputs += learning_rate * der_value
+        print('value: ' + str(outputs[77, 0]))
 
         corrected = True
+
+    #Just fix the last one as well
+    try:
+        beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+    except FloatingPointError as e:
+        print(str(e))
+
+    sigma = calc_sigma(outputs)
+
+    current_error = total_error(beta, sigma)
+
+    if (prev_error == None or current_error <= prev_error):
+        prev_error = current_error
+    elif corrected:
+        #Undo the weight correction
+        outputs -= learning_rate * der_value
+        corrected = False
 
     return outputs
 
