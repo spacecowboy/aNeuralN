@@ -179,7 +179,7 @@ class Test(unittest.TestCase):
             y_force = get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
 
             dBdYi = -y_force / beta_force
-            method_value = derivative_beta(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
+            method_value = derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
             print(dBdYi, method_value)
             assert(dBdYi == method_value)
 

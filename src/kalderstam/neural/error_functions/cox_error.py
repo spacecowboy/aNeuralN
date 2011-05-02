@@ -18,6 +18,7 @@ def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
 
 def get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups):
     output = outputs[output_index, 0]
+    beta_out = np.exp(beta * output)
     y_force = 0
     for es, risk_group, z, w in zip(timeslots, risk_groups, part_func, weighted_avg):
         #glogger.debugPlot('Partition function', part_func[s], style = 'b+')
@@ -26,7 +27,7 @@ def get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots,
         if es == output_index:
             kronicker = 1
         if output_index in risk_group:
-            dy_part = np.exp(beta * output) / z * (1 + beta * (output - w))
+            dy_part = beta_out / z * (1 + beta * (output - w))
         else:
             dy_part = 0
         y_force += kronicker - dy_part
@@ -54,12 +55,14 @@ def derivative_sigma(sigma, output_index, outputs):
     #glogger.debugPlot('Sigma derivative', ds, style = 'b+')
     return ds
 
-def derivative_beta(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups):
+def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
     """Eq. 14, derivative of Beta with respect to y(i)"""
     #glogger.debugPlot('Beta derivative', res, style = 'r+')
 
     y_force = get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
-    beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
+    #beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
+
+    logger.info('OI:' + str(output_index) + ' B:' + str(beta / abs(beta)) + ' BF:' + str(beta_force / abs(beta_force)) + ' YF' + str(y_force / abs(y_force)))
     return - y_force / beta_force
 
 def get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots):

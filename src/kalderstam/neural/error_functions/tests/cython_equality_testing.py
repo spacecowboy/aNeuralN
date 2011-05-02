@@ -44,10 +44,11 @@ class Test(unittest.TestCase):
 
         for output_index in range(len(outputs)):
             cder = cderivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
-            pyder = pyderivative_beta(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
+            pyder = pyderivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
             print(cder, pyder)
             assert(isinstance(pyder, cder.__class__))
-            assert(round(cder, 8) == round(pyder, 8))
+            assert(round(cder, 20) == round(pyder, 20))
+            assert(cder == pyder)
 
     def testCythonGet_slope(self):
         """Make sure the cython code returns the same values as python code."""

@@ -66,6 +66,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
     risk_groups = get_risk_groups(timeslots)
     prev_error = None
     corrected = False
+    initial_minima = False
     for epoch in range(epochs):
         logger.info("Epoch " + str(epoch))
         outputs = net.sim(inputs)
@@ -85,14 +86,20 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
 
         current_error = total_error(beta, sigma)
 
-        if (prev_error == None or current_error <= prev_error):
+        if prev_error == None:
             prev_error = current_error
+        elif current_error <= prev_error:
+            prev_error = current_error
+            initial_minima = False #We must be out of it
+        elif initial_minima and current_error > prev_error:
+            prev_error = current_error
+            logger.info('Allowing initial climb') #It's ok
         elif corrected:
             #Undo the weight correction
             apply_weight_corrections(net, -learning_rate)
             corrected = False
             #Half the learning rate
-            learning_rate *= -0.5
+            learning_rate *= 0.5
             #And "redo" this epoch
             logger.info('Halfing the learning rate: ' + str(learning_rate))
             continue
@@ -151,6 +158,25 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
         apply_weight_corrections(net, learning_rate)
         corrected = True
 
+    try:
+        beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+    except FloatingPointError as e:
+        print(str(e))
+
+    sigma = calc_sigma(outputs)
+
+    current_error = total_error(beta, sigma)
+
+    if prev_error == None:
+        prev_error = current_error
+    elif current_error <= prev_error:
+        initial_minima = False #We must be out of it
+    elif initial_minima and current_error > prev_error:
+        pass #It's ok
+    elif corrected:
+        #Undo the weight correction
+        apply_weight_corrections(net, -learning_rate)
+
     return net
 
 def apply_weight_corrections(net, learning_rate):
@@ -158,9 +184,9 @@ def apply_weight_corrections(net, learning_rate):
     for node in net.output_nodes + net.hidden_nodes:
         #Calculate weight update
         for back_node, back_weight in node.weights.items():
-            node.weights[back_node] = back_weight + learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
+            node.weights[back_node] = back_weight - learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
         #Don't forget bias
-        node.bias = node.bias + learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
+        node.bias = node.bias - learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
 
 def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
     np.seterr(all = 'raise') #I want errors!
@@ -182,19 +208,19 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
 
         current_error = total_error(beta, sigma)
 
-        if (prev_error == None or current_error <= prev_error or current_error > prev_error):
+        if (prev_error == None or current_error <= prev_error):
             prev_error = current_error
             #Try increasing the rate, but less than below
             #learning_rate *= 1.2
             #logger.info('learning rate increased: ' + str(learning_rate))
         elif corrected:
             #Undo the weight correction
-            outputs -= learning_rate * der_value
+            outputs += learning_rate * der_value
             corrected = False
             #Half the learning rate
             learning_rate *= 0.5
-            #if abs(learning_rate) < 0.01:
-            #    learning_rate *= -1000
+            #if abs(learning_rate) < 0.1:
+            #    learning_rate *= -10
             #And "redo" this epoch
             logger.info('Halfing the learning rate: ' + str(learning_rate))
             continue
@@ -211,14 +237,14 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
 
         #Iterate over all output indices
         i = 0
-        for output_index in [77]:#range(len(outputs)):
+        for output_index in [17, 77]:#range(len(outputs)):
             logger.debug("Patient: " + str(i))
             i += 1
 
             der_value[output_index] = derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
         #"FIX" output
-        outputs += learning_rate * der_value
-        print('value: ' + str(outputs[77, 0]))
+        outputs -= learning_rate * der_value
+        print('value: ' + str(outputs[[77, 17], 0]))
 
         corrected = True
 
@@ -232,12 +258,12 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
 
     current_error = total_error(beta, sigma)
 
-    if (prev_error == None or current_error <= prev_error):
-        prev_error = current_error
-    elif corrected:
-        #Undo the weight correction
-        outputs -= learning_rate * der_value
-        corrected = False
+#    if (prev_error == None or current_error <= prev_error):
+#        prev_error = current_error
+#    elif corrected:
+#        #Undo the weight correction
+#        outputs += learning_rate * der_value
+#        corrected = False
 
     return outputs
 

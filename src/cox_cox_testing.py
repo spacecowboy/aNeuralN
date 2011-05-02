@@ -24,16 +24,12 @@ def generate_timeslots2(T):
     return timeslots[::-1]
 
 def test(net, filename, epochs, learning_rate):
-    logger.info("Running test for: " + str(epochs) + ", rate: " + str(learning_rate))
+    logger.info("Running test for: " + filename + ' ' + str(epochs) + ", rate: " + str(learning_rate))
     P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
     #P = P[:100,:]
     #T = T[:100, :]
 
     timeslots = generate_timeslots(T)
-    timeslots2 = generate_timeslots2(T)
-    #Just to make sure it's correct when testing
-    for x, y in zip(timeslots, timeslots2):
-        assert(x == y)
 
     try:
         net = train_cox(net, (P, T), (None, None), timeslots, epochs, learning_rate = learning_rate)
@@ -64,16 +60,17 @@ if __name__ == "__main__":
     p = 4 #number of input covariates
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_ALPHA.ann')
-    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_OMEGA.ann')
+    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_OMEGA.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
-    #net = build_feedforward(p, 10, 1, output_function = linear())
+    net = build_feedforward(p, 10, 1, output_function = linear())
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
-    P, T = parse_file(lineartarget_nn, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+    filename = nonlineartarget_wn
+    P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
 
     #Initial state
     outputs = net.sim(P)
@@ -85,30 +82,31 @@ if __name__ == "__main__":
         network_timeslot_indices.append(timeslot_index)
 
     plt.figure()
-    plt.title('Scatter between index ordering, initial')
+    plt.title('Scatter between index ordering, initial\n' + str(filename))
     plt.xlabel('Target timeslots')
     plt.ylabel('Network timeslots')
     plt.plot(timeslots_target, timeslots_target, 'r-')
     plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
     plt.show()
 
-    epochs = 100
+    epochs = 1000
     rate = 5
-    net = test(net, lineartarget_nn, epochs, rate)
 
+    for times in range(100):
+        net = test(net, filename, epochs, rate)
 
-    outputs = net.sim(P)
-    timeslots_target = generate_timeslots(T)
-    timeslots_network = generate_timeslots(outputs)
-    network_timeslot_indices = []
-    for output_index in timeslots_network:
-        timeslot_index = indexOf(timeslots_target, output_index)
-        network_timeslot_indices.append(timeslot_index)
+        outputs = net.sim(P)
+        timeslots_target = generate_timeslots(T)
+        timeslots_network = generate_timeslots(outputs)
+        network_timeslot_indices = []
+        for output_index in timeslots_network:
+            timeslot_index = indexOf(timeslots_target, output_index)
+            network_timeslot_indices.append(timeslot_index)
 
-    plt.figure()
-    plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(rate))
-    plt.xlabel('Target timeslots')
-    plt.ylabel('Network timeslots')
-    plt.plot(timeslots_target, timeslots_target, 'r-')
-    plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
-    plt.show()
+        plt.figure()
+        plt.title('Scatter between index ordering, epochs:rate | ' + str(epochs) + ':' + str(rate) + '\n' + str(filename))
+        plt.xlabel('Target timeslots')
+        plt.ylabel('Network timeslots')
+        plt.plot(timeslots_target, timeslots_target, 'r-')
+        plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
+        plt.show()
