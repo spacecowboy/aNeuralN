@@ -6,8 +6,8 @@ Created on Apr 18, 2011
 import unittest
 from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
     get_beta_force
-from ..cox_error import get_risk_outputs as pyget_risk_outputs, get_slope as pyget_slope, derivative_beta as pyderivative_beta, calc_beta
-from ..ccox_error import get_risk_outputs as cget_risk_outputs, get_slope as cget_slope, derivative_beta as cderivative_beta #@UnresolvedImport
+from ..cox_error import get_slope as pyget_slope, derivative_beta as pyderivative_beta, calc_beta
+from ..ccox_error import get_slope as cget_slope, derivative_beta as cderivative_beta #@UnresolvedImport
 import numpy as np
 
 
@@ -102,25 +102,6 @@ class Test(unittest.TestCase):
             print(p, c)
             assert(isinstance(p, c.__class__))
             assert(p == c)
-
-
-    def testCythonGet_risk_outputs(self):
-        """Make sure the cython code returns the same values as python code."""
-
-        outputs, timeslots = self.generateRandomTestData(100)
-        risk_groups = get_risk_groups(timeslots)
-        for time_index in range(len(timeslots)):
-            risks = outputs[risk_groups[time_index]]
-            py_risks = pyget_risk_outputs(time_index, timeslots, outputs)
-            cy_risks = cget_risk_outputs(time_index, timeslots, outputs) #@UndefinedVariable
-            assert(len(py_risks) == len(timeslots) - time_index)
-            assert(len(cy_risks) == len(timeslots) - time_index)
-            assert(len(risks) == len(py_risks))
-            #Compare values in risk_groups
-            print(cy_risks)
-            for index in range(len(py_risks)):
-                assert(py_risks[index] == cy_risks[index])
-                assert(py_risks[index] == risks[index])
 
 
 if __name__ == "__main__":

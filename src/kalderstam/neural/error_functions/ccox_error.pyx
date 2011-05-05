@@ -12,7 +12,9 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
     output = outputs[output_index]
     y_force = 0
     beta_out = np.exp(beta * output)
-    for index in range(len(timeslots)):
+    #for index in range(len(timeslots)):
+    cdef int length = timeslots.shape[0]
+    for index from 0 <= index < length:
         s = timeslots[index]
         kronicker = 0
         if s == output_index:
@@ -30,7 +32,8 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
 def get_slope(double beta, risk_groups, beta_risk, np.ndarray[np.float64_t, ndim=1] part_func, np.ndarray[np.float64_t, ndim=1] weighted_avg, np.ndarray[np.float64_t, ndim=2] outputs, np.ndarray[np.int_t, ndim=1] timeslots):
     cdef Py_ssize_t time_index, s
     cdef np.float64_t output, result = 0
-    for time_index in range(timeslots.shape[0]):
+    cdef int length = timeslots.shape[0]
+    for time_index from 0 <= time_index < length:
         s = timeslots[time_index]
         output = outputs[s, 0]
         risk_outputs = outputs[risk_groups[time_index], 0]
@@ -45,14 +48,3 @@ def get_slope(double beta, risk_groups, beta_risk, np.ndarray[np.float64_t, ndim
         result += (output - weighted_avg[time_index])
 
     return result
-    
-@cython.boundscheck(False) # turn of bounds-checking for entire function
-cpdef np.ndarray[np.float64_t, ndim=1] get_risk_outputs(int time_index, timeslots, outputs):
-    """s corresponds to the index of an output in outputs"""
-    cdef int s, index, total_length = 0
-    total_length = timeslots.shape[0]
-    risk_outputs = np.zeros(total_length - time_index, dtype=np.float)
-    for index in range(time_index, total_length):
-        s = timeslots[index]
-        risk_outputs[index - time_index] = outputs[s, 0]
-    return risk_outputs

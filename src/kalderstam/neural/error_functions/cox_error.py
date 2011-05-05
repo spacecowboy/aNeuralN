@@ -125,15 +125,6 @@ def calc_sigma(outputs):
     logger.debug("Sigma = " + str(sigma))
     return sigma
 
-def get_risk_outputs(time_index, timeslots, outputs):
-    """Contains a list of lists, each list being the set of indices in the output array which make up the risk group."""
-    total_length = len(timeslots)
-    risk_outputs = np.zeros(total_length - time_index, dtype = float)
-    for index in range(time_index, total_length):
-        s = timeslots[index]
-        risk_outputs[index - time_index] = outputs[s]
-    return risk_outputs
-
 def get_risk_groups(timeslots):
     risk_groups = []
     for i in range(len(timeslots)):
