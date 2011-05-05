@@ -5,7 +5,7 @@ from numpy.core.numeric import dot
 import math
 import logging
 
-logger = logging.getLogger('kalderstam.neural.matlab_functions')
+logger = logging.getLogger('kalderstam.neural.matlab')
 
 def loadsyn1(n = 100):
     half = n / 2
@@ -365,40 +365,3 @@ def hinton(W, maxWeight = None):
                 _blob(_x - 0.5, height - _y + 0.5, min(1, -w / maxWeight), 'black')
 
     #plt.show()
-
-if __name__ == '__main__':
-    logging.basicConfig(level = logging.DEBUG)
-
-    from kalderstam.neural.training_functions import traingd_block
-    from kalderstam.neural.network import build_feedforward
-    from kalderstam.util.filehandling import get_validation_set
-
-    #Binary activation function
-    def activation_function(x):
-        if x > 0:
-            return 1
-        else:
-            return 0
-
-    P, T = loadsyn1(100)
-    test, validation = get_validation_set(P, T, validation_size = 0)
-    P, T = test
-
-    net = build_feedforward(2, 3, 1)
-
-    plot_network_weights(net, figure = 3)
-    plt.title('Before training')
-
-    net = traingd_block(net, test, validation, 100, block_size = 10, stop_error_value = False)
-
-    Y = net.sim(P)
-
-    [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed] = stat(Y, T)
-
-    plotroc(Y, T)
-    plot2d2c(net, P, T, figure = 2)
-
-    plot_network_weights(net, figure = 4)
-    #plt.title('After training')
-
-    plt.show()

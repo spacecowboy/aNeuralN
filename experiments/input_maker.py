@@ -36,6 +36,13 @@ def nonlinear_target(x_array):
         T[i] = 10 - (x[0] + x[1] + x[2] + x[3]) + 5 * (x[0] * x[3])
     return T
 
+def productfunction(x_array):
+    T = np.zeros(len(x_array))
+    for i in range(len(x_array)):
+        x = x_array[i]
+        T[i] = (x[0] * x[1] + x[0] * x[2] + x[0] * x[3])
+    return T
+
 #the function the network should try and approximate
 def linear_target(x_array):
     T = np.zeros(len(x_array))
@@ -47,5 +54,5 @@ def linear_target(x_array):
     return T
 
 if __name__ == "__main__":
-    name = 'nonlineartarget'
-    make_input('/home/gibson/jonask/' + name + '_no_noise.txt', '/home/gibson/jonask/' + name + '_with_noise.txt', 1.5, nonlinear_target, 500)
+    name = 'productfunction'
+    make_input('/home/gibson/jonask/' + name + '_no_noise.txt', '/home/gibson/jonask/' + name + '_with_noise.txt', 0.25, productfunction, 500)

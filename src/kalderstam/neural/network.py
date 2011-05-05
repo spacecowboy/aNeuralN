@@ -143,22 +143,3 @@ class node:
 
     def output_derivative(self, inputs):
         return self.activation_function.derivative(self.input_sum(inputs))
-
-
-if __name__ == '__main__':
-    import time
-    net = build_feedforward(input_number = 2, hidden_number = 3, output_number = 1)
-
-    results = benchmark(net.update)([1, 2])
-    print(results)
-
-    results = benchmark(net.sim)([[1, 2], [2, 3]])
-    print(results)
-
-    com = build_feedforward_committee(input_number = 2, hidden_number = 3, output_number = 1)
-
-    results = benchmark(com.update)([1, 2])
-    print(results)
-
-    results = benchmark(com.sim)([[1, 2], [2, 3]])
-    print(results)

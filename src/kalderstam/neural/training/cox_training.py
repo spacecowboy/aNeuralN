@@ -5,7 +5,7 @@ import logging
 from numpy import exp
 import numpy as np
 import kalderstam.util.graphlogger as glogger
-from kalderstam.neural.training_functions import traingd_block
+from kalderstam.neural.training.gradientdescent import traingd
 from kalderstam.util.filehandling import normalizeArray
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
@@ -268,7 +268,7 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
     return outputs
 
 def test():
-    from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
+    from kalderstam.matlab.matlab_functions import loadsyn1, stat, plot2d2c, \
     loadsyn2, loadsyn3, plotroc, plot_network_weights
     from kalderstam.util.filehandling import parse_file, save_network, load_network
     from kalderstam.neural.network import build_feedforward, build_feedforward_committee
@@ -345,7 +345,7 @@ def test():
 
 #This is a test of the functionality in this file
 if __name__ == '__main__':
-    from kalderstam.neural.matlab_functions import loadsyn1, stat, plot2d2c, \
+    from kalderstam.matlab.matlab_functions import loadsyn1, stat, plot2d2c, \
     loadsyn2, loadsyn3, plotroc, plot_network_weights
     from kalderstam.util.filehandling import parse_file, save_network
     from kalderstam.neural.network import build_feedforward, build_feedforward_committee

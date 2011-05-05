@@ -34,7 +34,7 @@ def generate_timeslots(P, T):
 
     return timeslots
 
-def test(net, filename, epochs):
+def experiment(net, filename, epochs):
     P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
     #P = P[:100,:]
     #T = T[:100, :]
@@ -71,5 +71,5 @@ if __name__ == "__main__":
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
 
     while True:
-        test(net, nonlineartarget_wn, 500)
+        experiment(net, nonlineartarget_wn, 500)
         plt.show()
