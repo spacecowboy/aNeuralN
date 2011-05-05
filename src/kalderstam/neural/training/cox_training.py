@@ -1,5 +1,5 @@
 from kalderstam.neural.error_functions.cox_error import derivative, calc_beta, \
-    calc_sigma, get_risk_outputs, total_error, get_risk_groups, get_beta_force
+    calc_sigma, total_error, get_risk_groups, get_beta_force
 from kalderstam.util.decorators import benchmark
 import logging
 from numpy import exp
@@ -35,7 +35,7 @@ def generate_timeslots(T):
 def plot_correctly_ordered(outputs, timeslots):
     timeslots_network = generate_timeslots(outputs)
     global prev_timeslots_network
-    if prev_timeslots_network == None:
+    if prev_timeslots_network is None:
         prev_timeslots_network = timeslots_network
     #Now count number of correctly ordered indices
     count = 0
@@ -86,7 +86,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
 
         current_error = total_error(beta, sigma)
 
-        if prev_error == None:
+        if prev_error is None:
             prev_error = current_error
         elif current_error <= prev_error:
             prev_error = current_error
@@ -167,7 +167,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
 
     current_error = total_error(beta, sigma)
 
-    if prev_error == None:
+    if prev_error is None:
         prev_error = current_error
     elif current_error <= prev_error:
         initial_minima = False #We must be out of it
@@ -208,7 +208,7 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
 
         current_error = total_error(beta, sigma)
 
-        if (prev_error == None or current_error <= prev_error):
+        if (prev_error is None or current_error <= prev_error):
             prev_error = current_error
             #Try increasing the rate, but less than below
             #learning_rate *= 1.2
@@ -258,7 +258,7 @@ def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
 
     current_error = total_error(beta, sigma)
 
-#    if (prev_error == None or current_error <= prev_error):
+#    if (prev_error is None or current_error <= prev_error):
 #        prev_error = current_error
 #    elif corrected:
 #        #Undo the weight correction

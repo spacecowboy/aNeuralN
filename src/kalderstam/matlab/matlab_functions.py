@@ -302,7 +302,7 @@ def plot_network_weights(net, figure = None):
         #First check input nodes
         for i in range(net.num_of_inputs):
             if i in node.weights:
-                if max == None:
+                if max is None:
                     max = node.weights[i]
                 if node.weights[i] > abs(max):
                     max = node.weights[i]
@@ -311,13 +311,13 @@ def plot_network_weights(net, figure = None):
                 nweights.append(0)
         for lnode in net.get_all_nodes():
             if lnode == node:
-                if max == None:
+                if max is None:
                     max = node.bias
                 if abs(node.bias) > abs(max):
                     max = node.bias
                 nweights.append(node.bias)
             elif lnode in node.weights:
-                if max == None:
+                if max is None:
                     max = node.weights[lnode]
                 if abs(node.weights[lnode]) > abs(max):
                     max = node.weights[lnode]

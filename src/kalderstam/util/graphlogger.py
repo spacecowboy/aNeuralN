@@ -71,7 +71,7 @@ class graphlogger():
     def plot(self, y_val, x_val = None):
         self.setup()
 
-        if x_val == None:
+        if x_val is None:
             if len(self.x_values) == 0:
                 x_val = 0
             else:

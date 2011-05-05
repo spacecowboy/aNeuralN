@@ -32,7 +32,7 @@ def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hi
 
 class committee:
     def __init__(self, net_list = None):
-        if net_list == None:
+        if net_list is None:
             self.nets = []
         else:
             self.nets = net_list

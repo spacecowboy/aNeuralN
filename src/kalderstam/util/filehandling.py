@@ -20,7 +20,7 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
     Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
     Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs.
     Ignorerows specify which, if any, rows should be skipped."""
-    if targetcols == None:
+    if targetcols is None:
         targetcols = []
     try:
         targetcols = [int(targetcols)]

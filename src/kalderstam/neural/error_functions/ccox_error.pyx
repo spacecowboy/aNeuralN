@@ -8,7 +8,7 @@ cimport cython
 def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
     """Eq. 14, derivative of Beta with respect to y(i)"""
     cdef double output, y_force, beta_out, res
-    cdef int s, kronicker
+    cdef int s, kronicker, index
     output = outputs[output_index]
     y_force = 0
     beta_out = np.exp(beta * output)
@@ -30,9 +30,10 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
 
 @cython.boundscheck(False) # turn of bounds-checking for entire function    
 def get_slope(double beta, risk_groups, beta_risk, np.ndarray[np.float64_t, ndim=1] part_func, np.ndarray[np.float64_t, ndim=1] weighted_avg, np.ndarray[np.float64_t, ndim=2] outputs, np.ndarray[np.int_t, ndim=1] timeslots):
-    cdef Py_ssize_t time_index, s
+    cdef Py_ssize_t s
     cdef np.float64_t output, result = 0
     cdef int length = timeslots.shape[0]
+    cdef int time_index
     for time_index from 0 <= time_index < length:
         s = timeslots[time_index]
         output = outputs[s, 0]
