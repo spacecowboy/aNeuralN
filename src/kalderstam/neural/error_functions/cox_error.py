@@ -95,7 +95,7 @@ def calc_beta(outputs, timeslots, risk_groups):
     part_func = np.zeros(len(timeslots))
     weighted_avg = np.zeros(len(timeslots))
 
-    slope = get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
+    slope = ccox.get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
 
     not_started = True
 
@@ -105,7 +105,7 @@ def calc_beta(outputs, timeslots, risk_groups):
         not_started = False
         prev_slope = slope
         beta += distance
-        slope = get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
+        slope = ccox.get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
         if slope * prev_slope < 0:
             #Different signs, we have passed the zero point, change directions and half the distance
             distance /= -2

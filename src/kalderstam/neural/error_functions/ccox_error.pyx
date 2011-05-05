@@ -27,22 +27,22 @@ def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, out
     return res
 
 @cython.boundscheck(False) # turn of bounds-checking for entire function    
-def get_slope(double beta, risk_outputs, beta_risk, np.ndarray[np.float64_t, ndim=1] part_func, np.ndarray[np.float64_t, ndim=1] weighted_avg, np.ndarray[np.float64_t, ndim=2] outputs, np.ndarray[np.int_t, ndim=1] timeslots):
+def get_slope(double beta, risk_groups, beta_risk, np.ndarray[np.float64_t, ndim=1] part_func, np.ndarray[np.float64_t, ndim=1] weighted_avg, np.ndarray[np.float64_t, ndim=2] outputs, np.ndarray[np.int_t, ndim=1] timeslots):
     cdef Py_ssize_t time_index, s
     cdef np.float64_t output, result = 0
     for time_index in range(timeslots.shape[0]):
         s = timeslots[time_index]
         output = outputs[s, 0]
-        risk_outputs[s] = get_risk_outputs(time_index, timeslots, outputs)
+        risk_outputs = outputs[risk_groups[time_index], 0]
         try:
-            beta_risk[s] = np.exp(beta * risk_outputs[s])
+            beta_risk[time_index] = np.exp(beta * risk_outputs)
         except FloatingPointError:
             #logger.error("In get_slope for calc_beta: \n if beta is 40 and risk_output is -23, we will get an underflow.\n Setting numpy.seterr(under = 'warn') or 'ignore', will do set it to zero in that case.")
             raise(FloatingPointError)
 
-        part_func[s] = beta_risk[s].sum()
-        weighted_avg[s] = (beta_risk[s] * risk_outputs[s]).sum() / part_func[s]
-        result += (output - weighted_avg[s])
+        part_func[time_index] = beta_risk[time_index].sum()
+        weighted_avg[time_index] = (beta_risk[time_index] * risk_outputs).sum() / part_func[time_index]
+        result += (output - weighted_avg[time_index])
 
     return result
     

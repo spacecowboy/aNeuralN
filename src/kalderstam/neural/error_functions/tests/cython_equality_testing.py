@@ -56,7 +56,6 @@ class Test(unittest.TestCase):
 
         beta = 0.79 #Start with something small
 
-        crisk_outputs = [None for i in range(len(timeslots))]
         pybeta_risk = [None for i in range(len(timeslots))]
         cbeta_risk = [None for i in range(len(timeslots))]
         pypart_func = np.zeros(len(timeslots))
@@ -67,7 +66,7 @@ class Test(unittest.TestCase):
         risk_groups = get_risk_groups(timeslots)
 
         pyslope = pyget_slope(beta, risk_groups, pybeta_risk, pypart_func, pyweighted_avg, outputs, timeslots)
-        cslope = cget_slope(beta, crisk_outputs, cbeta_risk, cpart_func, cweighted_avg, outputs, timeslots)
+        cslope = cget_slope(beta, risk_groups, cbeta_risk, cpart_func, cweighted_avg, outputs, timeslots)
 
         #Check equality between all returned values
         #print(pyslope, pyslope.__class__)
@@ -76,31 +75,31 @@ class Test(unittest.TestCase):
         assert(not np.isnan(cslope))
         #assert(isinstance(pyslope, cslope.__class__)) #Make sure they are of the same type
         assert(pyslope == cslope)
-        #Risk outputs
-        for i, c in zip(range(len(crisk_outputs)), crisk_outputs):
-            p = outputs[risk_groups[i], 0]
-            assert(isinstance(p, c.__class__))
-            #print(p, p.__class__)
-            #print(c, c.__class__)
-            for pp, cc in zip(p, c):
-                #print(pp, cc)
-                assert(isinstance(pp, cc.__class__))
-                assert(pp == cc)
+#        #Risk outputs
+#        for i, c in zip(range(len(crisk_outputs)), crisk_outputs):
+#            p = outputs[risk_groups[i], 0]
+#            assert(isinstance(p, c.__class__))
+#            #print(p, p.__class__)
+#            #print(c, c.__class__)
+#            for pp, cc in zip(p, c):
+#                #print(pp, cc)
+#                assert(isinstance(pp, cc.__class__))
+#                assert(pp == cc)
         #Beta risk
         for p, c in zip(pybeta_risk, cbeta_risk):
             assert(isinstance(p, c.__class__))
             for pp, cc in zip(p, c):
-                #print(pp, cc)
+                print(pp, cc)
                 assert(isinstance(pp, cc.__class__))
                 assert(pp == cc)
         #part_func
         for p, c in zip(pypart_func, cpart_func):
-            #print(p, c)
+            print(p, c)
             assert(isinstance(p, c.__class__))
             assert(p == c)
         #weighted average
         for p, c in zip(pyweighted_avg, cweighted_avg):
-            #print(p, c)
+            print(p, c)
             assert(isinstance(p, c.__class__))
             assert(p == c)
 

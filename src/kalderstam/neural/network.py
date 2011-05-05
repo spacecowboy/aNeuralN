@@ -107,8 +107,6 @@ class node:
         self.random_range = random_range
         self.weights = {}
         self.activation_function = active #Used to save to file
-        #self.activation_function = active.activation_function
-        #self.activation_derivative = active.derivative
         #initialize the bias
         if bias:
             self.bias = bias
