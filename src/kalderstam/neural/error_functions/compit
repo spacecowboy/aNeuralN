@@ -1,0 +1,16 @@
+#!/bin/bash
+
+root=`python -c 'import sys; print sys.prefix'`
+numpy=`python -c 'import numpy; print numpy.get_include()'`
+ver=`python -c 'import sys; print sys.version[:3]'`
+
+#Cant use spaces in bash
+name="${1%.c}"
+
+gcc -std=c99 -fPIC -O3 -g \
+	-I$root/include/python$ver \
+	-I$numpy \
+	-c "${name}.c"
+gcc -shared -o $name.so $name.o
+
+#-I /export/home/jonask/Downloads/numpy-1.5.1/build/src.linux-x86_64-2.7/numpy/core/include/numpy/ -I /export/home/jonask/Downloads/numpy-1.5.1/numpy/core/include

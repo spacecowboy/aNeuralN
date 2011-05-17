@@ -1,9 +1,11 @@
 from numpy import log, exp, array
 import logging
 import numpy as np
+from math import exp
 #import kalderstam.util.graphlogger as glogger
 #cython file
 import ccox_error as ccox
+from cox_error_in_c import derivative_beta as cderivative_beta, get_slope as cget_slope
 
 logger = logging.getLogger('kalderstam.neural.error_functions')
 
@@ -18,7 +20,8 @@ def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
 
 def get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups):
     output = outputs[output_index, 0]
-    beta_out = np.exp(beta * output)
+    #print beta, output
+    beta_out = exp(beta * output)
     y_force = 0
     for es, risk_group, z, w in zip(timeslots, risk_groups, part_func, weighted_avg):
         #glogger.debugPlot('Partition function', part_func[s], style = 'b+')
@@ -42,7 +45,7 @@ def derivative_error(beta, sigma):
 
 def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
     """Derivative of (Beta*Sigma) with respect to y(i)"""
-    bs = ccox.derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups) * sigma + beta * derivative_sigma(sigma, output_index, outputs) #@UndefinedVariable
+    bs = derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups) * sigma + beta * derivative_sigma(sigma, output_index, outputs) #@UndefinedVariable
     #glogger.debugPlot('BetaSigma derivative', bs, style = 'g+')
     if np.isnan(bs) or np.isinf(bs):
         raise FloatingPointError('Derivative BetaSigma is Nan or Inf: ' + str(bs))
@@ -58,21 +61,23 @@ def derivative_sigma(sigma, output_index, outputs):
 def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
     """Eq. 14, derivative of Beta with respect to y(i)"""
     #glogger.debugPlot('Beta derivative', res, style = 'r+')
+    return cderivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
 
-    y_force = get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
+    #y_force = get_y_force(beta, part_func, weighted_avg, output_index, outputs, timeslots, risk_groups)
     #beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
 
-    logger.info('OI:' + str(output_index) + ' B:' + str(beta / abs(beta)) + ' BF:' + str(beta_force / abs(beta_force)) + ' YF' + str(y_force / abs(y_force)))
-    return - y_force / beta_force
+    #logger.info('OI:' + str(output_index) + ' B:' + str(beta / abs(beta)) + ' BF:' + str(beta_force / abs(beta_force)) + ' YF' + str(y_force / abs(y_force)))
+    #return - y_force / beta_force
 
 def get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots):
+    #cget_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots)
     result = 0
     for time_index in range(len(timeslots)):
         s = timeslots[time_index]
         output = outputs[s, 0]
         risk_outputs = outputs[risk_groups[time_index], 0]
         try:
-            beta_risk[time_index] = exp(beta * risk_outputs)
+            beta_risk[time_index] = np.exp(beta * risk_outputs)
         except FloatingPointError as e:
             logger.error("In get_slope for calc_beta: \n if beta is 40 and risk_output is -23, we will get an underflow.\n Setting numpy.seterr(under = 'warn') or 'ignore', will do set it to zero in that case.")
             raise(e)
@@ -91,11 +96,11 @@ def calc_beta(outputs, timeslots, risk_groups):
     beta = 0.1 #Start with something small
     distance = 7.0 #Fairly large interval, we actually want to cross the zero
 
-    beta_risk = [None for i in range(len(timeslots))]
+    beta_risk = [np.zeros(len(risk_groups[i])) for i in range(len(risk_groups))]
     part_func = np.zeros(len(timeslots))
     weighted_avg = np.zeros(len(timeslots))
 
-    slope = ccox.get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
+    slope = cget_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
 
     not_started = True
 
@@ -105,7 +110,7 @@ def calc_beta(outputs, timeslots, risk_groups):
         not_started = False
         prev_slope = slope
         beta += distance
-        slope = ccox.get_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
+        slope = cget_slope(beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots) #@UndefinedVariable
         if slope * prev_slope < 0:
             #Different signs, we have passed the zero point, change directions and half the distance
             distance /= -2
@@ -114,7 +119,7 @@ def calc_beta(outputs, timeslots, risk_groups):
             distance *= -1
         logger.debug("Beta: " + str(beta) + ", Slope: " + str(slope) + ", distance: " + str(distance))
 
-    if abs(beta) >= 200:
+    if abs(beta) >= 200 or np.isnan(slope):
         raise FloatingPointError('Beta is diverging')
     logger.debug("Beta = " + str(beta))
     return beta, beta_risk, part_func, weighted_avg

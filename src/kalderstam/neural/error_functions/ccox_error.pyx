@@ -4,12 +4,25 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+#C Math library header
+cdef extern from "math.h":
+    float exp(float omega)
+    #float sinf(float theta)
+    #float acosf(float theta)
+
+#cpdef double get_y_force(double beta, np.ndarray[np.float64_t, ndim=1] part_func):
+#    cdef double y_force = 0
+    
+#    y_force = exp(beta)
+    
+#    return y_force
+
 @cython.boundscheck(False) # turn of bounds-checking for entire function
 def derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
     """Eq. 14, derivative of Beta with respect to y(i)"""
     cdef double output, y_force, beta_out, res
     cdef int s, kronicker, index
-    output = outputs[output_index]
+    output = outputs[output_index][0]
     y_force = 0
     beta_out = np.exp(beta * output)
     #for index in range(len(timeslots)):
