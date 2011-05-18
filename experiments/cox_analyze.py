@@ -95,4 +95,5 @@ if __name__ == "__main__":
         net = test(net, P, T, filename, epochs, rate)
 
         orderscatter(net, T, filename)
+        glogger.setup()
         plt.show()

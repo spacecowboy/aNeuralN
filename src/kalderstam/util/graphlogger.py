@@ -29,7 +29,12 @@ def infoPlot(name, y, x = None, style = 'b'):
     '''Name of the graph to plot to, the y value, and an optional x value'''
     getGraphLogger(name, style).infoPlot(y, x)
 
+def setup():
+    for name in loggers:
+        loggers[name].setup()
+
 def show():
+    setup()
     plt.show()
 
 class graphlogger():
@@ -37,22 +42,13 @@ class graphlogger():
         self.name = name
         self.x_values = []
         self.y_values = []
-
+        self.ymin = -0.0001
+        self.ymax = 0.0001
+        self.xmin = 0
+        self.xmax = 1
         self.style = style
+
         self.ready = False
-
-    def setup(self):
-        if not self.ready:
-            self.ready = True
-
-            #pyplot stuff
-            self.fig = plt.figure()
-            self.ax = self.fig.add_subplot(111)
-            self.ax.set_title(str(self.name))
-            self.line, = self.ax.plot([], [], self.style)
-            self.ax.grid()
-            self.clean_background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
-            self.ax.set_ylim(-0.0001, 0.0001)
 
     def infoPlot(self, *args, **kwargs):
         global logging_level
@@ -63,14 +59,28 @@ class graphlogger():
         global logging_level
         if logging_level >= debug:
             self.plot(*args, **kwargs)
+    def setup(self):
+        if not self.ready:
+            self.fig = plt.figure()
+            self.ax = self.fig.add_subplot(111)
+            self.ax.set_title(str(self.name))
+            self.line, = self.ax.plot([], [], self.style)
+            self.ax.grid()
+            self.clean_background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
+
+            self.ax.set_xlim(self.xmin, self.xmax)
+            self.ax.set_ylim(self.ymin, self.ymax)
+
+            self.line.set_data(self.x_values, self.y_values)
+            self.ready = True
 
     def show(self):
-        #self.fig.canvas.draw()
+        self.setup()
+
         plt.show()
 
     def plot(self, y_val, x_val = None):
-        self.setup()
-
+        self.ready = False #Forces a new figure to be drawn next time since we've added data
         if x_val is None:
             if len(self.x_values) == 0:
                 x_val = 0
@@ -83,30 +93,24 @@ class graphlogger():
         self.x_values.append(x)
         self.y_values.append(y)
 
-        xmin, xmax = self.ax.get_xlim()
-        ymin, ymax = self.ax.get_ylim()
-        reclear = False
-        if x >= xmax:
-            self.ax.set_xlim(xmin, 2 * x)
-            reclear = True
-        if x < xmin:
+        # Change limits if needed
+
+        if x >= self.xmax:
+            self.xmax = 2 * x
+        if x < self.xmin:
             if x >= 0:
-                self.ax.set_xlim(x / 2, xmax)
+                self.xmin = x / 2
             else:
-                self.ax.set_xlim(2 * x, xmax)
-            reclear = True
+                self.xmin = 2 * x
 
-        if y >= ymax:
-            self.ax.set_ylim(ymin, 2 * y)
-            reclear = True
-        if y < ymin:
+        if y >= self.ymax:
+            self.ymax = 2 * y
+        if y < self.ymin:
             if y >= 0:
-                self.ax.set_ylim(y / 2, ymax)
+                self.ymin = y / 2
             else:
-                self.ax.set_ylim(2 * y, ymax)
-            reclear = True
+                self.ymin = y * 2
 
-        self.line.set_data(self.x_values, self.y_values)
 
 if __name__ == '__main__':
     logger = getGraphLogger('TestLogging', 'b-')

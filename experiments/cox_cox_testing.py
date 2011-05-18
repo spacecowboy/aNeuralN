@@ -99,7 +99,7 @@ if __name__ == "__main__":
     orderscatter(net, T_nn, no_noise)
     plt.show()
 
-    epochs = 300
+    epochs = 10
     rate = 5
 
     for times in range(100):
@@ -107,4 +107,5 @@ if __name__ == "__main__":
 
         orderscatter(net, T_nn, no_noise)
         orderscatter(net, T_wn, with_noise)
+        glogger.setup()
         plt.show()
