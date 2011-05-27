@@ -14,3 +14,5 @@ gcc -std=c99 -fPIC -O3 -g \
 gcc -shared -o $name.so $name.o
 
 #-I /export/home/jonask/Downloads/numpy-1.5.1/build/src.linux-x86_64-2.7/numpy/core/include/numpy/ -I /export/home/jonask/Downloads/numpy-1.5.1/numpy/core/include
+
+#python setup.py build_ext --inplace

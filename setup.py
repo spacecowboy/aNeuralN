@@ -9,6 +9,10 @@ cox_ext = Extension('neural.error_functions.cox_error_in_c',
           sources = ['src/kalderstam/neural/error_functions/cox_error_in_c.c'],
           include_dirs = [numpy_include],
           extra_compile_args = ['-std=c99'])
+network_ext = Extension('neural.fast_network',
+          sources = ['src/kalderstam/neural/fast_network.c'],
+          include_dirs = [numpy_include],
+          extra_compile_args = ['-std=c99'])
 
 setup(name = 'aNeuralN',
       version = '1.0',
@@ -20,6 +24,6 @@ setup(name = 'aNeuralN',
       package_dir = {'kalderstam': 'src/kalderstam'},
       package_data = {'kalderstam.neural.gui': ['src/kalderstam/neural/gui/*.glade']},
       ext_package = 'kalderstam',
-      ext_modules = [cox_ext],
+      ext_modules = [cox_ext, network_ext],
       requires = ['numpy', 'matplotlib'],
      )
