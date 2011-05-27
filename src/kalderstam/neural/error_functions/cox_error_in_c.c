@@ -27,11 +27,11 @@ int inRiskGroup(long output_index, PyArrayObject *risk_group) {
 static PyObject *derivative_beta(PyObject *self, PyObject *args)
 {
 	// Define the arguments, a couple of arrays and a few doubles and integers.
-	PyArrayObject *timeslots, *outputs, *part_func, *weighted_avg, *risk_group; // These are all indexed by slot_index. Potential sub-arrays are indexed by risk_index
+	PyArrayObject *timeslots, *outputs, *part_func, *weighted_avg, *risk_group; // These are all indexed by slot_index.
 	//PyListObject *risk_groups; // python list
 	PyObject *pybeta, *pybeta_force, *pyoutput_index, *risk_groups;
 	
-	long es, output_index, slot_index, risk_index, slotmax;
+	long es, output_index, slot_index, slotmax;
 	double z, w, beta, beta_force, output, beta_out, y_force, result, kronicker;
 
 	// Order of the arguments are: beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups
@@ -102,7 +102,7 @@ static PyObject *get_slope(PyObject *self, PyObject *args)
 	//PyListObject *risk_groups; // python list
 	PyObject *pybeta, *risk_groups, *beta_risks;
 	
-	long es, output_index, slotmax, slot_index, risk_index, riskmax, betariskmax, betarisk_index, risk_output_index;
+	long es, slotmax, slot_index, risk_index, riskmax, risk_output_index;
 	double *z, *w, beta, output, *beta_risk, result, risk_output;
 
 	// Order of the arguments are: beta, risk_groups, beta_risk, part_func, weighted_avg, outputs, timeslots
