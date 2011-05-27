@@ -71,7 +71,7 @@ if __name__ == "__main__":
     glogger.setLoggingLevel(glogger.debug)
 
     filename = "/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Two_thirds_of_SA_1889_dataset.txt"
-    P, T = parse_file(filename, targetcols = [4], inputcols = [-1, -2, -3, -4], ignorerows = [0], normalize = False)
+    P, T = parse_file(filename, targetcols = [4], inputcols = [-1, -2, -3, -4], ignorerows = [0], normalize = True)
 
     #P = P[100:, :]
     #T = T[100:, :]
@@ -82,13 +82,15 @@ if __name__ == "__main__":
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_OMEGA.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
-    net = build_feedforward(p, 5, 1, output_function = linear())
+
+    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/4x10x10x1.ann')
+    #net = build_feedforward(p, 20, 1, output_function = linear())
 
     #Initial state
     orderscatter(net, T, filename)
     plt.show()
 
-    epochs = 1000
+    epochs = 2000
     rate = 5
 
     for times in range(100):

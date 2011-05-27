@@ -304,7 +304,8 @@ def test():
 
     p = 4 #number of input covariates
 
-    net = build_feedforward(p, 8, 1, output_function = linear(1))
+    #net = build_feedforward(p, 8, 1, output_function = linear(1))
+    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/4x10x10x1.ann')
 
     filename = '/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt'
     #filename = '/home/gibson/jonask/my_tweaked_fake_data_with_noise.txt'
