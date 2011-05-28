@@ -62,10 +62,9 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		                              &self->random_range,
 					      &self->weights))
 	       {
-		PyErr_Format(PyExc_ValueError, "Arguments should be: string active, double bias, double random_range");
+		PyErr_Format(PyExc_ValueError, "Arguments should be: string active, double bias, double random_range, weights");
 		return NULL;
 		}
-	   printf("And the function is: %s\n", self->activation_function);
         
 	// Set bias
 	   if (bias != RAND_MAX) {
@@ -83,7 +82,7 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		self->weights = PyDict_New();
 	   }
 	   else {
-		Py_INCREF(&self->weights);
+		Py_INCREF(self->weights);
 	   }
 
 	   // Set activation function and derivative
