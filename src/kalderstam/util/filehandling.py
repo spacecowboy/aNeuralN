@@ -338,7 +338,7 @@ def load_network(filename):
                 """check activation_function name"""
                 m = re.search('activation_function\s*=\s*([\w\d]+)', line)
                 if m:
-                    function = get_function(m.group(1))
+                    function = m.group(1) #Change this when C-node is ready, just remove get_function part and save the string directly
                     continue
 
                 """check bias"""
@@ -346,10 +346,11 @@ def load_network(filename):
                 if m:
                     try:
                         value = float(m.group(1))
+                        """ create node"""
+                        nodes[current_node] = network.node(active = function, bias = value)
                     except:
-                        value = None #Random value
-                    """ create node"""
-                    nodes[current_node] = network.node(active = function, bias = value)
+                        """ create node"""
+                        nodes[current_node] = network.node(active = function)
                     node_weights[current_node] = {}
                     continue
 

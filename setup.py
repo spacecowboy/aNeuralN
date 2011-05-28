@@ -10,7 +10,7 @@ cox_ext = Extension('neural.error_functions.cox_error_in_c',
           include_dirs = [numpy_include],
           extra_compile_args = ['-std=c99'])
 network_ext = Extension('neural.fast_network',
-          sources = ['src/kalderstam/neural/fast_network.c'],
+          sources = ['src/kalderstam/neural/fast_network.c', 'src/kalderstam/neural/activation_functions.c'],
           include_dirs = [numpy_include],
           extra_compile_args = ['-std=c99'])
 

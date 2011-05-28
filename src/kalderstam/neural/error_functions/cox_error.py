@@ -3,8 +3,6 @@ import logging
 import numpy as np
 from math import exp
 #import kalderstam.util.graphlogger as glogger
-#cython file
-import ccox_error as ccox
 from cox_error_in_c import derivative_beta as cderivative_beta, get_slope as cget_slope
 
 logger = logging.getLogger('kalderstam.neural.error_functions')

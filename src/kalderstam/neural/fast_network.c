@@ -1,4 +1,8 @@
 #include <Python.h>
+#include "structmember.h" // used to declare member list
+#include <string.h> // need to compare names
+#include <stdlib.h> // required for random()
+#include "activation_functions.h"
 
 /**
 Node class
@@ -8,72 +12,27 @@ typedef struct {
    double random_range;
    double bias;
    PyObject *weights; // A dictionary of nodes and weight values
-   PyObject *activation_function; // This should ideally have a C-API
+   char *activation_function; // The string representation of the activation function!
+   double (*function)(double); // Function pointer, the activation function
+   double (*derivative)(double); // Function pointer, to the derivative of the activation function
 } Node;
 
+static double _Node_input_sum(Node *self, PyObject *inputs);
+static double _Node_output(Node *self, PyObject *inputs);
+
 /**
-Public members (accessible from Python). Don't know why, but this fails to compile, using getters/setters instead.
+Public members
+*/
 static PyMemberDef NodeMembers[] = {
-    {"random_range", T_DOUBLE, offsetof(Node, random_range), 0,
-     "Range within a weight or bias is randomized from."},
     {"bias", T_DOUBLE, offsetof(Node, bias), 0,
      "Bias value"},
     {"weights", T_OBJECT_EX, offsetof(Node, weights), 0,
-     "Dict of {Node, weight}"},
-    {"activation_function", T_OBJECT_EX, offsetof(Node, activation_function), 0,
-     "The activation function."},
-    {NULL}  // Sentinel, for safe iterating
-};
-*/
-
-/**
-Getters and Setters, finishing with a list of all methods
-*/
-
-static PyObject *
-Node_getrandom_range(Node *self, void *closure)
-{
-    return Py_BuildValue("d", self->random_range);
-}
-
-static int
-Node_setrandom_range(Node *self, PyObject *value, void *closure)
-{
-  if (value == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Cannot delete the random range attribute");
-    return -1;
-  }
-  
-  if (! PyFloat_Check(value)) {
-    PyErr_SetString(PyExc_TypeError, 
-                    "The random range attribute value must be a float");
-    return -1;
-  }
-
-  self->random_range = PyFloat_AS_DOUBLE(value);    
-
-  return 0;
-}
-
-
-static PyGetSetDef Node_getseters[] = {
-    {"random_range", 
-     (getter)Node_getrandom_range, (setter)Node_setrandom_range,
-     "Range within a weight or bias is randomized from",
-     NULL},
-    {"bias", 
-     (getter)Node_getbias, (setter)Node_setbias,
-     "Bias value",
-     NULL},
-    {"weights", 
-     (getter)Node_getweights, (setter)Node_setweights,
-     "Dict of {Node, weight}",
-     NULL},
-    {"activation_function", 
-     (getter)Node_getactivation_function, (setter)Node_setactivation_function,
-     "The activation function",
-     NULL},
-    {NULL}  /* Sentinel */
+     "The weights dict of {node, weight}"},
+    {"activation_function", T_STRING, offsetof(Node, activation_function), 0,
+     "String representation of the activation function (its name)"},
+    {"random_range", T_DOUBLE, offsetof(Node, random_range), 0,
+     "Range within the weights are randomly assigned"},
+    {NULL}  // for safe iteration
 };
 
 /**
@@ -82,9 +41,47 @@ Constructor/Destructor.
 static int
 Node_init(Node *self, PyObject *args, PyObject *kwds)
 {
+   // Default values
    self->weights = PyDict_New();
-   //self->activation_function == NULL // Should assign this...
-   self->bias = 0;
+   self->random_range = 1;
+   self->activation_function = "linear";
+
+   double bias = RAND_MAX; // Dummy value that will never occur in real life
+
+   static char *kwlist[] = {"active", "bias", "random_range", NULL};
+
+   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sdd", kwlist,
+                                      &self->activation_function, &bias,
+                                      &self->random_range))
+       return -1;
+
+   // Set bias
+   if (bias != RAND_MAX) {
+       self->bias = bias;
+   }
+   else {
+       // Assign random value based on random range
+       srand((unsigned)time(NULL)); // Seed it
+       self->bias = self->random_range * ((double)rand()/(double)RAND_MAX);
+   }
+
+   // Set activation function and derivative
+   if (strcmp (self->activation_function, "logsig" ) == 0)
+   {
+       self->function = logsig;
+       self->derivative = logsig_derivative;
+   }
+   else if (strcmp (self->activation_function, "tanh" ) == 0)
+   {
+       self->function = tanh;
+       self->derivative = tanh_derivative;
+   }
+   else // Linear it is!
+   {
+       self->activation_function = "linear";
+       self->function = linear;
+       self->derivative = linear_derivative;
+   }
 
    return 0;
 }
@@ -100,20 +97,62 @@ Node_dealloc(Node *self)
 Node Class methods
 These are the only ones that need speed, rest are implemented in python.
 */
-static PyObject* Node_input_sum(PyObject *self, PyObject *args)
+static double _Node_input_sum(Node *self, PyObject *inputs)
 {
-    printf("The fire pops and sizzles in C...\n");
+    // Iterate over the items in the weights dict
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    PyObject *key, *pyweight;
+    double weight, value, sum = self->bias;
+    Py_ssize_t pos = 0;
+
+    while (PyDict_Next(self->weights, &pos, &key, &pyweight)) {
+        weight = PyFloat_AS_DOUBLE(pyweight);
+        // If node is a Node, call its inputsum. Else, it's an input index.
+        if (PyObject_IsInstance(key, (PyObject*) self->ob_type))
+        {
+             sum += weight * _Node_output((Node*) key, inputs);
+        }
+        else // It's an input index
+        {
+             Py_ssize_t index = PyInt_AsSsize_t(key);
+             PyObject *pyval = PyList_GetItem(inputs, index);
+	     value = PyFloat_AS_DOUBLE(pyval);
+
+	     sum += weight * value;
+        }    
+    }
+
+    return sum;
+}
+static PyObject* Node_input_sum(Node *self, PyObject *inputs)
+{
+    double sum = _Node_input_sum(self, inputs);
+
+    return Py_BuildValue("d", sum);
 }
 
-static PyObject* Node_output_derivative(PyObject *self, PyObject *args)
+static double _Node_output_derivative(Node *self, PyObject *inputs)
 {
-    printf("KABOOOOM! Exploded in C!\n");
+    double inputsum = _Node_input_sum(self, inputs);
+    return self->derivative(inputsum);
+}
+static PyObject* Node_output_derivative(Node *self, PyObject *inputs)
+{
+    double val = _Node_output_derivative(self, inputs);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_BuildValue("d", val);
+}
+
+static double _Node_output(Node *self, PyObject *inputs)
+{
+    double inputsum = _Node_input_sum(self, inputs);
+    return self->function(inputsum);
+}
+static PyObject* Node_output(Node *self, PyObject *inputs)
+{
+    double val = _Node_output(self, inputs);
+
+    return Py_BuildValue("d", val);
 }
 
 /**
@@ -122,8 +161,9 @@ Specify the accessible methods in a list
 
 static PyMethodDef NodeMethods[] = 
 {
-    {"input_sum", (PyCFunction) Node_input_sum, METH_VARARGS, "The sum of the inputs to this Node"},
-    {"output_derivative", (PyCFunction) Node_output_derivative, METH_VARARGS, "The derivative of the activation function, given the inputs"},
+    {"input_sum", (PyCFunction) Node_input_sum, METH_O, "The sum of the inputs to this Node"},
+    {"output_derivative", (PyCFunction) Node_output_derivative, METH_O, "The derivative of the activation function, given the inputs"},
+    {"output", (PyCFunction) Node_output, METH_O, "The derivative of the activation function, given the inputs"},
     {NULL}, // So that we can iterate safely below
 };
 
