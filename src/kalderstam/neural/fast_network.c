@@ -43,7 +43,6 @@ static PyObject *
 Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     Node *self;
-    printf("New called!\n");
 
     self = (Node *)type->tp_alloc(type, 0);
     if (self != NULL) {
@@ -109,7 +108,6 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 Node_init(Node *self, PyObject *args, PyObject *kwds)
 {
-   printf("Init called!\n");
    // Default values
 /*
    self->weights = PyDict_New();
@@ -205,7 +203,6 @@ static double _Node_input_sum(Node *self, PyObject *inputs)
 }
 static PyObject* Node_input_sum(Node *self, PyObject *inputs)
 {
-    printf("C values = %p, %p, %g, %g, %s\n", self->function, self->derivative, self->bias, self->random_range, self->activation_function);
     if (self->function == NULL || self->derivative == NULL)
     {
          PyErr_Format(PyExc_ValueError, "Something was null! function=%p, derivative=%p", self->function, self->derivative);
@@ -248,23 +245,26 @@ Used in pickling
 */
 static PyObject* Node_getnewargs(Node* self)
 {
-	printf("GETNEWARGS! %s\n", self->activation_function);
+	//printf("GETNEWARGS! %s\n", self->activation_function);
 	//"active", "bias", "random_range", "weights"
 	return Py_BuildValue("(sddO)", self->activation_function, self->bias, self->random_range, self->weights);
 }
 
 static PyObject* Node_reduce(Node* self)
 {
-	printf("REDUCE!\n");
+	//printf("REDUCE!\n");
 	//"active", "bias", "random_range", "weights"
 	PyObject *args = Node_getnewargs(self);
 	if (args == NULL)
 		return NULL; // Error, an exception should have been set
-	printf("Got args\n");
+	//printf("Got args\n");
 	//return Py_BuildValue("(OO)", Py_TYPE(self), args);
 	// Retrieve the class object
 	PyObject *attr_name = Py_BuildValue("s", "__class__");
 	PyObject *class = PyObject_GetAttr(self, attr_name);
+
+	//Py_XDECREF(attr_name);
+
 	return Py_BuildValue("(OO)", class, args);
 }
 
