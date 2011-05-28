@@ -39,13 +39,92 @@ static PyMemberDef NodeMembers[] = {
 /**
 Constructor//Initializer//Destructor.
 */
-static void
-_Set(Node *self, double bias)
+static PyObject *
+Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    Node *self;
+    printf("New called!\n");
+
+    self = (Node *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+
+	// Default values
+	   self->weights = NULL;
+	   self->random_range = 1;
+	   self->activation_function = "linear";
+
+	   double bias = RAND_MAX; // Dummy value that will never occur in real life
+
+	   static char *kwlist[] = {"active", "bias", "random_range", "weights", NULL};
+
+	   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sddO", kwlist,
+		                              &self->activation_function, &bias,
+		                              &self->random_range,
+					      &self->weights))
+	       {
+		PyErr_Format(PyExc_ValueError, "Arguments should be: string active, double bias, double random_range");
+		return NULL;
+		}
+	   printf("And the function is: %s\n", self->activation_function);
+        
+	// Set bias
+	   if (bias != RAND_MAX) {
+	       self->bias = bias;
+	   }
+	   else {
+	       // Assign random value based on random range
+	       srand((unsigned)time(NULL)); // Seed it
+	       self->bias = self->random_range * ((double)rand()/(double)RAND_MAX);
+	   }
+
+	// Weights
+	   if (self->weights == NULL) 
+	   {
+		self->weights = PyDict_New();
+	   }
+	   else {
+		Py_INCREF(&self->weights);
+	   }
+
+	   // Set activation function and derivative
+	   if (strcmp (self->activation_function, "logsig" ) == 0)
+	   {
+	       self->function = logsig;
+	       self->derivative = logsig_derivative;
+	   }
+	   else if (strcmp (self->activation_function, "tanh" ) == 0)
+	   {
+	       self->function = tanh;
+	       self->derivative = tanh_derivative;
+	   }
+	   else // Linear it is!
+	   {
+	       self->activation_function = "linear";
+	       self->function = linear;
+	       self->derivative = linear_derivative;
+	   }
+    }
+
+    return (PyObject *)self;
+}
+static int
+Node_init(Node *self, PyObject *args, PyObject *kwds)
+{
+   printf("Init called!\n");
    // Default values
+/*
    self->weights = PyDict_New();
    self->random_range = 1;
    self->activation_function = "linear";
+
+   double bias = RAND_MAX; // Dummy value that will never occur in real life
+
+   static char *kwlist[] = {"active", "bias", "random_range", NULL};
+
+   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sdd", kwlist,
+                                      &self->activation_function, &bias,
+                                      &self->random_range))
+       return -1;
 
    // Set bias
    if (bias != RAND_MAX) {
@@ -74,35 +153,7 @@ _Set(Node *self, double bias)
        self->function = linear;
        self->derivative = linear_derivative;
    }
-}
-
-static void
-Node_new(Node *self, PyObject *args)
-{
-   double bias = RAND_MAX; // Dummy value that will never occur in real life
-
-   static char *kwlist[] = {"active", "bias", "random_range", NULL};
-
-   if ( PyArg_ParseTupleAndKeywords(args, NULL, "|sdd", kwlist,
-                                      &self->activation_function, &bias,
-                                      &self->random_range))
-       _Set(self, bias);
-}
-
-static int
-Node_init(Node *self, PyObject *args, PyObject *kwds)
-{
-   double bias = RAND_MAX; // Dummy value that will never occur in real life
-
-   static char *kwlist[] = {"active", "bias", "random_range", NULL};
-
-   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sdd", kwlist,
-                                      &self->activation_function, &bias,
-                                      &self->random_range))
-       return -1;
-
-   _Set(self, bias);
-
+*/
    return 0;
 }
 
@@ -194,6 +245,31 @@ static PyObject* Node_output(Node *self, PyObject *inputs)
 }
 
 /**
+Used in pickling
+*/
+static PyObject* Node_getnewargs(Node* self)
+{
+	printf("GETNEWARGS! %s\n", self->activation_function);
+	//"active", "bias", "random_range", "weights"
+	return Py_BuildValue("(sddO)", self->activation_function, self->bias, self->random_range, self->weights);
+}
+
+static PyObject* Node_reduce(Node* self)
+{
+	printf("REDUCE!\n");
+	//"active", "bias", "random_range", "weights"
+	PyObject *args = Node_getnewargs(self);
+	if (args == NULL)
+		return NULL; // Error, an exception should have been set
+	printf("Got args\n");
+	//return Py_BuildValue("(OO)", Py_TYPE(self), args);
+	// Retrieve the class object
+	PyObject *attr_name = Py_BuildValue("s", "__class__");
+	PyObject *class = PyObject_GetAttr(self, attr_name);
+	return Py_BuildValue("(OO)", class, args);
+}
+
+/**
 Specify the accessible methods in a list
 */
 
@@ -202,6 +278,8 @@ static PyMethodDef NodeMethods[] =
     {"input_sum", (PyCFunction) Node_input_sum, METH_O, "The sum of the inputs to this Node"},
     {"output_derivative", (PyCFunction) Node_output_derivative, METH_O, "The derivative of the activation function, given the inputs"},
     {"output", (PyCFunction) Node_output, METH_O, "The derivative of the activation function, given the inputs"},
+    {"__reduce__", (PyCFunction) Node_reduce, METH_NOARGS, "Needed for pickling. Specifices how to reconstruct the object."},
+    {"__getnewargs__", (PyCFunction) Node_getnewargs, METH_NOARGS, "Needed for pickling. Specifices what args to give new()."},
     {NULL}, // So that we can iterate safely below
 };
 
@@ -213,7 +291,7 @@ static PyTypeObject
 NodeType = {
    PyObject_HEAD_INIT(NULL)
    0,                         /* ob_size */
-   "Node",               /* tp_name */
+   "kalderstam.neural.fast_network.Node",               /* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
    sizeof(Node),         /* tp_basicsize */
    0,                         /* tp_itemsize */
    (destructor)Node_dealloc, /* tp_dealloc */
@@ -249,7 +327,7 @@ NodeType = {
    0,                         /* tp_dictoffset */
    (initproc)Node_init,  /* tp_init */
    0,                         /* tp_alloc */
-   0,                         /* tp_new */
+   Node_new,                         /* tp_new */
 };
 
 
@@ -265,7 +343,8 @@ initfast_network(void)
    }
 
    // Fill in some slots in the type, and make it ready
-   NodeType.tp_new = PyType_GenericNew;
+   //NodeType.tp_new = PyType_GenericNew;
+   //NodeType.tp_base = &PyType_Type;
    if (PyType_Ready(&NodeType) < 0) {
       return;
    }
