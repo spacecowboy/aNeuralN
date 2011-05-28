@@ -39,22 +39,13 @@ static PyMemberDef NodeMembers[] = {
 /**
 Constructor//Initializer//Destructor.
 */
-static int
-Node_init(Node *self, PyObject *args, PyObject *kwds)
+static void
+_Set(Node *self, double bias)
 {
    // Default values
    self->weights = PyDict_New();
    self->random_range = 1;
    self->activation_function = "linear";
-
-   double bias = RAND_MAX; // Dummy value that will never occur in real life
-
-   static char *kwlist[] = {"active", "bias", "random_range", NULL};
-
-   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sdd", kwlist,
-                                      &self->activation_function, &bias,
-                                      &self->random_range))
-       return -1;
 
    // Set bias
    if (bias != RAND_MAX) {
@@ -83,6 +74,34 @@ Node_init(Node *self, PyObject *args, PyObject *kwds)
        self->function = linear;
        self->derivative = linear_derivative;
    }
+}
+
+static void
+Node_new(Node *self, PyObject *args)
+{
+   double bias = RAND_MAX; // Dummy value that will never occur in real life
+
+   static char *kwlist[] = {"active", "bias", "random_range", NULL};
+
+   if ( PyArg_ParseTupleAndKeywords(args, NULL, "|sdd", kwlist,
+                                      &self->activation_function, &bias,
+                                      &self->random_range))
+       _Set(self, bias);
+}
+
+static int
+Node_init(Node *self, PyObject *args, PyObject *kwds)
+{
+   double bias = RAND_MAX; // Dummy value that will never occur in real life
+
+   static char *kwlist[] = {"active", "bias", "random_range", NULL};
+
+   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sdd", kwlist,
+                                      &self->activation_function, &bias,
+                                      &self->random_range))
+       return -1;
+
+   _Set(self, bias);
 
    return 0;
 }
@@ -91,6 +110,7 @@ static void
 Node_dealloc(Node *self)
 {
    Py_XDECREF(self->weights);
+   Py_XDECREF(self->activation_function);
    self->ob_type->tp_free((PyObject*)self);
 }
 
