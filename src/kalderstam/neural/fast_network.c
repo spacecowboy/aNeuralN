@@ -37,7 +37,7 @@ static PyMemberDef NodeMembers[] = {
 };
 
 /**
-Constructor/Destructor.
+Constructor//Initializer//Destructor.
 */
 static int
 Node_init(Node *self, PyObject *args, PyObject *kwds)
@@ -135,9 +135,18 @@ static double _Node_input_sum(Node *self, PyObject *inputs)
 }
 static PyObject* Node_input_sum(Node *self, PyObject *inputs)
 {
-    double sum = _Node_input_sum(self, inputs);
+    printf("C values = %p, %p, %g, %g, %s\n", self->function, self->derivative, self->bias, self->random_range, self->activation_function);
+    if (self->function == NULL || self->derivative == NULL)
+    {
+         PyErr_Format(PyExc_ValueError, "Something was null! function=%p, derivative=%p", self->function, self->derivative);
+	 return NULL;
+    }
+    else
+    {
+    	double sum = _Node_input_sum(self, inputs);
 
-    return Py_BuildValue("d", sum);
+    	return Py_BuildValue("d", sum);
+    }
 }
 
 static double _Node_output_derivative(Node *self, PyObject *inputs)
