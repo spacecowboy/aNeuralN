@@ -1,4 +1,5 @@
 #include <Python.h>
+#include <numpy/arrayobject.h> // NumPy as seen from C
 #include "structmember.h" // used to declare member list
 #include <string.h> // need to compare names
 #include <stdlib.h> // required for random()
@@ -115,8 +116,16 @@ static double _Node_input_sum(Node *self, PyObject *inputs)
         else // It's an input index
         {
              Py_ssize_t index = PyInt_AsSsize_t(key);
-             PyObject *pyval = PyList_GetItem(inputs, index);
-	     value = PyFloat_AS_DOUBLE(pyval);
+	     // Two cases, python list or numpy list
+             if (PyList_CheckExact(inputs))
+	     {
+             	PyObject *pyval = PyList_GetItem(inputs, index);
+	     	value = PyFloat_AS_DOUBLE(pyval);
+	     }
+	     else // Numpy list
+	     {
+	     	value = *(double *) PyArray_GETPTR1((PyArrayObject*) inputs, index);
+	     }
 
 	     sum += weight * value;
         }    
