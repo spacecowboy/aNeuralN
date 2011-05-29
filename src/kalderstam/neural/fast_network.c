@@ -5,6 +5,9 @@
 #include <stdlib.h> // required for random()
 #include "activation_functions.h"
 
+#define TRUE 1
+#define FALSE 0
+
 /**
 Node class
 */
@@ -18,8 +21,8 @@ typedef struct {
    double (*derivative)(double); // Function pointer, to the derivative of the activation function
 } Node;
 
-static double _Node_input_sum(Node *self, PyObject *inputs);
-static double _Node_output(Node *self, PyObject *inputs);
+static int _Node_input_sum(Node *self, PyObject *inputs, double *sum);
+static int _Node_output(Node *self, PyObject *inputs, double *val);
 
 /**
 Public members
@@ -37,12 +40,34 @@ static PyMemberDef NodeMembers[] = {
 };
 
 /**
+Safety method
+Checks internal pointers for NULL and makes sure the weights dict has items in it.
+*/
+static int VerifySelf(Node *self)
+{
+	return (self->weights != NULL &&
+		self->function != NULL &&
+		self->derivative != NULL &&
+		PyDict_Size(self->weights) > 0);
+}
+
+/**
+Verifies that the input argument is a python list or a numpy list 1-D double list.
+*/
+static int VerifyList(PyObject *input)
+{
+	//printf("List: %d, NDIM = %d, NPY_DOUBLE: %d\n", PyList_CheckExact(input), PyArray_NDIM(input), PyArray_TYPE(input) == NPY_DOUBLE);
+	return (PyList_CheckExact(input) || (PyArray_NDIM(input) == 1 && PyArray_TYPE(input) == NPY_DOUBLE));
+}
+
+/**
 Constructor//Initializer//Destructor.
 */
 static PyObject *
 Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     Node *self;
+    PyObject *weights = NULL;
 
     self = (Node *)type->tp_alloc(type, 0);
     if (self != NULL) {
@@ -59,9 +84,9 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sddO", kwlist,
 		                              &self->activation_function, &bias,
 		                              &self->random_range,
-					      &self->weights))
+					      &weights))
 	       {
-		PyErr_Format(PyExc_ValueError, "Arguments should be: string active, double bias, double random_range, weights");
+		PyErr_Format(PyExc_ValueError, "Arguments should be (all optional): string active, double bias, double random_range, dict weights");
 		return NULL;
 		}
         
@@ -76,13 +101,19 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	   }
 
 	// Weights
-	   if (self->weights == NULL) 
+	   if (weights == NULL) 
 	   {
 		self->weights = PyDict_New();
 	   }
-	   else {
+	   else if (PyDict_Check(weights)) {
+		self->weights = weights;
 		Py_INCREF(self->weights);
 	   }
+	   else {
+		// Incorrect object...
+		PyErr_Format(PyExc_ValueError, "Weights was not a dict!");
+		return NULL;
+		}
 
 	   // Set activation function and derivative
 	   if (strcmp (self->activation_function, "logsig" ) == 0)
@@ -108,49 +139,6 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 Node_init(Node *self, PyObject *args, PyObject *kwds)
 {
-   // Default values
-/*
-   self->weights = PyDict_New();
-   self->random_range = 1;
-   self->activation_function = "linear";
-
-   double bias = RAND_MAX; // Dummy value that will never occur in real life
-
-   static char *kwlist[] = {"active", "bias", "random_range", NULL};
-
-   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sdd", kwlist,
-                                      &self->activation_function, &bias,
-                                      &self->random_range))
-       return -1;
-
-   // Set bias
-   if (bias != RAND_MAX) {
-       self->bias = bias;
-   }
-   else {
-       // Assign random value based on random range
-       srand((unsigned)time(NULL)); // Seed it
-       self->bias = self->random_range * ((double)rand()/(double)RAND_MAX);
-   }
-
-   // Set activation function and derivative
-   if (strcmp (self->activation_function, "logsig" ) == 0)
-   {
-       self->function = logsig;
-       self->derivative = logsig_derivative;
-   }
-   else if (strcmp (self->activation_function, "tanh" ) == 0)
-   {
-       self->function = tanh;
-       self->derivative = tanh_derivative;
-   }
-   else // Linear it is!
-   {
-       self->activation_function = "linear";
-       self->function = linear;
-       self->derivative = linear_derivative;
-   }
-*/
    return 0;
 }
 
@@ -164,84 +152,127 @@ Node_dealloc(Node *self)
 
 /**
 Node Class methods
-These are the only ones that need speed, rest are implemented in python.
+Returns an error code. 1 for success, -1 for error...
 */
-static double _Node_input_sum(Node *self, PyObject *inputs)
+static int _Node_input_sum(Node *self, PyObject *inputs, double *sum)
 {
     // Iterate over the items in the weights dict
 
     PyObject *key, *pyweight;
-    double weight, value, sum = self->bias;
+    double weight, value, recursive_val;
     Py_ssize_t pos = 0;
+    int result = TRUE;
+    *sum = self->bias;
 
     while (PyDict_Next(self->weights, &pos, &key, &pyweight)) {
+	// First verify that the weight is a float
+	if (!PyFloat_Check(pyweight)) {
+		PyErr_Format(PyExc_ValueError, "The value of the weights dict was NOT a float!");
+	 	result = FALSE;
+	}
+	else {
         weight = PyFloat_AS_DOUBLE(pyweight);
         // If node is a Node, call its inputsum. Else, it's an input index.
         if (PyObject_IsInstance(key, (PyObject*) self->ob_type))
         {
-             sum += weight * _Node_output((Node*) key, inputs);
+
+	     if (_Node_output((Node*) key, inputs, &recursive_val))
+             	*sum += weight * recursive_val;
+	     else
+		result = FALSE;
         }
-        else // It's an input index
+        else if (PyInt_Check(key))// It's an input index
         {
              Py_ssize_t index = PyInt_AsSsize_t(key);
 	     // Two cases, python list or numpy list
              if (PyList_CheckExact(inputs))
 	     {
              	PyObject *pyval = PyList_GetItem(inputs, index);
-	     	value = PyFloat_AS_DOUBLE(pyval);
+		if (pyval == NULL)
+			result = FALSE;
+		else
+	     		value = PyFloat_AS_DOUBLE(pyval);
 	     }
 	     else // Numpy list
 	     {
-	     	value = *(double *) PyArray_GETPTR1((PyArrayObject*) inputs, index);
+		double *ptr = (double *) PyArray_GETPTR1((PyArrayObject*) inputs, index);
+		if (ptr == NULL)
+			result = FALSE;
+		else
+	     		value = *ptr;
 	     }
 
-	     sum += weight * value;
-        }    
+	     *sum += weight * value;
+        }
+	else // Someone fucked up the weight dict
+	{
+		PyErr_Format(PyExc_ValueError, "The key of the weights dict was neither a Node nor an Int!");
+	 	result = FALSE;
+	}
+	}
     }
 
-    return sum;
+    return result;
 }
-static PyObject* Node_input_sum(Node *self, PyObject *inputs)
+
+static PyObject* Node_output_derivative(Node *self, PyObject *inputs)
 {
-    if (self->function == NULL || self->derivative == NULL)
+    if (!VerifyList(inputs))
     {
-         PyErr_Format(PyExc_ValueError, "Something was null! function=%p, derivative=%p", self->function, self->derivative);
+         PyErr_Format(PyExc_ValueError, "The input is not a one dimension numpy list of type Double, or not a python list.");
+	 return NULL;
+    }
+    else if (!VerifySelf(self))
+    {
+         PyErr_Format(PyExc_ValueError, "The weights vector is empty or an internal pointer is NULL: %d (1 for yes)", (self->weights == NULL || self->function == NULL || self->derivative == NULL));
 	 return NULL;
     }
     else
     {
-    	double sum = _Node_input_sum(self, inputs);
-
-    	return Py_BuildValue("d", sum);
+	double inputsum;
+	if(_Node_input_sum(self, inputs, &inputsum))
+    		return Py_BuildValue("d", self->derivative(inputsum));
+	else
+		return NULL;
     }
 }
 
-static double _Node_output_derivative(Node *self, PyObject *inputs)
+static int _Node_output(Node *self, PyObject *inputs, double *val)
 {
-    double inputsum = _Node_input_sum(self, inputs);
-    return self->derivative(inputsum);
-}
-static PyObject* Node_output_derivative(Node *self, PyObject *inputs)
-{
-    double val = _Node_output_derivative(self, inputs);
-
-    return Py_BuildValue("d", val);
-}
-
-static double _Node_output(Node *self, PyObject *inputs)
-{
-    double inputsum = _Node_input_sum(self, inputs);
-    return self->function(inputsum);
+	int result = TRUE;
+    double inputsum;
+	if(_Node_input_sum(self, inputs, &inputsum))
+    		*val = self->function(inputsum);
+	else
+		result = FALSE;
+	
+	return result;
 }
 static PyObject* Node_output(Node *self, PyObject *inputs)
 {
-    double val = _Node_output(self, inputs);
-
-    return Py_BuildValue("d", val);
+    if (!VerifyList(inputs))
+    {
+         PyErr_Format(PyExc_ValueError, "The input is not a one dimension numpy list of type Double, or not a python list.");
+	 return NULL;
+    }
+    else if (!VerifySelf(self))
+    {
+         PyErr_Format(PyExc_ValueError, "The weights vector is empty or an internal pointer is NULL: %d (1 for yes)", (self->weights == NULL || self->function == NULL || self->derivative == NULL));
+	 return NULL;
+    }
+    else
+    {
+	double val;
+	if (_Node_output(self, inputs, &val))
+    		return Py_BuildValue("d", val);
+	else
+		return NULL;
+    }
 }
 
 /**
 Used in pickling
+Returns the arguments necessary to reconstruct this object.
 */
 static PyObject* Node_getnewargs(Node* self)
 {
@@ -250,22 +281,16 @@ static PyObject* Node_getnewargs(Node* self)
 	return Py_BuildValue("(sddO)", self->activation_function, self->bias, self->random_range, self->weights);
 }
 
+/**
+This method is responsible for telling the pickler how to reconstruct this object.
+It returns a constructer (Py_Type(self)) and the arguments that accepts to reconstruct this object.
+*/
 static PyObject* Node_reduce(Node* self)
 {
-	//printf("REDUCE!\n");
-	//"active", "bias", "random_range", "weights"
 	PyObject *args = Node_getnewargs(self);
 	if (args == NULL)
 		return NULL; // Error, an exception should have been set
-	//printf("Got args\n");
-	//return Py_BuildValue("(OO)", Py_TYPE(self), args);
-	// Retrieve the class object
-	PyObject *attr_name = Py_BuildValue("s", "__class__");
-	PyObject *class = PyObject_GetAttr(self, attr_name);
-
-	//Py_XDECREF(attr_name);
-
-	return Py_BuildValue("(OO)", class, args);
+	return Py_BuildValue("(OO)", Py_TYPE(self), args);
 }
 
 /**
@@ -274,7 +299,7 @@ Specify the accessible methods in a list
 
 static PyMethodDef NodeMethods[] = 
 {
-    {"input_sum", (PyCFunction) Node_input_sum, METH_O, "The sum of the inputs to this Node"},
+    //{"input_sum", (PyCFunction) Node_input_sum, METH_O, "The sum of the inputs to this Node"},
     {"output_derivative", (PyCFunction) Node_output_derivative, METH_O, "The derivative of the activation function, given the inputs"},
     {"output", (PyCFunction) Node_output, METH_O, "The derivative of the activation function, given the inputs"},
     {"__reduce__", (PyCFunction) Node_reduce, METH_NOARGS, "Needed for pickling. Specifices how to reconstruct the object."},

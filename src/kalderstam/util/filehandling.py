@@ -4,6 +4,7 @@ import re
 from kalderstam.neural.activation_functions import get_function
 from os import path
 from random import random
+from kalderstam.neural.network import connect_node
 
 def read_data_file(filename):
     """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
@@ -261,7 +262,7 @@ def load_committee(filename):
                 net.num_of_inputs += 1
             else:
                 for name, weight in node_weights[net][node_name].items():
-                    node.connect_node(nodes[net][name], weight)
+                    connect_node(node, nodes[net][name], weight)
                 """ add to network"""
                 if node_name.startswith("hidden"):
                     net.hidden_nodes.append(nodes[net][node_name])

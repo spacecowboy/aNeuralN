@@ -4,7 +4,7 @@ import numpy
 import logging
 from kalderstam.neural.activation_functions import linear, logsig, tanh
 from kalderstam.util.decorators import benchmark
-from kalderstam.neural.fast_network import Node as base_node
+from kalderstam.neural.fast_network import Node as node
 
 logger = logging.getLogger('kalderstam.neural.network')
 
@@ -20,16 +20,28 @@ def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hi
     #Hidden layer
     for i in range(int(hidden_number)):
         hidden = node(str(hidden_function))
-        hidden.connect_nodes(inputs)
+        connect_nodes(hidden, inputs)
         net.hidden_nodes.append(hidden)
 
     #Output nodes
     for i in range(int(output_number)):
         output = node(str(output_function))
-        output.connect_nodes(net.hidden_nodes)
+        connect_nodes(output, net.hidden_nodes)
         net.output_nodes.append(output)
 
     return net
+
+def connect_node(node_self, node, weight = None):
+    if not weight:
+        weight = uniform(-node_self.random_range, node_self.random_range)
+    node_self.weights[node] = weight
+
+def connect_nodes(node_self, nodes, weight_dict = None):
+    for node in nodes:
+        if not weight_dict:
+            node_self.weights[node] = uniform(-node_self.random_range, node_self.random_range)
+        else:
+            node_self.weights[node] = weight_dict[node]
 
 class committee:
     def __init__(self, net_list = None):
@@ -98,47 +110,3 @@ class network:
             logger.error('Incorrect number of inputs(' + str(len(inputs)) + '), correct number is ' + str(self.num_of_inputs))
         else:
             return numpy.array([output_node.output(inputs) for output_node in self.output_nodes])
-
-class node(base_node):
-    def __int__(self):
-        raise ValueError
-
-    #default activation_function is F(x) = x
-#    def __init__(self, active = linear(), bias = None, random_range = 1):
-#        self.random_range = random_range
-#        self.weights = {}
-#        self.activation_function = active #Used to save to file
-#        #initialize the bias
-#        if bias:
-#            self.bias = bias
-#        else:
-#            self.bias = uniform(-self.random_range, self.random_range)
-
-    def connect_node(self, node, weight = None):
-        if not weight:
-            weight = uniform(-self.random_range, self.random_range)
-        self.weights[node] = weight
-
-    def connect_nodes(self, nodes, weight_dict = None):
-        for node in nodes:
-            if not weight_dict:
-                self.weights[node] = uniform(-self.random_range, self.random_range)
-            else:
-                self.weights[node] = weight_dict[node]
-
-#    def input_sum(self, inputs):
-#        input_sum = self.bias
-#        for node, weight in self.weights.items():
-#            try:
-#                index = int(node)
-#                input_sum += weight * inputs[index]
-#            except ValueError:
-#                input_sum += node.output(inputs) * weight
-#
-#        return input_sum
-#
-#    def output(self, inputs):
-#        return self.activation_function.function(self.input_sum(inputs))
-#
-#    def output_derivative(self, inputs):
-#        return self.activation_function.derivative(self.input_sum(inputs))
