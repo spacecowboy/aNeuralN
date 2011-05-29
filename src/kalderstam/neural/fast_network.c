@@ -16,7 +16,7 @@ typedef struct {
    double random_range;
    double bias;
    PyObject *weights; // A dictionary of nodes and weight values
-   char *activation_function; // The string representation of the activation function!
+   PyStringObject *activation_function; // The string representation of the activation function!
    double (*function)(double); // Function pointer, the activation function
    double (*derivative)(double); // Function pointer, to the derivative of the activation function
 } Node;
@@ -32,7 +32,7 @@ static PyMemberDef NodeMembers[] = {
      "Bias value"},
     {"weights", T_OBJECT_EX, offsetof(Node, weights), 0,
      "The weights dict of {node, weight}"},
-    {"activation_function", T_STRING, offsetof(Node, activation_function), 0,
+    {"activation_function", T_OBJECT_EX, offsetof(Node, activation_function), 0,
      "String representation of the activation function (its name)"},
     {"random_range", T_DOUBLE, offsetof(Node, random_range), 0,
      "Range within the weights are randomly assigned"},
@@ -75,13 +75,13 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	// Default values
 	   self->weights = NULL;
 	   self->random_range = 1;
-	   self->activation_function = "linear";
+	   self->activation_function = NULL;
 
 	   double bias = RAND_MAX; // Dummy value that will never occur in real life
 
 	   static char *kwlist[] = {"active", "bias", "random_range", "weights", NULL};
 
-	   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|sddO", kwlist,
+	   if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SddO", kwlist,
 		                              &self->activation_function, &bias,
 		                              &self->random_range,
 					      &weights))
@@ -116,19 +116,19 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 
 	   // Set activation function and derivative
-	   if (strcmp (self->activation_function, "logsig" ) == 0)
+	   if (self->activation_function != NULL && strcmp (PyString_AS_STRING(self->activation_function), "logsig" ) == 0)
 	   {
 	       self->function = logsig;
 	       self->derivative = logsig_derivative;
 	   }
-	   else if (strcmp (self->activation_function, "tanh" ) == 0)
+	   else if (self->activation_function != NULL && strcmp (PyString_AS_STRING(self->activation_function), "tanh" ) == 0)
 	   {
 	       self->function = tanh;
 	       self->derivative = tanh_derivative;
 	   }
 	   else // Linear it is!
 	   {
-	       self->activation_function = "linear";
+	       self->activation_function = (PyStringObject*) PyString_FromString("linear");
 	       self->function = linear;
 	       self->derivative = linear_derivative;
 	   }
@@ -159,7 +159,7 @@ static int _Node_input_sum(Node *self, PyObject *inputs, double *sum)
     // Iterate over the items in the weights dict
 
     PyObject *key, *pyweight;
-    double weight, value, recursive_val;
+    double weight, value = 0, recursive_val;
     Py_ssize_t pos = 0;
     int result = TRUE;
     *sum = self->bias;
@@ -278,7 +278,7 @@ static PyObject* Node_getnewargs(Node* self)
 {
 	//printf("GETNEWARGS! %s\n", self->activation_function);
 	//"active", "bias", "random_range", "weights"
-	return Py_BuildValue("(sddO)", self->activation_function, self->bias, self->random_range, self->weights);
+	return Py_BuildValue("(SddO)", self->activation_function, self->bias, self->random_range, self->weights);
 }
 
 /**

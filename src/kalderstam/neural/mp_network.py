@@ -56,9 +56,8 @@ def mp_nets_sim(nets, inputs):
 def mp_committee_sim(com, inputs):
     """This evaluates each network in a separate process. Does not split the input.
     The results are returned in the same order as the iterator of nets"""
-    cmd_list = [(net, [inputs], {}) for net in com.nets]
-    sim_list = p.map(__net_sim, cmd_list)
-    return com.__average__(sim_list)
+    results = mp_nets_sim(com.nets, inputs)
+    return com.__average__(results)
 
 def mp_train_committee(com, train_func, input_array, target_array, *train_args, **train_kwargs):
     #Do stratified or not?
@@ -117,6 +116,7 @@ if __name__ == '__main__':
     print len(Ys[0][0])
     
     com = build_feedforward_committee(input_number = 2, hidden_number = 4, output_number = 1)
+    print("built")
     Ys = benchmark(mp_committee_sim)(com, P)
     benchmark(com.sim)(P)
     print len(Ys)
