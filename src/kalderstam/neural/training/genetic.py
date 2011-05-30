@@ -1,7 +1,8 @@
 import logging
 import numpy
 from random import sample, random, uniform
-from kalderstam.neural.network import build_feedforward, node, network
+from kalderstam.neural.network import build_feedforward, node, network,\
+    connect_nodes
 from kalderstam.neural.error_functions import sum_squares
 import kalderstam.util.graphlogger as glogger
 
@@ -62,7 +63,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 else:
                     hidden.bias = sample([mother_node, father_node], 1)[0].bias
 
-                hidden.connect_nodes(range(mother.num_of_inputs), weights)
+                connect_nodes(hidden, range(mother.num_of_inputs), weights)
                 population[child_index].hidden_nodes.append(hidden)
 
             hidden_nodes = population[child_index].hidden_nodes
@@ -83,7 +84,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 else:
                     output.bias = sample([mother, father], 1)[0].output_nodes[output_number].bias
 
-                output.connect_nodes(hidden_nodes, weights)
+                connect_nodes(output, hidden_nodes, weights)
                 population[child_index].output_nodes.append(output)
 
         logger.info("Generation " + str(generation) + ", best so far: " + str(best_error))

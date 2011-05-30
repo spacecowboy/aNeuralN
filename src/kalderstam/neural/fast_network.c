@@ -118,11 +118,13 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	   // Set activation function and derivative
 	   if (self->activation_function != NULL && strcmp (PyString_AS_STRING(self->activation_function), "logsig" ) == 0)
 	   {
+		Py_INCREF(self->activation_function);
 	       self->function = logsig;
 	       self->derivative = logsig_derivative;
 	   }
 	   else if (self->activation_function != NULL && strcmp (PyString_AS_STRING(self->activation_function), "tanh" ) == 0)
 	   {
+		Py_INCREF(self->activation_function);
 	       self->function = tanh;
 	       self->derivative = tanh_derivative;
 	   }
@@ -263,9 +265,9 @@ static PyObject* Node_output(Node *self, PyObject *inputs)
     else
     {
 	double val;
-	if (_Node_output(self, inputs, &val))
+	if (_Node_output(self, inputs, &val)) {
     		return Py_BuildValue("d", val);
-	else
+	} else
 		return NULL;
     }
 }

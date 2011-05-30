@@ -2,30 +2,29 @@
 from random import uniform
 import numpy
 import logging
-from kalderstam.neural.activation_functions import linear, logsig, tanh
 from kalderstam.util.decorators import benchmark
 from kalderstam.neural.fast_network import Node as node
 
 logger = logging.getLogger('kalderstam.neural.network')
 
-def build_feedforward_committee(size = 8, input_number = 2, hidden_number = 2, output_number = 1, hidden_function = tanh(), output_function = logsig()):
+def build_feedforward_committee(size = 8, input_number = 2, hidden_number = 2, output_number = 1, hidden_function = "tanh", output_function = "logsig"):
     net_list = [build_feedforward(input_number, hidden_number, output_number, hidden_function, output_function) for n in range(size)]
     return committee(net_list)
 
-def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = tanh(), output_function = logsig()):
+def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = "tanh", output_function = "logsig"):
     net = network()
     net.num_of_inputs = input_number
     inputs = range(input_number)
 
     #Hidden layer
     for i in range(int(hidden_number)):
-        hidden = node(str(hidden_function))
+        hidden = node(hidden_function)
         connect_nodes(hidden, inputs)
         net.hidden_nodes.append(hidden)
 
     #Output nodes
     for i in range(int(output_number)):
-        output = node(str(output_function))
+        output = node(output_function)
         connect_nodes(output, net.hidden_nodes)
         net.output_nodes.append(output)
 

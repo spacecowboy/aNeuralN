@@ -1,7 +1,6 @@
 import numpy
 from kalderstam.neural import network
 import re
-from kalderstam.neural.activation_functions import get_function
 from os import path
 from random import random
 from kalderstam.neural.network import connect_node
@@ -225,7 +224,7 @@ def load_committee(filename):
                 """check activation_function name"""
                 m = re.search('activation_function\s*=\s*([\w\d]+)', line)
                 if m:
-                    function = get_function(m.group(1))
+                    function = m.group(1)
                     continue
 
                 """check bias"""

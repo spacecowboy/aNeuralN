@@ -26,6 +26,7 @@ class Test(unittest.TestCase):
 
         results = com.sim([[1, 2], [2, 3]])
         print(results)
+        print("Simple done")
 
     def testMultiplication(self):
         net = build_feedforward(input_number = 2, hidden_number = 3, output_number = 1)
@@ -50,6 +51,7 @@ class Test(unittest.TestCase):
         assert(round(a * first_sum, 10) == round(second_sum, 10))
         assert(round(first_sum, 10) == round(second_sum / a, 10))
         assert(round(first_sum, 10) == round(third_sum, 10))
+        print("mul done")
 
 
 if __name__ == "__main__":
