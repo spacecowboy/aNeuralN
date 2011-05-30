@@ -4,7 +4,6 @@ from kalderstam.neural.network import build_feedforward
 import time
 import numpy
 import matplotlib.pyplot as plt
-from kalderstam.neural.activation_functions import linear
 from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
 import kalderstam.util.graphlogger as glogger
 import logging

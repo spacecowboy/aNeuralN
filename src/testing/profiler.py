@@ -97,18 +97,24 @@ def test():
 
     p = 4 #number of input covariates
 
-    net = build_feedforward(p, 8, 1, output_function = "linear")
+    #net = build_feedforward(p, 8, 1, output_function = "linear")
+    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/4x10x10x1.ann')
     #net = load_network('/home/jonas/workspace/aNeuralN/ANNs/4x10x10x1.ann')
 
     #filename = '/home/jonas/Dropbox/ANN/my_tweaked_fake_data_no_noise.txt'
-    filename = '/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt'
+    #filename = '/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt'
     #filename = '/home/gibson/jonask/my_tweaked_fake_data_with_noise.txt'
     #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_no_noise.txt'
     #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_with_noise.txt'
     #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_with_noise.txt'
     #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_survival_data_no_noise.txt'
 
-    P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+    #P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+
+    filename = "/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Two_thirds_of_SA_1889_dataset.txt"
+    P, T = parse_file(filename, targetcols = [4], inputcols = [-1, -2, -3, -4], ignorerows = [0], normalize = True)
+
+
     #P = P[:100,:]
     #T = T[:100, :]
 
