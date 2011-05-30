@@ -6,11 +6,11 @@ import numpy
 numpy_include = numpy.get_include()
 
 cox_ext = Extension('error_functions.cox_error_in_c',
-          sources = ['src/kalderstam/neural/error_functions/cox_error_in_c.c'],
+          sources = ['src/C_ext/cox_error_in_c.c'],
           include_dirs = [numpy_include],
           extra_compile_args = ['-std=c99'])
 network_ext = Extension('fast_network',
-          sources = ['src/kalderstam/neural/fast_network.c', 'src/kalderstam/neural/activation_functions.c'],
+          sources = ['src/C_ext/fast_network.c', 'src/C_ext/activation_functions.c'],
           include_dirs = [numpy_include],
           extra_compile_args = ['-std=c99'])
 
