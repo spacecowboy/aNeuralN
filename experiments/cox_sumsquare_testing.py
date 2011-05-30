@@ -1,12 +1,11 @@
-from kalderstam.neural.matlab_functions import plot_network_weights
+from kalderstam.matlab.matlab_functions import plot_network_weights
 from kalderstam.util.filehandling import parse_file, load_network
 from kalderstam.neural.network import build_feedforward
 import time
 import numpy
 import matplotlib.pyplot as plt
-from kalderstam.neural.activation_functions import linear
 from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
-from kalderstam.neural.training_functions import traingd_block
+from kalderstam.neural.training.gradientdescent import traingd
 import kalderstam.util.graphlogger as glogger
 import logging
 from kalderstam.util.numpyhelp import indexOf
@@ -41,7 +40,7 @@ def experiment(net, filename, epochs):
 
     try:
         #net = train_cox(net, (P, T), (None, None), timeslots, epochs = 500, learning_rate = 5)
-        net = traingd_block(net, (P, T), (None, None), epochs = epochs, learning_rate = 0.01, block_size = 0)
+        net = traingd(net, (P, T), (None, None), epochs = epochs, learning_rate = 0.01, block_size = 0)
     except FloatingPointError:
         print('Aaawww....')
     outputs = net.sim(P)
@@ -64,7 +63,7 @@ if __name__ == "__main__":
 
     p = 4 #number of input covariates
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')
-    net = build_feedforward(p, 10, 1, output_function = linear())
+    net = build_feedforward(p, 10, 1, output_function = "linear")
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
