@@ -8,7 +8,6 @@ import numpy as np
 from kalderstam.neural.training.cox_training import generate_timeslots, \
 train_cox, plot_correctly_ordered
 import matplotlib.pyplot as plt
-from kalderstam.neural.activation_functions import linear
 import logging
 from kalderstam.util import graphlogger as glogger
 from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
@@ -98,11 +97,11 @@ def test():
 
     p = 4 #number of input covariates
 
-    #net = build_feedforward(p, 8, 1, output_function = linear(1))
-    net = load_network('/home/jonas/workspace/aNeuralN/ANNs/4x10x10x1.ann')
+    net = build_feedforward(p, 8, 1, output_function = "linear")
+    #net = load_network('/home/jonas/workspace/aNeuralN/ANNs/4x10x10x1.ann')
 
-    filename = '/home/jonas/Dropbox/ANN/my_tweaked_fake_data_no_noise.txt'
-    #filename = '/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt'
+    #filename = '/home/jonas/Dropbox/ANN/my_tweaked_fake_data_no_noise.txt'
+    filename = '/home/gibson/jonask/my_tweaked_fake_data_no_noise.txt'
     #filename = '/home/gibson/jonask/my_tweaked_fake_data_with_noise.txt'
     #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_no_noise.txt'
     #filename = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/new_fake_ann_data_with_noise.txt'

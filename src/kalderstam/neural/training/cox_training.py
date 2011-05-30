@@ -67,6 +67,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
     prev_error = None
     corrected = False
     initial_minima = False
+    weight_corrections = {}
     for epoch in range(epochs):
         logger.info("Epoch " + str(epoch))
         outputs = net.sim(inputs)
@@ -96,7 +97,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
             logger.info('Allowing initial climb') #It's ok
         elif corrected:
             #Undo the weight correction
-            apply_weight_corrections(net, -learning_rate)
+            apply_weight_corrections(net, -learning_rate, weight_corrections)
             corrected = False
             #Half the learning rate
             learning_rate *= 0.5
@@ -114,9 +115,10 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
 
         beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
 
+        weight_corrections = {}
         #Set corrections to 0 on all nodes first
         for node in net.get_all_nodes():
-            node.weight_corrections = {}
+            weight_corrections[node] = {}
 
         #Iterate over all output indices
         i = 0
@@ -124,38 +126,39 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
             logger.debug("Patient: " + str(i))
             i += 1
             #Set error to 0 on all nodes first
+            gradients = {}
             for node in net.get_all_nodes():
-                node.error_gradient = 0
+                gradients[node] = 0
 
             #Set errors on output nodes first
             for node, gradient in zip(net.output_nodes, derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)):
                 #glogger.debugPlot('Gradient', gradient, style = 'b.')
-                node.error_gradient = gradient
+                gradients[node] = gradient
 
             #Iterate over the nodes and correct the weights
             for node in net.output_nodes + net.hidden_nodes:
                 #Calculate local error gradient
-                node.error_gradient *= node.output_derivative(input)
+                gradients[node] *= node.output_derivative(input)
 
                 #Propagate the error backwards and then update the weights
                 for back_node, back_weight in node.weights.items():
 
-                    if back_node not in node.weight_corrections:
-                        node.weight_corrections[back_node] = []
+                    if back_node not in weight_corrections[node]:
+                        weight_corrections[node][back_node] = []
 
                     try:
                         index = int(back_node)
-                        node.weight_corrections[back_node].append(node.error_gradient * input[index])
-                    except ValueError:
-                        back_node.error_gradient += back_weight * node.error_gradient
-                        node.weight_corrections[back_node].append(node.error_gradient * back_node.output(input))
+                        weight_corrections[node][back_node].append(gradients[node] * input[index])
+                    except TypeError:
+                        gradients[back_node] += back_weight * gradients[node]
+                        weight_corrections[node][back_node].append(gradients[node] * back_node.output(input))
 
                 #Finally, correct the bias
-                if "bias" not in node.weight_corrections:
-                    node.weight_corrections["bias"] = []
-                node.weight_corrections["bias"].append(node.error_gradient)
+                if "bias" not in weight_corrections[node]:
+                    weight_corrections[node]["bias"] = []
+                weight_corrections[node]["bias"].append(gradients[node])
 
-        apply_weight_corrections(net, learning_rate)
+        apply_weight_corrections(net, learning_rate, weight_corrections)
         corrected = True
 
     try:
@@ -179,11 +182,11 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
 
     return net
 
-def apply_weight_corrections(net, learning_rate):
+def apply_weight_corrections(net, learning_rate, weight_corrections):
     #Iterate over the nodes and correct the weights
     for node in net.output_nodes + net.hidden_nodes:
         #Calculate weight update
         for back_node, back_weight in node.weights.items():
-            node.weights[back_node] = back_weight - learning_rate * sum(node.weight_corrections[back_node]) / len(node.weight_corrections[back_node])
+            node.weights[back_node] = back_weight - learning_rate * sum(weight_corrections[node][back_node]) / len(weight_corrections[node][back_node])
         #Don't forget bias
-        node.bias = node.bias - learning_rate * sum(node.weight_corrections["bias"]) / len(node.weight_corrections["bias"])
+        node.bias = node.bias - learning_rate * sum(weight_corrections[node]["bias"]) / len(weight_corrections[node]["bias"])
