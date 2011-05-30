@@ -375,7 +375,7 @@ def load_network(filename):
             net.num_of_inputs += 1
         else:
             for name, weight in node_weights[node_name].items():
-                node.connect_node(nodes[name], weight)
+                connect_node(node, nodes[name], weight)
             """ add to network"""
             if node_name.startswith("hidden"):
                 net.hidden_nodes.append(nodes[node_name])
