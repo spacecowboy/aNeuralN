@@ -4,11 +4,13 @@ from kalderstam.neural.network import build_feedforward
 import time
 import numpy
 import matplotlib.pyplot as plt
-from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
+from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta, generate_timeslots, \
+    derivative, total_error, cox_pre_func, cox_block_func
 import kalderstam.util.graphlogger as glogger
 import logging
-from kalderstam.neural.training.cox_training import train_cox, generate_timeslots
+from kalderstam.neural.training.cox_training import train_cox
 from kalderstam.util.numpyhelp import indexOf
+from kalderstam.neural.training.gradientdescent import traingd
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
 
@@ -28,7 +30,8 @@ def test(net, P, T, filename, epochs, learning_rate):
     timeslots = generate_timeslots(T)
 
     try:
-        net = train_cox(net, (P, T), (None, None), timeslots, epochs, learning_rate = learning_rate)
+        #net = train_cox(net, (P, T), (None, None), timeslots, epochs, learning_rate = learning_rate)
+        net = traingd(net, (P, T), (None, None), epochs, learning_rate, block_size = 0, error_derivative = derivative, error_function = total_error, pre_loop_func = cox_pre_func, block_func = cox_block_func)
     except FloatingPointError:
         print('Aaawww....')
     outputs = net.sim(P)

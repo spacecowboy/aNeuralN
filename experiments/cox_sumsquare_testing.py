@@ -6,32 +6,12 @@ import numpy
 import matplotlib.pyplot as plt
 from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
 from kalderstam.neural.training.gradientdescent import traingd
+from kalderstam.neural.training.genetic import train_evolutionary
 import kalderstam.util.graphlogger as glogger
 import logging
 from kalderstam.util.numpyhelp import indexOf
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
-
-def generate_timeslots(P, T):
-    timeslots = numpy.array([], dtype = int)
-    for x_index in range(len(P)):
-        x = P[x_index]
-        time = T[x_index][0]
-        if len(timeslots) == 0:
-            timeslots = numpy.insert(timeslots, 0, x_index)
-        else:
-            added = False
-            #Find slot
-            for time_index in timeslots:
-                if time < T[time_index][0]:
-                    timeslots = numpy.insert(timeslots, time_index, x_index)
-                    added = True
-                    break
-            if not added:
-                #Reached the end, insert here
-                timeslots = numpy.append(timeslots, x_index)
-
-    return timeslots
 
 def experiment(net, filename, epochs):
     P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
@@ -41,6 +21,7 @@ def experiment(net, filename, epochs):
     try:
         #net = train_cox(net, (P, T), (None, None), timeslots, epochs = 500, learning_rate = 5)
         net = traingd(net, (P, T), (None, None), epochs = epochs, learning_rate = 0.01, block_size = 0)
+        #net = train_evolutionary(net, (P, T), (None, None), epochs = epochs)
     except FloatingPointError:
         print('Aaawww....')
     outputs = net.sim(P)
@@ -59,7 +40,7 @@ def experiment(net, filename, epochs):
 
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
-    glogger.setLoggingLevel(glogger.debug)
+    glogger.setLoggingLevel(glogger.info)
 
     p = 4 #number of input covariates
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON.ann')

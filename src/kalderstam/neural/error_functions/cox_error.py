@@ -1,13 +1,59 @@
 from numpy import log, exp, array
 import logging
 import numpy as np
-from math import exp
 #import kalderstam.util.graphlogger as glogger
 from cox_error_in_c import derivative_beta as cderivative_beta, get_slope as cget_slope
 
 logger = logging.getLogger('kalderstam.neural.error_functions')
 
 shift = 4 #Also known as Delta, it's the handwaving variable.
+
+def generate_timeslots(T):
+    timeslots = np.array([], dtype = int)
+    for x_index in range(len(T)):
+        time = T[x_index][0]
+        if len(timeslots) == 0:
+            timeslots = np.insert(timeslots, 0, x_index)
+        else:
+            added = False
+            #Find slot
+            for index in range(len(timeslots)):
+                time_index = timeslots[index]
+                if time > T[time_index, 0]:
+                    timeslots = np.insert(timeslots, index, x_index)
+                    added = True
+                    break
+            if not added:
+                #Reached the end, insert here
+                timeslots = np.append(timeslots, x_index)
+
+    return timeslots
+
+def plot_correctly_ordered(outputs, timeslots):
+    timeslots_network = generate_timeslots(outputs)
+    global prev_timeslots_network
+    if prev_timeslots_network is None:
+        prev_timeslots_network = timeslots_network
+    #Now count number of correctly ordered indices
+    count = 0
+    diff = 0
+    for i, j, prev in zip(timeslots, timeslots_network, prev_timeslots_network):
+        if i == j:
+            count += 1
+        if j != prev:
+            diff += 1
+
+    glogger.debugPlot('Network ordering difference', y = diff, style = 'r-')
+    logger.info('Network ordering difference: ' + str(diff))
+    prev_timeslots_network = timeslots_network
+
+    countreversed = 0
+    for i, j in zip(timeslots[::-1], timeslots_network):
+        if i == j:
+            countreversed += 1
+    correct = max(count, countreversed)
+    #glogger.debugPlot('Number of correctly ordered outputs', y = correct, style = 'r-')
+    #logger.info('Number of correctly ordered outputs: ' + str(correct))
 
 def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
     beta_force = 0
@@ -138,6 +184,33 @@ def total_error(beta, sigma):
     """E = ln(1 + exp(Delta - Beta*Sigma))."""
     return log(1 + exp(shift - beta * sigma))
 
-def derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups):
+def derivative(test_targets, outputs, index, beta, sigma, part_func, weighted_avg, beta_force, timeslots, risk_groups, **kwargs):
     """dE/d(Beta*Sigma) * d(Beta*Sigma)/dresult."""
-    return derivative_error(beta, sigma) * derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
+    return derivative_error(beta, sigma) * derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, index, outputs, timeslots, risk_groups)
+
+def cox_pre_func(net, test_inputs, test_targets, block_size):
+    np.seterr(all = 'raise') #I want errors!
+    np.seterr(under = 'warn') #Except for underflows, just equate them to zero...
+
+    if (block_size == 0 or block_size == len(test_targets)):
+        timeslots = generate_timeslots(test_targets)
+        risk_groups = get_risk_groups(timeslots)
+        return {'timeslots': timeslots, 'risk_groups': risk_groups}
+    else:
+        return {}
+
+def cox_block_func(test_inputs, test_targets, block_size, outputs, block_members, timeslots = None, risk_groups = None, **kwargs):
+    block_outputs = outputs[block_members]
+    sigma = calc_sigma(block_outputs)
+    if risk_groups == None or timeslots == None:
+        timeslots = generate_timeslots(test_targets[block_members])
+        risk_groups = get_risk_groups(timeslots)
+        retval = {'timeslots': timeslots, 'risk_groups': risk_groups}
+    else:
+        retval = {}
+    beta, beta_risk, part_func, weighted_avg = calc_beta(block_outputs, timeslots, risk_groups)
+    beta_force = get_beta_force(beta, block_outputs, risk_groups, part_func, weighted_avg)
+
+    retval.update({'sigma':sigma, 'beta': beta, 'beta_risk': beta_risk, 'part_func': part_func, 'weighted_avg': weighted_avg, 'beta_force': beta_force})
+    return retval
+

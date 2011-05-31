@@ -131,7 +131,7 @@ def train_cox(net, (test_inputs, test_targets), (validation_inputs, validation_t
                 gradients[node] = 0
 
             #Set errors on output nodes first
-            for node, gradient in zip(net.output_nodes, derivative(beta, sigma, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)):
+            for node, gradient in zip(net.output_nodes, derivative(test_targets, outputs, output_index, beta, sigma, part_func, weighted_avg, beta_force, timeslots, risk_groups)):
                 #glogger.debugPlot('Gradient', gradient, style = 'b.')
                 gradients[node] = gradient
 

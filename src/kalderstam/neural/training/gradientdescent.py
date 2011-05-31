@@ -15,7 +15,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
     Same for epoch_func and block_func."""
 
     if pre_loop_func:
-        pre_loop_kwargs = pre_loop_func(net, (test_inputs, test_targets), (validation_inputs, validation_targets))
+        pre_loop_kwargs = pre_loop_func(net, test_inputs, test_targets, block_size)
     else:
         pre_loop_kwargs = {}
 
@@ -23,8 +23,9 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
         try: #Want to catch keyboard interrupt
             #Iterate over training data
             logger.info('Epoch ' + str(epoch))
+
             if epoch_func:
-                epoch_kwargs = epoch_func(net, (test_inputs, test_targets), (validation_inputs, validation_targets), pre_loop_kwargs)
+                epoch_kwargs = epoch_func(net, test_inputs, test_targets, block_size, **pre_loop_kwargs)
             else:
                 epoch_kwargs = {}
             #error_sum = 0
@@ -33,6 +34,9 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                 block_size = len(test_inputs)
 
             for block in range(int(len(test_inputs) / block_size)):
+                results = net.sim(test_inputs)
+                extra_kwargs = pre_loop_kwargs
+                extra_kwargs.update(epoch_kwargs) #Add data from epoch function
 
                 weight_corrections = {}
                 gradients = {}
@@ -41,26 +45,22 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                     weight_corrections[node] = {}
 
                 #Train in random order
-                block_data = sample(zip(test_inputs, test_targets), block_size)
+                block_data = sample(range(len(test_targets)), block_size)
 
                 if block_func:
-                    block_kwargs = block_func(net, (test_inputs, test_targets), (validation_inputs, validation_targets), pre_loop_kwargs, epoch_kwargs)
-                else:
-                    block_kwargs = {}
+                    extra_kwargs.update(block_func(test_inputs, test_targets, block_size, results, block_data, **extra_kwargs))
 
-                for input, target in block_data:
-
+                for index in block_data:
+                    input = test_inputs[index]
                     #Calc output
-                    result = net.update(input)
+                    #result = results[index]
 
                     #Set error to 0 on all nodes first
                     for node in net.get_all_nodes():
                         gradients[node] = 0
 
                     #Set errors on output nodes first
-                    extra_kwargs = dict(pre_loop_kwargs.items() + epoch_kwargs.items() + block_kwargs.items())
-                    for node, gradient in zip(net.output_nodes, error_derivative(target, result, **extra_kwargs)):
-                        glogger.debugPlot('Gradient at output nodes', gradient, style = 'b-')
+                    for node, gradient in zip(net.output_nodes, error_derivative(test_targets, results, index, **extra_kwargs)):
                         gradients[node] = gradient
 
                     #Iterate over the nodes and correct the weights
@@ -90,20 +90,20 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
 
             #Calculate error of the network and print
 
-            if len(test_inputs > 0):
-                test_results = net.sim(test_inputs)
-                test_error = error_function(test_targets, test_results) / len(test_targets)
-                glogger.debugPlot('Test Error', test_error, style = 'r-')
-                logger.debug("Test Error = " + str(test_error))
-                if test_error <= stop_error_value:
-                    break
+            #if len(test_inputs > 0):
+                #test_results = net.sim(test_inputs)
+                #test_error = error_function(test_targets[:, 0], test_results[:, 0]) / len(test_targets)
+                #glogger.debugPlot('Test Error', test_error, style = 'r-')
+                #logger.debug("Test Error = " + str(test_error))
+                #if test_error <= stop_error_value:
+                    #break
 
-            if validation_inputs != None and len(validation_inputs) > 0:
-                validation_results = net.sim(validation_inputs)
-                validation_error = error_function(validation_targets, validation_results) / len(validation_targets)
-                logger.debug("Validation Error = " + str(validation_error))
-                if validation_error <= stop_error_value:
-                    break
+            #if validation_inputs != None and len(validation_inputs) > 0:
+                #validation_results = net.sim(validation_inputs)
+                #validation_error = error_function(validation_targets[:, 0], validation_results[:, 0]) / len(validation_targets)
+                #logger.debug("Validation Error = " + str(validation_error))
+                #if validation_error <= stop_error_value:
+                    #break
         except KeyboardInterrupt:
             logger.info("Interrupt received, returning net...")
             break

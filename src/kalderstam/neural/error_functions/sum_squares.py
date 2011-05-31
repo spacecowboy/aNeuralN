@@ -10,6 +10,6 @@ def total_error(target, result):
         print(target, result)
         raise e
 
-def derivative(target, result):
+def derivative(targets, results, index):
     """dE/dej = ej = result - target."""
-    return (result - target)
+    return (results[index] - targets[index])
