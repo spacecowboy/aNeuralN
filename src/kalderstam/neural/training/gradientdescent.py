@@ -50,8 +50,9 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                 if block_func:
                     extra_kwargs.update(block_func(test_inputs, test_targets, block_size, results, block_data, **extra_kwargs))
 
-                for index in block_data:
+                for index, member_index in zip(block_data, range(len(block_data))):
                     input = test_inputs[index]
+                    member_targets, member_results = test_targets[block_data], results[block_data]
                     #Calc output
                     #result = results[index]
 
@@ -60,7 +61,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                         gradients[node] = 0
 
                     #Set errors on output nodes first
-                    for node, gradient in zip(net.output_nodes, error_derivative(test_targets, results, index, **extra_kwargs)):
+                    for node, gradient in zip(net.output_nodes, error_derivative(member_targets, member_results, member_index, **extra_kwargs)):
                         gradients[node] = gradient
 
                     #Iterate over the nodes and correct the weights

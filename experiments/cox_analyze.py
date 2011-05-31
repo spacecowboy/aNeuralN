@@ -31,7 +31,7 @@ def test(net, P, T, filename, epochs, learning_rate):
 
     try:
         #net = train_cox(net, (P, T), (None, None), timeslots, epochs, learning_rate = learning_rate)
-        net = traingd(net, (P, T), (None, None), epochs, learning_rate, block_size = 0, error_derivative = derivative, error_function = total_error, pre_loop_func = cox_pre_func, block_func = cox_block_func)
+        net = traingd(net, (P, T), (None, None), epochs, learning_rate, block_size = 400, error_derivative = derivative, error_function = total_error, pre_loop_func = cox_pre_func, block_func = cox_block_func)
     except FloatingPointError:
         print('Aaawww....')
     outputs = net.sim(P)
