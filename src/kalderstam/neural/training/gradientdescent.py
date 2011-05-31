@@ -14,6 +14,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
     It should return a dict which will be passed as keyword arguments to the other functions.
     Same for epoch_func and block_func."""
 
+    extra_kwargs = {}
     if pre_loop_func:
         pre_loop_kwargs = pre_loop_func(net, test_inputs, test_targets, block_size)
     else:
@@ -35,7 +36,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
 
             for block in range(int(len(test_inputs) / block_size)):
                 results = net.sim(test_inputs)
-                extra_kwargs = pre_loop_kwargs
+                extra_kwargs.update(pre_loop_kwargs)
                 extra_kwargs.update(epoch_kwargs) #Add data from epoch function
 
                 weight_corrections = {}

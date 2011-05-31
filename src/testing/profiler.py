@@ -5,13 +5,14 @@ from kalderstam.neural.network import build_feedforward, build_feedforward_commi
 from random import uniform
 import time
 import numpy as np
-from kalderstam.neural.training.cox_training import generate_timeslots, \
-train_cox, plot_correctly_ordered
+from kalderstam.neural.training.cox_training import train_cox
 import matplotlib.pyplot as plt
 import logging
 from kalderstam.util import graphlogger as glogger
 from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
-    calc_sigma, total_error, get_beta_force, derivative, calc_beta
+    calc_sigma, total_error, get_beta_force, derivative, calc_beta, cox_pre_func, \
+    cox_block_func, generate_timeslots, plot_correctly_ordered
+from kalderstam.neural.training.gradientdescent import traingd
 
 def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
     np.seterr(all = 'raise') #I want errors!
@@ -126,7 +127,8 @@ def test():
     #plt.title('Before training, [hidden, output] vs [input, hidden, output\nError = ' + str(total_error(beta, sigma)))
 
     try:
-        net = train_cox(net, (P, T), (None, None), timeslots, epochs = 10, learning_rate = 5)
+        #net = train_cox(net, (P, T), (None, None), timeslots, epochs = 10, learning_rate = 5)
+        net = traingd(net, (P, T), (None, None), epochs = 10, learning_rate = 5, block_size = 400, error_derivative = derivative, error_function = total_error, pre_loop_func = cox_pre_func, block_func = cox_block_func)
     except FloatingPointError:
         print('Aaawww....')
 
