@@ -5,7 +5,7 @@ import time
 import numpy
 import matplotlib.pyplot as plt
 from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta, generate_timeslots, \
-    derivative, total_error, cox_pre_func, cox_block_func
+    derivative, total_error, cox_pre_func, cox_block_func, cox_epoch_func
 import kalderstam.util.graphlogger as glogger
 import logging
 from kalderstam.neural.training.cox_training import train_cox
@@ -31,7 +31,7 @@ def test(net, P, T, filename, epochs, learning_rate):
 
     try:
         #net = train_cox(net, (P, T), (None, None), timeslots, epochs, learning_rate = learning_rate)
-        net = traingd(net, (P, T), (None, None), epochs, learning_rate, block_size = 400, error_derivative = derivative, error_function = total_error, pre_loop_func = cox_pre_func, block_func = cox_block_func)
+        net = traingd(net, (P, T), (None, None), epochs, learning_rate, block_size = 400, error_derivative = derivative, error_function = total_error, pre_loop_func = cox_pre_func, block_func = cox_block_func, epoch_func = cox_epoch_func)
     except FloatingPointError:
         print('Aaawww....')
     outputs = net.sim(P)
@@ -62,7 +62,7 @@ def orderscatter(net, T, filename):
         network_timeslot_indices.append(timeslot_index)
 
     plt.figure()
-    plt.title('Scatter between index ordering, initial\n' + str(filename))
+    plt.title('Scatter between index ordering\n' + str(filename))
     plt.xlabel('Target timeslots')
     plt.ylabel('Network timeslots')
     plt.plot(timeslots_target, timeslots_target, 'r-')
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     orderscatter(net, T, filename)
     plt.show()
 
-    epochs = 2000
+    epochs = 20000
     rate = 5
 
     for times in range(100):

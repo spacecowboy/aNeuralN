@@ -3,6 +3,7 @@ import logging
 import numpy as np
 #import kalderstam.util.graphlogger as glogger
 from cox_error_in_c import derivative_beta as cderivative_beta, get_slope as cget_slope
+import kalderstam.util.graphlogger as glogger
 
 logger = logging.getLogger('kalderstam.neural.error_functions')
 
@@ -198,6 +199,21 @@ def cox_pre_func(net, test_inputs, test_targets, block_size):
         return {'timeslots': timeslots, 'risk_groups': risk_groups}
     else:
         return {}
+
+def cox_epoch_func(net, test_inputs, test_targets, block_size, timeslots = None, risk_groups = None, **pre_loop_kwargs):
+    outputs = net.sim(test_inputs)
+    sigma = calc_sigma(outputs)
+    if block_size != 0 or block_size != len(test_targets):
+        timeslots = generate_timeslots(test_targets)
+        risk_groups = get_risk_groups(timeslots)
+    beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
+
+    glogger.debugPlot('Total error', total_error(beta, sigma), style = 'b-')
+    glogger.debugPlot('Sigma * Beta vs Epochs', beta * sigma, style = 'g-')
+    #glogger.debugPlot('Sigma vs Epochs', sigma, style = 'b-')
+    #glogger.debugPlot('Beta vs Epochs', beta, style = 'b-')
+    logger.info('Beta*Sigma = ' + str(sigma * beta))
+    return {}
 
 def cox_block_func(test_inputs, test_targets, block_size, outputs, block_members, timeslots = None, risk_groups = None, **kwargs):
     block_outputs = outputs[block_members]

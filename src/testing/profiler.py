@@ -11,7 +11,7 @@ import logging
 from kalderstam.util import graphlogger as glogger
 from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
     calc_sigma, total_error, get_beta_force, derivative, calc_beta, cox_pre_func, \
-    cox_block_func, generate_timeslots, plot_correctly_ordered
+    cox_block_func, generate_timeslots, plot_correctly_ordered, cox_epoch_func
 from kalderstam.neural.training.gradientdescent import traingd
 
 def test_cox_part(outputs, timeslots, epochs = 1, learning_rate = 2.0):
@@ -128,7 +128,7 @@ def test():
 
     try:
         #net = train_cox(net, (P, T), (None, None), timeslots, epochs = 10, learning_rate = 5)
-        net = traingd(net, (P, T), (None, None), epochs = 10, learning_rate = 5, block_size = 400, error_derivative = derivative, error_function = total_error, pre_loop_func = cox_pre_func, block_func = cox_block_func)
+        net = traingd(net, (P, T), (None, None), epochs = 10, learning_rate = 5, block_size = 100, error_derivative = derivative, error_function = total_error, pre_loop_func = cox_pre_func, block_func = cox_block_func, epoch_func = cox_epoch_func)
     except FloatingPointError:
         print('Aaawww....')
 
