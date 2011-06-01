@@ -19,6 +19,8 @@ typedef struct {
 	PyStringObject *activation_function; // The string representation of the activation function!
 	double (*function)(double); // Function pointer, the activation function
 	double (*derivative)(double); // Function pointer, to the derivative of the activation function
+	double cached_output;
+	PyObject *cached_input;
 } Node;
 
 static int _Node_input_sum(Node *self, PyObject *inputs, double *sum);
@@ -75,6 +77,7 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		self->weights = NULL;
 		self->random_range = 1;
 		self->activation_function = NULL;
+		self->cached_output = 0;
 
 		double bias = RAND_MAX; // Dummy value that will never occur in real life
 
@@ -229,11 +232,12 @@ static PyObject* Node_output_derivative(Node *self, PyObject *inputs)
 	}
 	else
 	{
-		double inputsum;
-		if(_Node_input_sum(self, inputs, &inputsum))
-			return Py_BuildValue("d", self->derivative(inputsum));
-		else
-			return NULL;
+		if (inputs != self->cached_input) {
+			double output;
+			if (!_Node_output(self, inputs, &output))
+				return NULL;
+		}
+		return Py_BuildValue("d", self->derivative(self->cached_output));
 	}
 }
 
@@ -241,11 +245,16 @@ static int _Node_output(Node *self, PyObject *inputs, double *val)
 {
 	int result = TRUE;
 	double inputsum;
-	if(_Node_input_sum(self, inputs, &inputsum))
+	if (inputs == self->cached_input) {
+		*val = self->cached_output;
+	} else if (_Node_input_sum(self, inputs, &inputsum)) {
 		*val = self->function(inputsum);
-	else
+		self->cached_output = *val;
+		self->cached_input = inputs;
+	} else {
 		result = FALSE;
-	
+		self->cached_input = NULL;
+	}
 	return result;
 }
 static PyObject* Node_output(Node *self, PyObject *inputs)
@@ -262,12 +271,12 @@ static PyObject* Node_output(Node *self, PyObject *inputs)
 	}
 	else
 	{
-	double val;
-	if (_Node_output(self, inputs, &val)) {
-		return Py_BuildValue("d", val);
-	}
-	else
-		return NULL;
+		double val;
+		if (_Node_output(self, inputs, &val)) {
+			return Py_BuildValue("d", val);
+		}
+		else
+			return NULL;
 	}
 }
 

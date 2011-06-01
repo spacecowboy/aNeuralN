@@ -77,7 +77,7 @@ class Test(unittest.TestCase):
         #print(initial_val_performance, genetic_val_performance, gd_val_performance)
         #assert(initial_val_performance < gd_val_performance)
 
-    def testCommitteeImprovement(self):
+    def testXCommitteeImprovement(self):
         P, T = loadsyn3(100)
         p, t = P, T
 

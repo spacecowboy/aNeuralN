@@ -113,7 +113,7 @@ def test():
     #P, T = parse_file(filename, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
 
     filename = "/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Two_thirds_of_SA_1889_dataset.txt"
-    P, T = parse_file(filename, targetcols = [4], inputcols = [-1, -2, -3, -4], ignorerows = [0], normalize = True)
+    P, T = parse_file(filename, targetcols = [4, 5], inputcols = [-1, -2, -3, -4], ignorerows = [0], normalize = True)
 
 
     #P = P[:100,:]

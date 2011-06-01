@@ -25,7 +25,7 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
     try:
         targetcols = [int(targetcols)]
     except TypeError:
-        #targetcols is alreayd a list
+        #targetcols is already a list
         pass
 
     if not inputcols:

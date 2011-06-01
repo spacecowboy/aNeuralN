@@ -12,23 +12,39 @@ shift = 4 #Also known as Delta, it's the handwaving variable.
 def generate_timeslots(T):
     timeslots = np.array([], dtype = int)
     for x_index in range(len(T)):
-        time = T[x_index][0]
-        if len(timeslots) == 0:
-            timeslots = np.insert(timeslots, 0, x_index)
-        else:
-            added = False
-            #Find slot
-            for index in range(len(timeslots)):
-                time_index = timeslots[index]
-                if time > T[time_index, 0]:
-                    timeslots = np.insert(timeslots, index, x_index)
-                    added = True
-                    break
-            if not added:
-                #Reached the end, insert here
-                timeslots = np.append(timeslots, x_index)
+        event = T[x_index][1]
+        if event == 1: #Else it was censored
+            time = T[x_index][0]
+            if len(timeslots) == 0:
+                timeslots = np.insert(timeslots, 0, x_index)
+            else:
+                added = False
+                #Find slot
+                for index in range(len(timeslots)):
+                    time_index = timeslots[index]
+                    if time < T[time_index, 0]:
+                        timeslots = np.insert(timeslots, index, x_index)
+                        added = True
+                        break
+                if not added:
+                    #Reached the end, insert here
+                    timeslots = np.append(timeslots, x_index)
 
     return timeslots
+
+def get_risk_groups(T, timeslots):
+    """T is the target vector of [ [time_to_event/censoring, event] ],
+     where event is 1 if there was an event, 0 if it was censored."""
+    risk_groups = []
+    # Sort T on the time?
+    for i in timeslots:
+        group = np.array([], dtype = int)
+        #Iterate over T and add all with a time greater than T[i]
+        for j in range(len(T)):
+            if T[j][0] >= T[i][0]:
+                group = np.append(group, j)
+        risk_groups.append(group)
+    return risk_groups
 
 def plot_correctly_ordered(outputs, timeslots):
     timeslots_network = generate_timeslots(outputs)
@@ -59,7 +75,7 @@ def plot_correctly_ordered(outputs, timeslots):
 def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
     beta_force = 0
     for risk_group, z, w in zip(risk_groups, part_func, weighted_avg):
-        beta_force += -1 / z * np.sum(np.exp(beta * outputs[risk_group]) * outputs[risk_group] ** 2) + w ** 2
+        beta_force += -1 / z * np.sum(np.exp(beta * outputs[risk_group, 0]) * outputs[risk_group, 0] ** 2) + w ** 2
 
     return beta_force
 
@@ -98,8 +114,8 @@ def derivative_betasigma(beta, sigma, part_func, weighted_avg, beta_force, outpu
 
 def derivative_sigma(sigma, output_index, outputs):
     """Eq. 12, derivative of Sigma with respect to y(i)"""
-    output = outputs[output_index]
-    ds = (output - outputs.mean()) / (len(outputs) * sigma)
+    output = outputs[output_index, 0]
+    ds = (output - outputs[:, 0].mean()) / (len(outputs) * sigma)
     #glogger.debugPlot('Sigma derivative', ds, style = 'b+')
     return ds
 
@@ -171,15 +187,9 @@ def calc_beta(outputs, timeslots, risk_groups):
 
 def calc_sigma(outputs):
     """Standard deviation, just use numpy for it. need ALL results, from net.sim(inputs)"""
-    sigma = outputs.std()
+    sigma = outputs[:, 0].std()
     logger.debug("Sigma = " + str(sigma))
     return sigma
-
-def get_risk_groups(timeslots):
-    risk_groups = []
-    for i in range(len(timeslots)):
-        risk_groups.append(timeslots[i:])
-    return risk_groups
 
 def total_error(beta, sigma):
     """E = ln(1 + exp(Delta - Beta*Sigma))."""
@@ -195,7 +205,7 @@ def cox_pre_func(net, test_inputs, test_targets, block_size):
 
     if (block_size == 0 or block_size == len(test_targets)):
         timeslots = generate_timeslots(test_targets)
-        risk_groups = get_risk_groups(timeslots)
+        risk_groups = get_risk_groups(test_targets, timeslots)
         return {'timeslots': timeslots, 'risk_groups': risk_groups}
     else:
         return {}
@@ -205,7 +215,7 @@ def cox_epoch_func(net, test_inputs, test_targets, block_size, timeslots = None,
     sigma = calc_sigma(outputs)
     if block_size != 0 or block_size != len(test_targets):
         timeslots = generate_timeslots(test_targets)
-        risk_groups = get_risk_groups(timeslots)
+        risk_groups = get_risk_groups(test_targets, timeslots)
     beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
 
     glogger.debugPlot('Total error', total_error(beta, sigma), style = 'b-')
@@ -220,7 +230,7 @@ def cox_block_func(test_inputs, test_targets, block_size, outputs, block_members
     sigma = calc_sigma(block_outputs)
     if block_size != 0 or block_size != len(test_targets):
         timeslots = generate_timeslots(test_targets[block_members])
-        risk_groups = get_risk_groups(timeslots)
+        risk_groups = get_risk_groups(test_targets[block_members], timeslots)
         retval = {'timeslots': timeslots, 'risk_groups': risk_groups}
     else:
         retval = {}
@@ -230,3 +240,5 @@ def cox_block_func(test_inputs, test_targets, block_size, outputs, block_members
     retval.update({'sigma':sigma, 'beta': beta, 'beta_risk': beta_risk, 'part_func': part_func, 'weighted_avg': weighted_avg, 'beta_force': beta_force})
     return retval
 
+def c_index(targets, outputs):
+    pass

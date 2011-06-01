@@ -5,11 +5,11 @@
 
 def total_error(target, result):
     try:
-        return ((result - target) ** 2).sum() / 2
+        return ((result[:, 0] - target[:, 0]) ** 2).sum() / 2
     except FloatingPointError as e:
         print(target, result)
         raise e
 
 def derivative(targets, results, index):
     """dE/dej = ej = result - target."""
-    return (results[index] - targets[index])
+    return (results[index, 0] - targets[index, 0])

@@ -54,15 +54,14 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                 for index, member_index in zip(block_data, range(len(block_data))):
                     input = test_inputs[index]
                     member_targets, member_results = test_targets[block_data], results[block_data]
-                    #Calc output
-                    #result = results[index]
 
                     #Set error to 0 on all nodes first
                     for node in net.get_all_nodes():
                         gradients[node] = 0
 
                     #Set errors on output nodes first
-                    for node, gradient in zip(net.output_nodes, error_derivative(member_targets, member_results, member_index, **extra_kwargs)):
+                    gradient = error_derivative(member_targets, member_results, member_index, **extra_kwargs)
+                    for node in net.output_nodes:
                         gradients[node] = gradient
 
                     #Iterate over the nodes and correct the weights

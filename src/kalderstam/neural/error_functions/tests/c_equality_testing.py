@@ -5,37 +5,33 @@ Created on Apr 18, 2011
 '''
 import unittest
 from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
-    get_beta_force
-from ..cox_error import get_slope as pyget_slope, derivative_beta as pyderivative_beta, calc_beta, get_y_force as pygetyforce
-from ..cox_error_in_c import derivative_beta as cderivative_beta, get_slope as cget_slope#, #get_y_force as cgetyforce #@UnresolvedImport
+    get_beta_force, generate_timeslots, get_slope as pyget_slope, derivative_beta as pyderivative_beta, calc_beta, get_y_force as pygetyforce
+#from ..cox_error import get_slope as pyget_slope, derivative_beta as pyderivative_beta, calc_beta, get_y_force as pygetyforce
+from kalderstam.neural.error_functions.cox_error_in_c import derivative_beta as cderivative_beta, get_slope as cget_slope#, #get_y_force as cgetyforce #@UnresolvedImport
 import numpy as np
 
 
 class Test(unittest.TestCase):
 
     def generateRandomTestData(self, number):
-        outputs = np.random.random((number, 1))
-        return self.generateFixedData(number, outputs)
-
-    def generateFixedData(self, number, outputs):
-        timeslots = np.arange(number)
-#        sorted_outputs = np.sort(outputs, axis = 0)
-#        timeslots = np.zeros(number, dtype = int)
-#        for i in range(len(timeslots)):
-#            timeslots[i] = indexOf(outputs, sorted_outputs[i])[0]
+        outputs = np.random.random((number, 2))
+        for i in range(len(outputs)):
+            outputs[i, 1] = np.random.randint(0, 2) #inclusive, exclusive
+        timeslots = generate_timeslots(outputs)
 
         return (outputs, timeslots)
 
-
     def testCDerivative_beta(self):
         """Make sure the cython code returns the same values as python code."""
-        outputs, timeslots = self.generateRandomTestData(100)
-
         beta = 0.79 #Start with something small
 
-        risk_groups = get_risk_groups(timeslots)
+        outputs, timeslots = self.generateRandomTestData(100)
+        risk_groups = get_risk_groups(outputs, timeslots)
+        #Now get a new set, that won't match this, so beta doesn't diverge
+        outputs, rnd_timeslots = self.generateRandomTestData(100)
+
         risk_outputs = [None for i in range(len(timeslots))]
-        beta_risk = [np.zeros(len(risk_groups[i])) for i in range(len(timeslots))]
+        beta_risk = [np.zeros(len(risk_groups[i])) for i in range(len(risk_groups))]
         part_func = np.zeros(len(timeslots))
         weighted_avg = np.zeros(len(timeslots))
 
@@ -52,11 +48,16 @@ class Test(unittest.TestCase):
 
     def testCGet_slope(self):
         """Make sure the cython code returns the same values as python code."""
-        outputs, timeslots = self.generateRandomTestData(100)
+        #outputs, timeslots = self.generateRandomTestData(100)
 
         beta = 0.79 #Start with something small
 
-        risk_groups = get_risk_groups(timeslots)
+        #risk_groups = get_risk_groups(timeslots)
+        outputs, timeslots = self.generateRandomTestData(100)
+        risk_groups = get_risk_groups(outputs, timeslots)
+        #Now get a new set, that won't match this, so beta doesn't diverge
+        outputs, rnd_timeslots = self.generateRandomTestData(100)
+
         pybeta_risk = [np.zeros(len(risk_groups[i])) for i in range(len(risk_groups))]
         cbeta_risk = [np.zeros(len(risk_groups[i])) for i in range(len(risk_groups))]
         pypart_func = np.zeros(len(timeslots))
