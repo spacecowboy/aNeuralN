@@ -4,23 +4,13 @@ from kalderstam.neural.network import build_feedforward
 import time
 import numpy
 import matplotlib.pyplot as plt
-from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta
+from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta, generate_timeslots, get_C_index, censor_rndtest
 import kalderstam.util.graphlogger as glogger
 import logging
-from kalderstam.neural.training.cox_training import train_cox, generate_timeslots
+from kalderstam.neural.training.cox_training import train_cox
 from kalderstam.util.numpyhelp import indexOf
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
-
-def generate_timeslots2(T):
-    '''Slower, and can't trust IndexOf in case two outputs have the same value.
-    But logically this is what generate_timeslots does.'''
-    timeslots = numpy.zeros(len(T), dtype = int)
-    sorted_T = numpy.sort(T, axis = 0)
-    for i in range(len(timeslots)):
-        timeslots[i] = indexOf(T, sorted_T[i])[0]
-
-    return timeslots[::-1]
 
 def experiment(net, P, T, filename, epochs, learning_rate):
     logger.info("Running experiment for: " + filename + ' ' + str(epochs) + ", rate: " + str(learning_rate))
@@ -52,17 +42,19 @@ def experiment(net, P, T, filename, epochs, learning_rate):
 def orderscatter(net, T, filename):
     outputs = net.sim(P)
     timeslots_target = generate_timeslots(T)
-    timeslots_network = generate_timeslots(outputs)
+    T_copy = T.copy()
+    T_copy[:, 0] = outputs[:, 0]
+    timeslots_network = generate_timeslots(T_copy)
     network_timeslot_indices = []
     for output_index in timeslots_network:
         timeslot_index = indexOf(timeslots_target, output_index)
         network_timeslot_indices.append(timeslot_index)
 
     plt.figure()
-    plt.title('Scatter between index ordering, initial\n' + str(filename))
+    plt.title('Scatter between index ordering\n' + str(filename))
     plt.xlabel('Target timeslots')
     plt.ylabel('Network timeslots')
-    plt.plot(timeslots_target, timeslots_target, 'r-')
+    plt.plot(range(len(timeslots_target)), range(len(timeslots_target)), 'r-')
     plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
 
 if __name__ == "__main__":
@@ -75,8 +67,8 @@ if __name__ == "__main__":
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_OMEGA.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
-    net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/4x10x10x1.ann')
-    #net = build_feedforward(p, 20, 1, output_function = linear())
+    #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/4x10x10x1.ann')
+    net = build_feedforward(p, 8, 1, output_function = linear())
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
@@ -90,10 +82,16 @@ if __name__ == "__main__":
 
     P, T_nn = parse_file(no_noise, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
     P, T_wn = parse_file(with_noise, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
+    
+    #Amount to censor
+    ratio = 0.25
+    
+    T_nn = censor_rndtest(T_nn, ratio)
+    T_wn = censor_rndtest(T_wn, ratio)
 
     #Training sample
-    T = T_wn
-    filename = with_noise
+    T = T_nn
+    filename = no_noise
 
     #Initial state
     orderscatter(net, T_nn, no_noise)
@@ -105,6 +103,10 @@ if __name__ == "__main__":
     for times in range(100):
         net = experiment(net, P, T, filename, epochs, rate)
 
+        outputs = net.sim(P)
+        c_index = get_C_index(T, outputs)
+        logger.info("C index = " + str(c_index))
+        
         orderscatter(net, T_nn, no_noise)
         orderscatter(net, T_wn, with_noise)
         glogger.setup()

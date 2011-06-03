@@ -108,6 +108,16 @@ def generate_random_testdata(number):
 
     return (outputs, timeslots)
 
+def censor_rndtest(T, ratio):
+    Tc = np.array([], dtype = np.int64)
+    for t in T[:, 0]:
+        if np.random.rand() <= ratio:
+            e = 0
+        else:
+            e = 1
+        Tc = np.append(Tc, (t, e))
+    return Tc
+
 def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
     beta_force = 0
     for risk_group, z, w in zip(risk_groups, part_func, weighted_avg):
