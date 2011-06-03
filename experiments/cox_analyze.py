@@ -5,10 +5,9 @@ import time
 import numpy
 import matplotlib.pyplot as plt
 from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta, generate_timeslots, \
-    derivative, total_error, cox_pre_func, cox_block_func, cox_epoch_func
+    derivative, total_error, cox_pre_func, cox_block_func, cox_epoch_func, orderscatter, get_C_index
 import kalderstam.util.graphlogger as glogger
 import logging
-from kalderstam.util.numpyhelp import indexOf
 from kalderstam.neural.training.gradientdescent import traingd
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
@@ -45,26 +44,6 @@ def test(net, P, T, filename, epochs, learning_rate, block_size):
         pass
 
     return net
-
-def orderscatter(net, T, filename):
-    outputs = net.sim(P)
-    c_index = get_C_index(T, outputs)
-    timeslots_target = generate_timeslots(T)
-    T_copy = T.copy()
-    T_copy[:, 0] = outputs[:, 0]
-    timeslots_network = generate_timeslots(T_copy)
-    network_timeslot_indices = []
-    for output_index in timeslots_network:
-        timeslot_index = indexOf(timeslots_target, output_index)
-        network_timeslot_indices.append(timeslot_index)
-
-    plt.figure()
-    plt.title('Scatter between index ordering\n' + str(filename) + "\nC index = " + str(c_index))
-    plt.xlabel('Target timeslots')
-    plt.ylabel('Network timeslots')
-    plt.plot(range(len(timeslots_target)), range(len(timeslots_target)), 'r-')
-    plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
-
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
     glogger.setLoggingLevel(glogger.debug)
@@ -87,7 +66,8 @@ if __name__ == "__main__":
     net = build_feedforward(p, 20, 1, output_function = 'linear')
 
     #Initial state
-    orderscatter(net, T, filename)
+    outputs = net.sim(P)
+    orderscatter(outputs, T, filename)
     plt.show()
 
     epochs = 20000
@@ -97,6 +77,7 @@ if __name__ == "__main__":
     for times in range(100):
         net = test(net, P, T, filename, epochs, rate, block_size)
 
-        orderscatter(net, T, filename)
+        outputs = net.sim(P)
+        orderscatter(outputs, T, filename)
         glogger.setup()
         plt.show()

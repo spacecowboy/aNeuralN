@@ -5,10 +5,9 @@ import time
 import numpy
 import matplotlib.pyplot as plt
 from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta, generate_timeslots, \
-    derivative, total_error, cox_pre_func, cox_block_func, cox_epoch_func, censor_rndtest, get_C_index
+    derivative, total_error, cox_pre_func, cox_block_func, cox_epoch_func, censor_rndtest, get_C_index, orderscatter
 import kalderstam.util.graphlogger as glogger
 import logging
-from kalderstam.util.numpyhelp import indexOf
 from kalderstam.neural.training.gradientdescent import traingd
 
 logger = logging.getLogger('kalderstam.neural.cox_training')
@@ -43,25 +42,6 @@ def experiment(net, P, T, filename, epochs, learning_rate):
 
     return net
 
-def orderscatter(net, T, filename):
-    outputs = net.sim(P)
-    c_index = get_C_index(T, outputs)
-    timeslots_target = generate_timeslots(T)
-    T_copy = T.copy()
-    T_copy[:, 0] = outputs[:, 0]
-    timeslots_network = generate_timeslots(T_copy)
-    network_timeslot_indices = []
-    for output_index in timeslots_network:
-        timeslot_index = indexOf(timeslots_target, output_index)
-        network_timeslot_indices.append(timeslot_index)
-
-    plt.figure()
-    plt.title('Scatter between index ordering\n' + str(filename) + "\nC index = " + str(c_index))
-    plt.xlabel('Target timeslots')
-    plt.ylabel('Network timeslots')
-    plt.plot(range(len(timeslots_target)), range(len(timeslots_target)), 'r-')
-    plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
-
 if __name__ == "__main__":
     logging.basicConfig(level = logging.INFO)
     glogger.setLoggingLevel(glogger.debug)
@@ -78,8 +58,8 @@ if __name__ == "__main__":
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
-    productfunction_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/productfunction_many_no_noise.txt'
-    productfunction_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/productfunction_many_with_noise.txt'
+    productfunction_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/productfunction_no_noise.txt'
+    productfunction_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/productfunction_with_noise.txt'
 
     #The training sample
     no_noise = productfunction_nn
@@ -89,17 +69,18 @@ if __name__ == "__main__":
     P, T_wn = parse_file(with_noise, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
 
     #Amount to censor
-    ratio = 0.75
+    ratio = 0.50
 
     T_nn = censor_rndtest(T_nn, ratio)
     T_wn = censor_rndtest(T_wn, ratio)
 
     #Training sample
-    T = T_nn
-    filename = no_noise
+    T = T_wn
+    filename = with_noise
 
     #Initial state
-    orderscatter(net, T_nn, no_noise)
+    outputs = net.sim(P)
+    orderscatter(outputs, T_nn, no_noise)
     plt.show()
 
     epochs = 10
@@ -107,8 +88,9 @@ if __name__ == "__main__":
 
     for times in range(100):
         net = experiment(net, P, T, filename, epochs, rate)
+        outputs = net.sim(P)
 
-        orderscatter(net, T_nn, no_noise)
-        orderscatter(net, T_wn, with_noise)
+        orderscatter(outputs, T_nn, no_noise)
+        orderscatter(outputs, T_wn, with_noise)
         glogger.setup()
         plt.show()

@@ -4,6 +4,8 @@ import numpy as np
 #import kalderstam.util.graphlogger as glogger
 from cox_error_in_c import derivative_beta as cderivative_beta, get_slope as cget_slope
 import kalderstam.util.graphlogger as glogger
+from kalderstam.util.numpyhelp import indexOf
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger('kalderstam.neural.error_functions')
 
@@ -75,32 +77,6 @@ def get_risk_groups(T, timeslots):
         risk_groups.append(group)
     return risk_groups
 
-def plot_correctly_ordered(outputs, timeslots):
-    timeslots_network = generate_timeslots(outputs)
-    global prev_timeslots_network
-    if prev_timeslots_network is None:
-        prev_timeslots_network = timeslots_network
-    #Now count number of correctly ordered indices
-    count = 0
-    diff = 0
-    for i, j, prev in zip(timeslots, timeslots_network, prev_timeslots_network):
-        if i == j:
-            count += 1
-        if j != prev:
-            diff += 1
-
-    glogger.debugPlot('Network ordering difference', y = diff, style = 'r-')
-    logger.info('Network ordering difference: ' + str(diff))
-    prev_timeslots_network = timeslots_network
-
-    countreversed = 0
-    for i, j in zip(timeslots[::-1], timeslots_network):
-        if i == j:
-            countreversed += 1
-    correct = max(count, countreversed)
-    #glogger.debugPlot('Number of correctly ordered outputs', y = correct, style = 'r-')
-    #logger.info('Number of correctly ordered outputs: ' + str(correct))
-
 def generate_random_testdata(number):
     outputs = np.random.random((number, 2))
     for i in range(len(outputs)):
@@ -119,6 +95,24 @@ def censor_rndtest(T, ratio):
             e = 1
         Tc[i] = (T[i, 0], e)
     return Tc
+
+def orderscatter(outputs, T, filename = ""):
+    c_index = get_C_index(T, outputs)
+    timeslots_target = generate_timeslots(T)
+    T_copy = T.copy()
+    T_copy[:, 0] = outputs[:, 0]
+    timeslots_network = generate_timeslots(T_copy)
+    network_timeslot_indices = []
+    for output_index in timeslots_network:
+        timeslot_index = indexOf(timeslots_target, output_index)
+        network_timeslot_indices.append(timeslot_index)
+
+    plt.figure()
+    plt.title('Scatter between index ordering\n' + str(filename) + "\nC index = " + str(c_index))
+    plt.xlabel('Target timeslots')
+    plt.ylabel('Network timeslots')
+    plt.plot(range(len(timeslots_target)), range(len(timeslots_target)), 'r-')
+    plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
 
 def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
     beta_force = 0
