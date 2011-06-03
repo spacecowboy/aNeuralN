@@ -14,6 +14,8 @@ logger = logging.getLogger('kalderstam.neural.cox_training')
 
 def test(net, P, T, filename, epochs, learning_rate, block_size):
     logger.info("Running test for: " + filename + ' ' + str(epochs) + ", rate: " + str(learning_rate) + ", block_size: " + str(block_size))
+    print("Number of patients with events: " + str(T[:, 1].sum()))
+    print("Number of censored patients: " + str((1 - T[:, 1]).sum()))
 
     outputs = net.sim(P)
     c_index = get_C_index(T, outputs)
@@ -55,8 +57,6 @@ if __name__ == "__main__":
 
     filename = "/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Two_thirds_of_SA_1889_dataset.txt"
     P, T = parse_file(filename, targetcols = [4, 5], inputcols = [-1, -2, -3, -4], ignorerows = [0], normalize = True)
-    print("Number of patients with events: " + str(T[:, 1].sum()))
-    print("Number of censored patients: " + str((1 - T[:, 1]).sum()))
     #P = P[100:, :]
     #T = T[100:, :]
 
