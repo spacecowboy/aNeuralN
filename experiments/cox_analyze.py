@@ -16,6 +16,10 @@ logger = logging.getLogger('kalderstam.neural.cox_training')
 
 def test(net, P, T, filename, epochs, learning_rate, block_size):
     logger.info("Running test for: " + filename + ' ' + str(epochs) + ", rate: " + str(learning_rate) + ", block_size: " + str(block_size))
+    
+    outputs = net.sim(P)
+    c_index = get_C_index(T, outputs)
+    logger.info("C index = " + str(c_index))
 
     timeslots = generate_timeslots(T)
 
@@ -26,6 +30,8 @@ def test(net, P, T, filename, epochs, learning_rate, block_size):
     except FloatingPointError:
         print('Aaawww....')
     outputs = net.sim(P)
+    c_index = get_C_index(T, outputs)
+    logger.info("C index = " + str(c_index))
 
     plot_network_weights(net)
 
@@ -38,8 +44,6 @@ def test(net, P, T, filename, epochs, learning_rate, block_size):
         plt.plot(T.flatten(), T.flatten(), 'r-')
     except:
         pass
-    #Manual test
-    outputs = net.sim(P)
 
     return net
 
