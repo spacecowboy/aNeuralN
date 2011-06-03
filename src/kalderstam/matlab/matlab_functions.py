@@ -86,7 +86,7 @@ def loadsyn3(n = 100):
 
     return (P, T)
 
-def plot2d2c(net, P, T, figure = 1):
+def plot2d2c(net, P, T, figure = 1, cut = 0.5):
     if len(P[0]) != 2:
         logger.error('Input is not of dimension 2')
     else:
@@ -95,21 +95,21 @@ def plot2d2c(net, P, T, figure = 1):
         for x, y, target in zip(P[:, 0], P[:, 1], T[:, 0]):
             results = net.update([x, y])
             mark = ''
-            if (target - 1 < -0.5):
+            if (target - 1 < -cut):
                 mark = 'o'
             else:
                 mark = '+'
 
             color = ''
-            if (target > 0.5 and results[0] > 0.5 or
-                target <= 0.5 and results[0] <= 0.5):
+            if (target > cut and results[0] > cut or
+                target <= cut and results[0] <= cut):
                 color = 'b'
             else:
                 color = 'r'
             plt.plot(x, y, color + mark)
-        boundary(net, P)
+        boundary(net, P, cut)
 
-def boundary(net, P):
+def boundary(net, P, cut = 0.5):
     if len(P[0]) != 2:
         logger.error('Error: Input is not of dimension 2')
     else:
@@ -138,13 +138,13 @@ def boundary(net, P):
 
             x2 = min_X2
             prev_val = net.update([x1, x2])
-            if prev_val > 0.5:
+            if prev_val > cut:
                 prev_val = 1
             else:
                 prev_val = 0
             while (x2 < max_X2):
                 val = net.update([x1, x2])
-                if val > 0.5:
+                if val > cut:
                     val = 1
                 else:
                     val = 0
@@ -195,7 +195,7 @@ def plotroc(Y, T, figure = 1):
 
         plt.plot([0, best_x], [100, best_y], 'g-')
 
-        return area
+        return area, best_cut
 
 def get_rocarea_and_best_cut(Y, T):
     Y = Y.flatten()

@@ -1,30 +1,39 @@
 #!/usr/bin/env python
 
 import matplotlib.pyplot as plt
-from kalderstam.neural.training_functions import train_evolutionary,\
-    traingd_block, train_committee
 from kalderstam.util.filehandling import read_data_file, load_network,\
     parse_file, save_committee
-from kalderstam.neural.network import build_feedforward_committee
-from kalderstam.neural.matlab_functions import stat, plot2d2c, plotroc
+from kalderstam.neural.network import build_feedforward_committee, build_feedforward
+from kalderstam.matlab.matlab_functions import stat, plot2d2c, plotroc, loadsyn1, loadsyn2, loadsyn3
+from kalderstam.neural.training.gradientdescent import traingd
+from kalderstam.neural.training.genetic import train_evolutionary
+from kalderstam.neural.training.committee import train_committee
 import logging
 from kalderstam.util.decorators import benchmark
+from kalderstam.util.filehandling import get_stratified_validation_set,\
+    get_validation_set
     
 def find_solution(P, T):
                 
     #test, validation = get_validation_set(P, T, validation_size = 0.33)
-    #net = build_feedforward(6, 3, 1)
-    com = build_feedforward_committee(size = 10, input_number = len(P[0]), hidden_number = 20, output_number = len(T[0]))
+    net = build_feedforward(input_number = len(P[0]), hidden_number = 4, output_number = len(T[0]))
+    #com = build_feedforward_committee(size = 4, input_number = len(P[0]), hidden_number = 6, output_number = len(T[0]))
     
-    epochs = 2
+    epochs = 1000
+    
+    testset, valset = get_validation_set(P, T, validation_size = 0.01)
     
     print("Training...")
-    benchmark(train_committee)(com, train_evolutionary, P, T, 5, random_range = 3)
-    #benchmark(train_committee)(com, traingd_block, P, T, epochs, learning_rate = 0.03, block_size = 30)
+    net = benchmark(train_evolutionary)(net, testset, valset, 100, random_range = 1)
+    net = benchmark(traingd)(net, testset, valset, epochs, learning_rate = 0.1, block_size = 1)
+    
+    #benchmark(train_committee)(com, train_evolutionary, P, T, 100, random_range = 1)
+    #benchmark(train_committee)(com, traingd, P, T, epochs, learning_rate = 0.1, block_size = 30)
     
     #P, T = test
-    Y = com.sim(P)
-    area = plotroc(Y, T, 1)
+    Y = net.sim(P)
+    area, best_cut = plotroc(Y, T, 1)
+    plot2d2c(net, P, T, figure = 2, cut = best_cut)
     
     #P, T = validation
     #Y = com.sim(P)
@@ -57,7 +66,8 @@ if __name__ == '__main__':
     logger = logging.getLogger('classify')
     
     #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Two_thirds_of_SA_1889_dataset.txt", targetcols = [5], ignorecols = [0,1,4])
-    P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Two_thirds_of_SA_1889_dataset.txt", targetcols = [5], ignorecols = [0,1,3,4])
+    #P, T = parse_file("/home/gibson/jonask/Dropbox/Ann-Survival-Phd/Two_thirds_of_SA_1889_dataset.txt", targetcols = [5], ignorecols = [0,1,3,4])
+    P, T = loadsyn3(100)
     
     find_solution(P, T)
     
