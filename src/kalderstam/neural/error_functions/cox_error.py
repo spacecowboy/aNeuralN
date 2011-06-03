@@ -62,14 +62,15 @@ def generate_timeslots(T):
 
 def get_risk_groups(T, timeslots):
     """T is the target vector of [ [time_to_event/censoring, event] ],
-     where event is 1 if there was an event, 0 if it was censored."""
+     where event is 1 if there was an event, 0 if it was censored.
+     A risk group is defined as those who disappeared from the study up to time t."""
     risk_groups = []
     # Sort T on the time?
     for i in timeslots:
         group = np.array([], dtype = np.int64)
-        #Iterate over T and add all with a time greater than T[i]
+        #Iterate over T and add all with a time less than T[i]
         for j in range(len(T)):
-            if T[j][0] >= T[i][0]:
+            if T[j][0] <= T[i][0]:
                 group = np.append(group, j)
         risk_groups.append(group)
     return risk_groups

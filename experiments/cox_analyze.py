@@ -8,7 +8,6 @@ from kalderstam.neural.error_functions.cox_error import calc_sigma, calc_beta, g
     derivative, total_error, cox_pre_func, cox_block_func, cox_epoch_func
 import kalderstam.util.graphlogger as glogger
 import logging
-from kalderstam.neural.training.cox_training import train_cox
 from kalderstam.util.numpyhelp import indexOf
 from kalderstam.neural.training.gradientdescent import traingd
 
@@ -16,7 +15,7 @@ logger = logging.getLogger('kalderstam.neural.cox_training')
 
 def test(net, P, T, filename, epochs, learning_rate, block_size):
     logger.info("Running test for: " + filename + ' ' + str(epochs) + ", rate: " + str(learning_rate) + ", block_size: " + str(block_size))
-    
+
     outputs = net.sim(P)
     c_index = get_C_index(T, outputs)
     logger.info("C index = " + str(c_index))
@@ -36,7 +35,7 @@ def test(net, P, T, filename, epochs, learning_rate, block_size):
     plot_network_weights(net)
 
     plt.figure()
-    plt.title('Scatter plot cox error\n' + filename)
+    plt.title('Scatter plot cox error\n' + filename + "\nC index = " + str(c_index))
     plt.xlabel('Survival time years')
     plt.ylabel('Network output')
     try:
@@ -49,6 +48,7 @@ def test(net, P, T, filename, epochs, learning_rate, block_size):
 
 def orderscatter(net, T, filename):
     outputs = net.sim(P)
+    c_index = get_C_index(T, outputs)
     timeslots_target = generate_timeslots(T)
     T_copy = T.copy()
     T_copy[:, 0] = outputs[:, 0]
@@ -59,7 +59,7 @@ def orderscatter(net, T, filename):
         network_timeslot_indices.append(timeslot_index)
 
     plt.figure()
-    plt.title('Scatter between index ordering\n' + str(filename))
+    plt.title('Scatter between index ordering\n' + str(filename) + "\nC index = " + str(c_index))
     plt.xlabel('Target timeslots')
     plt.ylabel('Network timeslots')
     plt.plot(range(len(timeslots_target)), range(len(timeslots_target)), 'r-')

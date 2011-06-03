@@ -54,5 +54,5 @@ def linear_target(x_array):
     return T
 
 if __name__ == "__main__":
-    name = 'productfunction'
-    make_input('/home/gibson/jonask/' + name + '_no_noise.txt', '/home/gibson/jonask/' + name + '_with_noise.txt', 0.25, productfunction, 500)
+    name = 'productfunction_many'
+    make_input('/home/gibson/jonask/' + name + '_no_noise.txt', '/home/gibson/jonask/' + name + '_with_noise.txt', 0.25, productfunction, 2000)
