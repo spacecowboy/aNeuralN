@@ -40,6 +40,8 @@ def get_C_index(T, outputs):
 
 
 def generate_timeslots(T):
+    """Setting for_censored to true will reverse the behaviour and the function generates timeslots for censored data instead of for non-censored.
+    Used for plotting the order-scatter"""
     timeslots = np.array([], dtype = np.int64)
     for x_index in range(len(T)):
         event = T[x_index][1]
@@ -98,21 +100,29 @@ def censor_rndtest(T, ratio):
 
 def orderscatter(outputs, T, filename = ""):
     c_index = get_C_index(T, outputs)
-    timeslots_target = generate_timeslots(T)
+
     T_copy = T.copy()
     T_copy[:, 0] = outputs[:, 0]
-    timeslots_network = generate_timeslots(T_copy)
-    network_timeslot_indices = []
-    for output_index in timeslots_network:
-        timeslot_index = indexOf(timeslots_target, output_index)
-        network_timeslot_indices.append(timeslot_index)
 
     plt.figure()
-    plt.title('Scatter between index ordering\n' + str(filename) + "\nC index = " + str(c_index))
-    plt.xlabel('Target timeslots')
-    plt.ylabel('Network timeslots')
-    plt.plot(range(len(timeslots_target)), range(len(timeslots_target)), 'r-')
-    plt.scatter(range(len(timeslots_target)), network_timeslot_indices, c = 'g', marker = 's')
+    plt.title('Scatter between the indices of the sorted target and sorted output arrays\n' + str(filename) + "\nC index = " + str(c_index) + "\nEvents in green, Censored in red.")
+    plt.xlabel('Target index')
+    plt.ylabel('Network index')
+
+    for x_index in range(len(T)):
+        index_t = 0 #index in T
+        index_o = 0 #index in outputs
+        color = 'g'
+        if T[x_index, 1] == 0:
+            color = 'r'
+        for cmp_index in range(len(T)):
+            if T[x_index, 0] > T[cmp_index, 0]:
+                index_t += 1
+            if T_copy[x_index, 0] > T_copy[cmp_index, 0]:
+                index_o += 1
+        plt.scatter(index_t, index_o, c = color, marker = 's')
+
+    plt.plot(range(len(T)), range(len(T)), 'r-')
 
 def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
     beta_force = 0
