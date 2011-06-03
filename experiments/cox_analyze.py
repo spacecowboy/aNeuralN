@@ -38,8 +38,13 @@ def test(net, P, T, filename, epochs, learning_rate, block_size):
     plt.xlabel('Survival time years')
     plt.ylabel('Network output')
     try:
-        plt.scatter(T[:, 0].flatten(), outputs[:, 0].flatten(), c = 'g', marker = 's')
-        plt.plot(T.flatten(), T.flatten(), 'r-')
+        for t, o, e in zip(T[:, 0], outputs[:, 0], T[:, 1]):
+            c = 'r'
+            if e == 1:
+                c = 'g'
+            plt.scatter(t, o, c = c, marker = 's')
+        #plt.scatter(T[:, 0].flatten(), outputs[:, 0].flatten(), c = 'g', marker = 's')
+        plt.plot(T[:, 0].flatten(), T[:, 0].flatten(), 'r-')
     except:
         pass
 
@@ -63,7 +68,7 @@ if __name__ == "__main__":
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
 
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/4x10x10x1.ann')
-    net = build_feedforward(p, 20, 1, output_function = 'linear')
+    net = build_feedforward(p, 8, 1, output_function = 'linear')
 
     #Initial state
     outputs = net.sim(P)
@@ -71,8 +76,8 @@ if __name__ == "__main__":
     plt.show()
 
     epochs = 20000
-    rate = 10
-    block_size = 500
+    rate = 5
+    block_size = 100
 
     for times in range(100):
         net = test(net, P, T, filename, epochs, rate, block_size)

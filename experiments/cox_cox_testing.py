@@ -35,8 +35,13 @@ def experiment(net, P, T, filename, epochs, learning_rate):
     plt.xlabel('Survival time years')
     plt.ylabel('Network output')
     try:
-        plt.scatter(T[:, 0].flatten(), outputs[:, 0].flatten(), c = 'g', marker = 's')
-        plt.plot(T.flatten(), T.flatten(), 'r-')
+        for t, o, e in zip(T[:, 0], outputs[:, 0], T[:, 1]):
+            c = 'r'
+            if e == 1:
+                c = 'g'
+            plt.scatter(t, o, c = c, marker = 's')
+        #plt.scatter(T[:, 0].flatten(), outputs[:, 0].flatten(), c = 'g', marker = 's')
+        plt.plot(T[:, 0].flatten(), T[:, 0].flatten(), 'r-')
     except:
         pass
 
@@ -53,13 +58,13 @@ if __name__ == "__main__":
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/4x10x10x1.ann')
-    net = build_feedforward(p, 4, 1, output_function = 'linear')
+    net = build_feedforward(p, 6, 1, output_function = 'linear')
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
     nonlineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_with_noise.txt'
-    productfunction_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/productfunction_no_noise.txt'
-    productfunction_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/productfunction_with_noise.txt'
+    productfunction_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/productfunction_many_no_noise.txt'
+    productfunction_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/productfunction_many_with_noise.txt'
 
     #The training sample
     no_noise = productfunction_nn
@@ -69,7 +74,7 @@ if __name__ == "__main__":
     P, T_wn = parse_file(with_noise, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
 
     #Amount to censor
-    ratio = 0.50
+    ratio = 0.75
 
     T_nn = censor_rndtest(T_nn, ratio)
     T_wn = censor_rndtest(T_wn, ratio)
@@ -83,7 +88,7 @@ if __name__ == "__main__":
     orderscatter(outputs, T_nn, no_noise)
     plt.show()
 
-    epochs = 10
+    epochs = 100
     rate = 5
 
     for times in range(100):
