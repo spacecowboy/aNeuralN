@@ -1,4 +1,4 @@
-from numpy import log, exp, array
+from numpy import log, exp
 import logging
 import numpy as np
 #import kalderstam.util.graphlogger as glogger
@@ -9,8 +9,36 @@ logger = logging.getLogger('kalderstam.neural.error_functions')
 
 shift = 4 #Also known as Delta, it's the handwaving variable.
 
+def get_C_index(T, outputs):
+    """Compare that the outputs are sorted 'correctly'.
+    if T[x,0] < T[y,0] and X[x] < X[y] or T[x,0] > T[y,0] and X[x] > X[y], plus 1. Finally divide by the number of comparisons made.
+    Non-censored points can be compared with all other non-censored points and all later censored points.
+    Censored points can only be compared to earlier non-censored points."""
+    total = 0
+    sum = 0
+    for x in range(len(T)):
+        for y in range(len(T)):
+            if x == y:
+                continue #Don't compare with itself
+            if T[x, 1] == 1 and (T[y, 1] == 1): #Non-censored, compare with all other non-censored
+                total += 1
+                if outputs[x, 0] >= outputs[y, 0] and T[x, 0] >= T[y, 0] or outputs[x, 0] <= outputs[y, 0] and T[x, 0] <= T[y, 0]:
+                    sum += 1
+            elif T[x, 1] == 1 and (T[y, 1] == 0) and T[x, 0] <= T[y, 0]: #Non-censored, compare with later censored
+                total += 1
+                if outputs[x, 0] <= outputs[y, 0]:
+                    sum += 1
+            elif T[x, 1] == 0 and T[y, 1] == 1 and T[x, 0] >= T[y, 0]: #Censored, compare only with earlier non-censored
+                total += 1
+                if outputs[x, 0] >= outputs[y, 0]:
+                    sum += 1
+    
+    sum /= float(total)
+    return sum
+                
+
 def generate_timeslots(T):
-    timeslots = np.array([], dtype = int)
+    timeslots = np.array([], dtype = np.int64)
     for x_index in range(len(T)):
         event = T[x_index][1]
         if event == 1: #Else it was censored
@@ -38,7 +66,7 @@ def get_risk_groups(T, timeslots):
     risk_groups = []
     # Sort T on the time?
     for i in timeslots:
-        group = np.array([], dtype = int)
+        group = np.array([], dtype = np.int64)
         #Iterate over T and add all with a time greater than T[i]
         for j in range(len(T)):
             if T[j][0] >= T[i][0]:
@@ -71,6 +99,14 @@ def plot_correctly_ordered(outputs, timeslots):
     correct = max(count, countreversed)
     #glogger.debugPlot('Number of correctly ordered outputs', y = correct, style = 'r-')
     #logger.info('Number of correctly ordered outputs: ' + str(correct))
+    
+def generate_random_testdata(number):
+    outputs = np.random.random((number, 2))
+    for i in range(len(outputs)):
+        outputs[i, 1] = np.random.randint(0, 2) #inclusive, exclusive
+    timeslots = generate_timeslots(outputs)
+
+    return (outputs, timeslots)
 
 def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
     beta_force = 0

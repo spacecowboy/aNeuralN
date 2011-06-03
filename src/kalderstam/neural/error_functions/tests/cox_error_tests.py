@@ -7,22 +7,28 @@ import unittest
 import numpy as np
 from kalderstam.neural.error_functions.cox_error import get_risk_groups, \
     calc_sigma, derivative_sigma, shift, derivative_error, calc_beta, \
-    get_beta_force, derivative_beta, get_y_force, generate_timeslots
+    get_beta_force, derivative_beta, get_y_force, generate_random_testdata, get_C_index
 from kalderstam.util.numpyhelp import indexOf
 from random import sample
 
 class Test(unittest.TestCase):
-
-    def generateRandomTestData(self, number):
-        outputs = np.random.random((number, 2))
-        for i in range(len(outputs)):
-            outputs[i, 1] = np.random.randint(0, 2) #inclusive, exclusive
-        timeslots = generate_timeslots(outputs)
-
-        return (outputs, timeslots)
+    
+    def testCIndex(self):
+        T, timeslots = generate_random_testdata(50)
+        outputs, rndtimeslots = generate_random_testdata(50)
+        #Should give perfect result
+        c_perfect = get_C_index(T, T)
+        print(c_perfect)
+        assert(c_perfect == 1.0)
+        
+        #should give around 0.5, that is random
+        c_rnd = get_C_index(T, outputs)
+        print(c_rnd)
+        assert(c_rnd < 0.6 and c_rnd > 0.4)
+        
 
     def testGetRiskGroups(self):
-        outputs, timeslots = self.generateRandomTestData(50)
+        outputs, timeslots = generate_random_testdata(50)
         risk_groups = get_risk_groups(outputs, timeslots)
         for group, start_index in zip(risk_groups, range(len(timeslots))):
             for ti in timeslots[start_index:]:
@@ -30,10 +36,10 @@ class Test(unittest.TestCase):
                 assert(outputs[ti, 1] == 1)
 
     def testPartFunc(self):
-        outputs, timeslots = self.generateRandomTestData(100)
+        outputs, timeslots = generate_random_testdata(100)
         risk_groups = get_risk_groups(outputs, timeslots)
         #Now get a new set, that won't match this, so beta doesn't diverge
-        outputs, rnd_timeslots = self.generateRandomTestData(100)
+        outputs, rnd_timeslots = generate_random_testdata(100)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
 
         for z, risk_group in zip(part_func, risk_groups):
@@ -42,10 +48,10 @@ class Test(unittest.TestCase):
             assert(z == testz)
 
     def testWeightedAverage(self):
-        outputs, timeslots = self.generateRandomTestData(100)
+        outputs, timeslots = generate_random_testdata(100)
         risk_groups = get_risk_groups(outputs, timeslots)
         #Now get a new set, that won't match this, so beta doesn't diverge
-        outputs, rnd_timeslots = self.generateRandomTestData(100)
+        outputs, rnd_timeslots = generate_random_testdata(100)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
 
         for w, z, risk_group in zip(weighted_avg, part_func, risk_groups):
@@ -65,7 +71,7 @@ class Test(unittest.TestCase):
         Causing beta to grow."""
         #Check that it diverges if given a perfect ordering
         outputs = np.array([[i, 1] for i in np.linspace(0, 5, 100)])
-        timeslots = np.arange(100) #0-99
+        timeslots = np.arange(100, dtype = np.int64) #0-99
         risk_groups = get_risk_groups(outputs, timeslots)
 
         #print outputs
@@ -100,8 +106,8 @@ class Test(unittest.TestCase):
         assert(round(F_result, 4) == 0)
 
     def testDerivativeSigma(self):
-        """Verified to be correct."""
-        outputs, timeslots = self.generateRandomTestData(100)
+        """Testing Derivative Sigma"""
+        outputs, timeslots = generate_random_testdata(100)
         sigma = calc_sigma(outputs)
         avg = outputs[:, 0].sum() / len(outputs)
         #First calculate it manually, then compare with function
@@ -111,12 +117,12 @@ class Test(unittest.TestCase):
             assert(ds == derivative_sigma(sigma, i, outputs))
 
     def testDerivativeError(self):
-        """Verified to be correct."""
-        outputs, timeslots = self.generateRandomTestData(100)
+        """Testing Derivative Error"""
+        outputs, timeslots = generate_random_testdata(100)
         risk_groups = get_risk_groups(outputs, timeslots)
         #Now get a new set, that won't match this, so beta doesn't diverge
-        outputs, rnd_timeslots = self.generateRandomTestData(100)
-        #outputs, timeslots = self.generateRandomTestData(100)
+        outputs, rnd_timeslots = generate_random_testdata(100)
+        #outputs, timeslots = generate_random_testdata(100)
         sigma = calc_sigma(outputs)
         #risk_groups = get_risk_groups(outputs, timeslots)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
@@ -126,11 +132,11 @@ class Test(unittest.TestCase):
         assert(testDE == derivative_error(beta, sigma))
 
     def testYForce(self):
-        """Verified to be correct."""
-        outputs, timeslots = self.generateRandomTestData(100)
+        """Testing Y Force."""
+        outputs, timeslots = generate_random_testdata(100)
         risk_groups = get_risk_groups(outputs, timeslots)
         #Now get a new set, that won't match this, so beta doesn't diverge
-        outputs, rnd_timeslots = self.generateRandomTestData(100)
+        outputs, rnd_timeslots = generate_random_testdata(100)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
 
         for output_index in range(len(outputs)):
@@ -155,11 +161,11 @@ class Test(unittest.TestCase):
 
 
     def testBetaForce(self):
-        """Verified to be correct."""
-        outputs, timeslots = self.generateRandomTestData(100)
+        """Testing beta force"""
+        outputs, timeslots = generate_random_testdata(100)
         risk_groups = get_risk_groups(outputs, timeslots)
         #Now get a new set, that won't match this, so beta doesn't diverge
-        outputs, rnd_timeslots = self.generateRandomTestData(100)
+        outputs, rnd_timeslots = generate_random_testdata(100)
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
 
         testbeta_force = 0
@@ -178,10 +184,10 @@ class Test(unittest.TestCase):
         assert(round(testbeta_force, 10) == round(betaforce, 10))
 
     def testDerivativeBeta(self):
-        outputs, timeslots = self.generateRandomTestData(100)
+        outputs, timeslots = generate_random_testdata(100)
         risk_groups = get_risk_groups(outputs, timeslots)
         #Now get a new set, that won't match this, so beta doesn't diverge
-        outputs, rnd_timeslots = self.generateRandomTestData(100)
+        outputs, rnd_timeslots = generate_random_testdata(100)
 
         beta, beta_risk, part_func, weighted_avg = calc_beta(outputs, timeslots, risk_groups)
         beta_force = get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg)
@@ -193,7 +199,7 @@ class Test(unittest.TestCase):
             method_value = derivative_beta(beta, part_func, weighted_avg, beta_force, output_index, outputs, timeslots, risk_groups)
 
             print(dBdYi, method_value)
-            assert(dBdYi == method_value)
+            assert(round(dBdYi, 10) == round(method_value, 10)) #Otherwise errors might happen on 32-bit machines
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 
 int inRiskGroup(long output_index, PyArrayObject *risk_group) {
 	if (PyArray_NDIM(risk_group) != 1 || PyArray_TYPE(risk_group) != NPY_INT64) {
-		PyErr_Format(PyExc_ValueError, "risk_group array is %d-dimensional or not of type int", PyArray_NDIM(risk_group));
+		PyErr_Format(PyExc_ValueError, "Because risk_group array is %d-dimensional or not of type int64", PyArray_NDIM(risk_group));
 		return -1;
 	}
 
@@ -43,19 +43,19 @@ static PyObject *derivative_beta(PyObject *self, PyObject *args)
 
 	// Check length and type of the array, return exception if wrong.
 	if (PyArray_NDIM(timeslots) != 1 || PyArray_TYPE(timeslots) != NPY_INT64) {
-		PyErr_Format(PyExc_ValueError, "Timeslots array is %d-dimensional or not of type int", PyArray_NDIM(timeslots));
+		PyErr_Format(PyExc_ValueError, "Because timeslots array is %d-dimensional or not of type int64", PyArray_NDIM(timeslots));
 		return NULL;
 	} else if (PyArray_NDIM(outputs) != 2 || PyArray_TYPE(outputs) != NPY_DOUBLE) {
-		PyErr_Format(PyExc_ValueError, "outputs array is %d-dimensional or not of type double", PyArray_NDIM(outputs));
+		PyErr_Format(PyExc_ValueError, "Because outputs array is %d-dimensional or not of type double", PyArray_NDIM(outputs));
 		return NULL;
 	} else if (PyList_Size((PyObject*) risk_groups) != PyArray_DIM(timeslots,0)) {
-		PyErr_Format(PyExc_ValueError, "risk_groups array is not the same length as the timeslots array.");
+		PyErr_Format(PyExc_ValueError, "Because risk_groups array is not the same length as the timeslots array.");
 		return NULL;
 	} else if (PyArray_NDIM(part_func) != 1 || PyArray_TYPE(part_func) != NPY_DOUBLE) {
-		PyErr_Format(PyExc_ValueError, "part_func array is %d-dimensional or not of type double", PyArray_NDIM(part_func));
+		PyErr_Format(PyExc_ValueError, "Because part_func array is %d-dimensional or not of type double", PyArray_NDIM(part_func));
 		return NULL;
 	} else if (PyArray_NDIM(weighted_avg) != 1 || PyArray_TYPE(weighted_avg) != NPY_DOUBLE) {
-		PyErr_Format(PyExc_ValueError, "weighted_avg array is %d-dimensional or not of type double", PyArray_NDIM(weighted_avg));
+		PyErr_Format(PyExc_ValueError, "Because weighted_avg array is %d-dimensional or not of type double", PyArray_NDIM(weighted_avg));
 		return NULL;
 	}
 	// Now convert the non-lists to C-types
@@ -111,22 +111,22 @@ static PyObject *get_slope(PyObject *self, PyObject *args)
 
 	// Check length and type of the array, return exception if wrong.
 	if (PyArray_NDIM(timeslots) != 1 || PyArray_TYPE(timeslots) != NPY_INT64) {
-		PyErr_Format(PyExc_ValueError, "Timeslots array is %d-dimensional or not of type int", PyArray_NDIM(timeslots));
+		PyErr_Format(PyExc_ValueError, "Because timeslots array is %d-dimensional or not of type int64", PyArray_NDIM(timeslots));
 		return NULL;
 	} else if (PyArray_NDIM(outputs) != 2 || PyArray_TYPE(outputs) != NPY_DOUBLE) {
-		PyErr_Format(PyExc_ValueError, "outputs array is %d-dimensional or not of type double", PyArray_NDIM(outputs));
+		PyErr_Format(PyExc_ValueError, "Because outputs array is %d-dimensional or not of type double", PyArray_NDIM(outputs));
 		return NULL;
 	} else if (PyList_Size(risk_groups) != PyArray_DIM(timeslots,0)) {
-		PyErr_Format(PyExc_ValueError, "risk_groups array is not the same length as the timeslots array.");
+		PyErr_Format(PyExc_ValueError, "Because risk_groups array is not the same length as the timeslots array.");
 		return NULL;
 	} else if (PyArray_NDIM(part_func) != 1 || PyArray_TYPE(part_func) != NPY_DOUBLE) {
-		PyErr_Format(PyExc_ValueError, "part_func array is %d-dimensional or not of type double", PyArray_NDIM(part_func));
+		PyErr_Format(PyExc_ValueError, "Because part_func array is %d-dimensional or not of type double", PyArray_NDIM(part_func));
 		return NULL;
 	} else if (PyArray_NDIM(weighted_avg) != 1 || PyArray_TYPE(weighted_avg) != NPY_DOUBLE) {
-		PyErr_Format(PyExc_ValueError, "weighted_avg array is %d-dimensional or not of type double", PyArray_NDIM(weighted_avg));
+		PyErr_Format(PyExc_ValueError, "Because weighted_avg array is %d-dimensional or not of type double", PyArray_NDIM(weighted_avg));
 		return NULL;
 	} else if (PyList_Size(beta_risks) != PyArray_DIM(timeslots, 0)) {
-		PyErr_Format(PyExc_ValueError, "beta risk array is not the same length as the timeslots array.");
+		PyErr_Format(PyExc_ValueError, "Because beta risk array is not the same length as the timeslots array.");
 		return NULL;
 	}
 
