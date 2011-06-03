@@ -68,7 +68,7 @@ if __name__ == "__main__":
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_SIGMOID.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/PERCEPTRON_FIXED.ann')
     #net = load_network('/home/gibson/jonask/Projects/aNeuralN/ANNs/4x10x10x1.ann')
-    net = build_feedforward(p, 8, 1, output_function = linear())
+    net = build_feedforward(p, 8, 1, output_function = 'linear')
     lineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_no_noise.txt'
     nonlineartarget_nn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/nonlineartarget_no_noise.txt'
     lineartarget_wn = '/home/gibson/jonask/Dropbox/Ann-Survival-Phd/fake_data_set/lineartarget_with_noise.txt'
@@ -82,15 +82,16 @@ if __name__ == "__main__":
 
     P, T_nn = parse_file(no_noise, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
     P, T_wn = parse_file(with_noise, targetcols = [4], inputcols = [0, 1, 2, 3], ignorecols = [], ignorerows = [], normalize = False)
-    
+
     #Amount to censor
     ratio = 0.25
-    
+
     T_nn = censor_rndtest(T_nn, ratio)
     T_wn = censor_rndtest(T_wn, ratio)
 
     #Training sample
     T = T_nn
+    print(T)
     filename = no_noise
 
     #Initial state
@@ -106,7 +107,7 @@ if __name__ == "__main__":
         outputs = net.sim(P)
         c_index = get_C_index(T, outputs)
         logger.info("C index = " + str(c_index))
-        
+
         orderscatter(net, T_nn, no_noise)
         orderscatter(net, T_wn, with_noise)
         glogger.setup()

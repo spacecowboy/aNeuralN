@@ -32,10 +32,10 @@ def get_C_index(T, outputs):
                 total += 1
                 if outputs[x, 0] >= outputs[y, 0]:
                     sum += 1
-    
+
     sum /= float(total)
     return sum
-                
+
 
 def generate_timeslots(T):
     timeslots = np.array([], dtype = np.int64)
@@ -99,7 +99,7 @@ def plot_correctly_ordered(outputs, timeslots):
     correct = max(count, countreversed)
     #glogger.debugPlot('Number of correctly ordered outputs', y = correct, style = 'r-')
     #logger.info('Number of correctly ordered outputs: ' + str(correct))
-    
+
 def generate_random_testdata(number):
     outputs = np.random.random((number, 2))
     for i in range(len(outputs)):
@@ -109,13 +109,14 @@ def generate_random_testdata(number):
     return (outputs, timeslots)
 
 def censor_rndtest(T, ratio):
-    Tc = np.array([], dtype = np.int64)
-    for t in T[:, 0]:
+    temp = [[1.5, 0] for _ in T]
+    Tc = np.array(temp, dtype = np.float64)
+    for i in range(len(T)):
         if np.random.rand() <= ratio:
             e = 0
         else:
             e = 1
-        Tc = np.append(Tc, (t, e))
+        Tc[i] = (T[i, 0], e)
     return Tc
 
 def get_beta_force(beta, outputs, risk_groups, part_func, weighted_avg):
