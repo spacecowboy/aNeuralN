@@ -7,6 +7,6 @@ def benchmark(func):
     def wrapper(*args, **kwargs):
         t = time.time()
         res = func(*args, **kwargs)
-        print func.__name__, time.time()-t
+        print(func.__name__, time.time() - t)
         return res
     return wrapper

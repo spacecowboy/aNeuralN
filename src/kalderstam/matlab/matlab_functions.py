@@ -1,9 +1,13 @@
 import numpy
-import matplotlib.pyplot as plt
 from math import sqrt
 from numpy.core.numeric import dot
 import math
 import logging
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None #This makes matplotlib optional
 
 logger = logging.getLogger('kalderstam.neural.matlab')
 
@@ -89,7 +93,7 @@ def loadsyn3(n = 100):
 def plot2d2c(net, P, T, figure = 1, cut = 0.5):
     if len(P[0]) != 2:
         logger.error('Input is not of dimension 2')
-    else:
+    elif plt:
         plt.figure(figure)
         plt.title("Blue are correctly classified, while Red are incorrectly classified.")
         for x, y, target in zip(P[:, 0], P[:, 1], T[:, 0]):
@@ -112,7 +116,7 @@ def plot2d2c(net, P, T, figure = 1, cut = 0.5):
 def boundary(net, P, cut = 0.5):
     if len(P[0]) != 2:
         logger.error('Error: Input is not of dimension 2')
-    else:
+    elif plt:
         min_X1 = P[0, 0]
         max_X1 = P[0, 0]
         min_X2 = P[0, 1]
@@ -158,7 +162,6 @@ def boundary(net, P, cut = 0.5):
         plt.plot(coords[0], coords[1], 'g.')
 
 def plotroc(Y, T, figure = 1):
-    plt.figure(figure)
     Y = Y.flatten()
     T = T.flatten()
 
@@ -183,17 +186,16 @@ def plotroc(Y, T, figure = 1):
             y = numpy.append(y, num_correct_second)
             cuts = numpy.append(cuts, cut)
 
-        #plt.figure(2)
-        plt.xlabel("1-specificity")
-        plt.ylabel("sensitivity")
-        plt.axis([-1, 101, -1, 101])
-        plt.plot(x, y, 'r+', x, y, 'b-')
-
         area, (best_x, best_y, best_cut) = __calc_area__(x, y, cuts)
         logger.info("ROC area: " + str(area) + "%")
-        plt.title("ROC area: " + str(area) + "%\nBest cut at: " + str(best_cut))
-
-        plt.plot([0, best_x], [100, best_y], 'g-')
+        if plt:
+            plt.figure(figure)
+            plt.xlabel("1-specificity")
+            plt.ylabel("sensitivity")
+            plt.axis([-1, 101, -1, 101])
+            plt.plot(x, y, 'r+', x, y, 'b-')
+            plt.title("ROC area: " + str(area) + "%\nBest cut at: " + str(best_cut))
+            plt.plot([0, best_x], [100, best_y], 'g-')
 
         return area, best_cut
 
@@ -239,7 +241,7 @@ def __calc_area__(x_array, y_array, cuts):
         elif x > left_x:
             #Simple square
             area += left_y * (x - left_x)
-            if left_y <> y:
+            if left_y != y:
                 #And a triangle, will be negative if y has gone down, so no worries
                 area += (x - left_x) * (y - left_y) / 2
             left_y = y
@@ -251,7 +253,7 @@ def __calc_area__(x_array, y_array, cuts):
             best_dist = dist
             best_cut = (x, y, cut)
     if area / 100 > 100 or area / 100 < 0:
-        print zip(x_array, y_array, cuts)
+        print(zip(x_array, y_array, cuts))
     return (area / 100, best_cut)
 
 def stat(Y, T, cut = 0.5):
@@ -293,75 +295,78 @@ def stat(Y, T, cut = 0.5):
         return [num_correct_first, num_correct_second, total_performance, num_first, num_second, missed]
 
 def plot_network_weights(net, figure = None):
-    plt.figure(figure)
-    max = None
-    #Get a weight matrix for the network
-    weights = []
-    for node in (list(reversed(net.hidden_nodes)) + net.output_nodes):
-        nweights = []
-        #First check input nodes
-        for i in range(net.num_of_inputs):
-            if i in node.weights:
-                if max is None:
-                    max = node.weights[i]
-                if node.weights[i] > abs(max):
-                    max = node.weights[i]
-                nweights.append(node.weights[i])
-            else:
-                nweights.append(0)
-        for lnode in (list(reversed(net.hidden_nodes)) + net.output_nodes):
-            if lnode == node:
-                if max is None:
-                    max = node.bias
-                if abs(node.bias) > abs(max):
-                    max = node.bias
-                nweights.append(node.bias)
-            elif lnode in node.weights:
-                if max is None:
-                    max = node.weights[lnode]
-                if abs(node.weights[lnode]) > abs(max):
-                    max = node.weights[lnode]
-                nweights.append(node.weights[lnode])
-            else:
-                nweights.append(0)
-        weights.append(nweights)
+    if plt:
+        plt.figure(figure)
+        max = None
+        #Get a weight matrix for the network
+        weights = []
+        for node in (list(reversed(net.hidden_nodes)) + net.output_nodes):
+            nweights = []
+            #First check input nodes
+            for i in range(net.num_of_inputs):
+                if i in node.weights:
+                    if max is None:
+                        max = node.weights[i]
+                    if node.weights[i] > abs(max):
+                        max = node.weights[i]
+                    nweights.append(node.weights[i])
+                else:
+                    nweights.append(0)
+            for lnode in (list(reversed(net.hidden_nodes)) + net.output_nodes):
+                if lnode == node:
+                    if max is None:
+                        max = node.bias
+                    if abs(node.bias) > abs(max):
+                        max = node.bias
+                    nweights.append(node.bias)
+                elif lnode in node.weights:
+                    if max is None:
+                        max = node.weights[lnode]
+                    if abs(node.weights[lnode]) > abs(max):
+                        max = node.weights[lnode]
+                    nweights.append(node.weights[lnode])
+                else:
+                    nweights.append(0)
+            weights.append(nweights)
 
-    weights = numpy.matrix(weights).T
-    #Plot it
-    hinton(weights)
-    #Say what the max value is
-    plt.title("Biggest absolute weight = " + str(max))
+        weights = numpy.matrix(weights).T
+        #Plot it
+        hinton(weights)
+        #Say what the max value is
+        plt.title("Biggest absolute weight = " + str(max))
 
 def _blob(x, y, area, colour):
     """
     Draws a square-shaped blob with the given area (< 1) at
     the given coordinates.
     """
-    hs = numpy.sqrt(area) / 2
-    xcorners = numpy.array([x - hs, x + hs, x + hs, x - hs])
-    ycorners = numpy.array([y - hs, y - hs, y + hs, y + hs])
-    plt.fill(xcorners, ycorners, colour, edgecolor = colour)
+    if plt:
+        hs = numpy.sqrt(area) / 2
+        xcorners = numpy.array([x - hs, x + hs, x + hs, x - hs])
+        ycorners = numpy.array([y - hs, y - hs, y + hs, y + hs])
+        plt.fill(xcorners, ycorners, colour, edgecolor = colour)
 
 def hinton(W, maxWeight = None):
     """
     Draws a Hinton diagram for visualizing a weight matrix.
     """
-    #plt.clf()
-    height, width = W.shape
-    if not maxWeight:
-        maxWeight = 2 ** numpy.ceil(numpy.log(numpy.max(numpy.abs(W))) / numpy.log(2))
+    if plt:
+        #plt.clf()
+        height, width = W.shape
+        if not maxWeight:
+            maxWeight = 2 ** numpy.ceil(numpy.log(numpy.max(numpy.abs(W))) / numpy.log(2))
 
-    plt.fill(numpy.array([0, width, width, 0]), numpy.array([0, 0, height, height]), 'gray')
-    plt.axis('off')
-    plt.axis('scaled')
-    for x in xrange(width):
-        for y in xrange(height):
-            _x = x + 1
-            _y = y + 1
-            w = W[y, x]
-            if w > 0:
-                _blob(_x - 0.5, height - _y + 0.5, min(1, w / maxWeight), 'white')
-            elif w < 0:
-                _blob(_x - 0.5, height - _y + 0.5, min(1, -w / maxWeight), 'black')
+        plt.fill(numpy.array([0, width, width, 0]), numpy.array([0, 0, height, height]), 'gray')
+        plt.axis('off')
+        plt.axis('scaled')
+        for x in xrange(width):
+            for y in xrange(height):
+                _x = x + 1
+                _y = y + 1
+                w = W[y, x]
+                if w > 0:
+                    _blob(_x - 0.5, height - _y + 0.5, min(1, w / maxWeight), 'white')
+                elif w < 0:
+                    _blob(_x - 0.5, height - _y + 0.5, min(1, -w / maxWeight), 'black')
 
-    #plt.show()
+        #plt.show()

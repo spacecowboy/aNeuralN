@@ -2,7 +2,10 @@
 This class graphs data instead of printing it as the logger does.
 '''
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None #This makes matplotlib optional
 import numpy as np
 
 loggers = {}
@@ -61,55 +64,57 @@ class graphlogger():
             self.plot(*args, **kwargs)
     def setup(self):
         if not self.ready:
-            self.fig = plt.figure()
-            self.ax = self.fig.add_subplot(111)
-            self.ax.set_title(str(self.name))
-            self.line, = self.ax.plot([], [], self.style)
-            self.ax.grid()
-            self.clean_background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
+            if plt:
+                self.fig = plt.figure()
+                self.ax = self.fig.add_subplot(111)
+                self.ax.set_title(str(self.name))
+                self.line, = self.ax.plot([], [], self.style)
+                self.ax.grid()
+                self.clean_background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
 
-            self.ax.set_xlim(self.xmin, self.xmax)
-            self.ax.set_ylim(self.ymin, self.ymax)
+                self.ax.set_xlim(self.xmin, self.xmax)
+                self.ax.set_ylim(self.ymin, self.ymax)
 
-            self.line.set_data(self.x_values, self.y_values)
+                self.line.set_data(self.x_values, self.y_values)
             self.ready = True
 
     def show(self):
         self.setup()
-
-        plt.show()
+        if plt:
+            plt.show()
 
     def plot(self, y_val, x_val = None):
-        self.ready = False #Forces a new figure to be drawn next time since we've added data
-        if x_val is None:
-            if len(self.x_values) == 0:
-                x_val = 0
-            else:
-                x_val = self.x_values[len(self.x_values) - 1] + 1
+        if plt:
+            self.ready = False #Forces a new figure to be drawn next time since we've added data
+            if x_val is None:
+                if len(self.x_values) == 0:
+                    x_val = 0
+                else:
+                    x_val = self.x_values[len(self.x_values) - 1] + 1
 
-        x = float(x_val)
-        y = float(y_val)
+            x = float(x_val)
+            y = float(y_val)
 
-        self.x_values.append(x)
-        self.y_values.append(y)
+            self.x_values.append(x)
+            self.y_values.append(y)
 
-        # Change limits if needed
+            # Change limits if needed
 
-        if x >= self.xmax:
-            self.xmax = 2 * x
-        if x < self.xmin:
-            if x >= 0:
-                self.xmin = x / 2
-            else:
-                self.xmin = 2 * x
+            if x >= self.xmax:
+                self.xmax = 2 * x
+            if x < self.xmin:
+                if x >= 0:
+                    self.xmin = x / 2
+                else:
+                    self.xmin = 2 * x
 
-        if y >= self.ymax:
-            self.ymax = 2 * y
-        if y < self.ymin:
-            if y >= 0:
-                self.ymin = y / 2
-            else:
-                self.ymin = y * 2
+            if y >= self.ymax:
+                self.ymax = 2 * y
+            if y < self.ymin:
+                if y >= 0:
+                    self.ymin = y / 2
+                else:
+                    self.ymin = y * 2
 
 
 if __name__ == '__main__':

@@ -394,31 +394,31 @@ if __name__ == '__main__':
 
     results1 = net.update([1, 2])
 
-    print results1
+    print(results1)
 
     filename = path.join(path.expanduser("~"), "test.ann")
-    print "saving and reloading"
+    print("saving and reloading")
     save_network(net, filename)
 
     net = load_network(filename)
     results2 = net.update([1, 2])
-    print results2
+    print(results2)
 
     assert(abs(results1[0] - results2[0]) < 0.0001) #float doesn't handle absolutes so well
     print("Good, now testing committee...")
 
     com = build_feedforward_committee()
     results1 = com.update([1, 2])
-    print results1
+    print(results1)
 
     filename = path.join(path.expanduser("~"), "test.anncom")
-    print "saving and reloading"
+    print("saving and reloading")
 
     save_committee(com, filename)
 
     com = load_committee(filename)
     results2 = com.update([1, 2])
-    print results2
+    print(results2)
 
     assert(abs(results1[0] - results2[0]) < 0.0001) #float doesn't handle absolutes so well
 

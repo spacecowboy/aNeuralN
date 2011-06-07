@@ -210,7 +210,7 @@ class ANN_gui():
         self.input_file = button.get_filename()
 
     def on_config_file_button(self, button):
-        print button.get_filename()
+        print(button.get_filename())
         self.config_entry.set_text(button.get_filename())
 
     def on_new_item_activate(self, *args):
