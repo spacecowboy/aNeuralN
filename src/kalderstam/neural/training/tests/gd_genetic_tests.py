@@ -59,7 +59,7 @@ class Test(unittest.TestCase):
         Y = net2.sim(P)
         [num_correct_first, num_correct_second, initial_val_performance, num_first, num_second, missed] = stat(Y, T) #@UnusedVariable
 
-        best2 = benchmark(traingd)(net2, test, validation, epochs, block_size = 10, stop_error_value = 0)
+        best2 = benchmark(traingd)(net2, test, validation, epochs, block_size = 10)
 
         P, T = test
         Y = best2.sim(P)
@@ -101,7 +101,7 @@ class Test(unittest.TestCase):
         Y = comg.sim(p)
         [num_correct_first, num_correct_second, initial_performance, num_first, num_second, missed] = stat(Y, t) #@UnusedVariable
 
-        benchmark(train_committee)(comg, traingd, p, t, epochs, block_size = 10, stop_error_value = 0)
+        benchmark(train_committee)(comg, traingd, p, t, epochs, block_size = 10)
 
         Y = comg.sim(p)
         [num_correct_first, num_correct_second, gd_performance, num_first, num_second, missed] = stat(Y, t) #@UnusedVariable

@@ -79,7 +79,7 @@ def get_risk_groups(T, timeslots):
         risk_groups.append(group)
     return risk_groups
 
-def generate_random_testdata(number):
+def generate_random_data(number):
     outputs = np.random.random((number, 2))
     for i in range(len(outputs)):
         outputs[i, 1] = np.random.randint(0, 2) #inclusive, exclusive
@@ -291,6 +291,3 @@ def cox_block_func(test_inputs, test_targets, block_size, outputs, block_members
 
     retval.update({'sigma':sigma, 'beta': beta, 'beta_risk': beta_risk, 'part_func': part_func, 'weighted_avg': weighted_avg, 'beta_force': beta_force})
     return retval
-
-def c_index(targets, outputs):
-    pass

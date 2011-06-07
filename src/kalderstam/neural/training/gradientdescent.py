@@ -8,15 +8,15 @@ import numpy as np
 logger = logging.getLogger('kalderstam.neural.training.gradientdescent')
 np.seterr(all = 'raise') #I want errors!
 
-def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, momentum = 0.0, error_derivative = sum_squares.derivative, error_function = sum_squares.total_error, stop_error_value = 0, pre_loop_func = None, epoch_func = None, block_func = None):
+def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, error_module = sum_squares):
     """Train using Gradient Descent.
     The pre_loop function calculcates possible values that are necessary for the error function later on (for performance reasons probably).
     It should return a dict which will be passed as keyword arguments to the other functions.
     Same for epoch_func and block_func."""
 
     extra_kwargs = {}
-    if pre_loop_func:
-        pre_loop_kwargs = pre_loop_func(net, test_inputs, test_targets, block_size)
+    if hasattr(error_module, 'pre_loop_func'):
+        pre_loop_kwargs = error_module.pre_loop_func(net, test_inputs, test_targets, block_size)
     else:
         pre_loop_kwargs = {}
 
@@ -25,8 +25,8 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
             #Iterate over training data
             logger.info('Epoch ' + str(epoch))
 
-            if epoch_func:
-                epoch_kwargs = epoch_func(net, test_inputs, test_targets, block_size, **pre_loop_kwargs)
+            if hasattr(error_module, 'epoch_func'):
+                epoch_kwargs = error_module.epoch_func(net, test_inputs, test_targets, block_size, **pre_loop_kwargs)
             else:
                 epoch_kwargs = {}
             #error_sum = 0
@@ -48,8 +48,8 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                 #Train in random order
                 block_data = sample(range(len(test_targets)), block_size)
 
-                if block_func:
-                    extra_kwargs.update(block_func(test_inputs, test_targets, block_size, results, block_data, **extra_kwargs))
+                if hasattr(error_module, 'block_func'):
+                    extra_kwargs.update(error_module.block_func(test_inputs, test_targets, block_size, results, block_data, **extra_kwargs))
 
                 for index, member_index in zip(block_data, range(len(block_data))):
                     input = test_inputs[index]
@@ -60,7 +60,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                         gradients[node] = 0
 
                     #Set errors on output nodes first
-                    gradient = error_derivative(member_targets, member_results, member_index, **extra_kwargs)
+                    gradient = error_module.derivative(member_targets, member_results, member_index, **extra_kwargs)
                     for node in net.output_nodes:
                         gradients[node] = gradient
 
