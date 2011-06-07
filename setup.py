@@ -26,5 +26,5 @@ setup(name = 'aNeuralN',
       package_data = {'kalderstam.neural.gui': ['*.glade']},
       ext_package = 'kalderstam.neural',
       ext_modules = [network_ext],
-      requires = ['numpy', 'matplotlib'],
+      requires = ['numpy'],
      )
