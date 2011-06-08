@@ -42,7 +42,7 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
 
         inputcols = numpy.delete(inputcols, destroycols, 0)
 
-    for line in range(len(inputs)):
+    for line in xrange(len(inputs)):
         if len(targetcols) == 0:
             all_cols = inputs[line, inputcols]
         elif len(inputcols) == 0:
@@ -73,7 +73,7 @@ def normalizeArray(array):
     inputs = numpy.copy(array)
     #First we must determine which columns have real values in them
     #Basically, we if it isn't a binary value by comparing to 0 and 1
-    for col in range(len(inputs[0])):
+    for col in xrange(len(inputs[0])):
         real = False
         for value in inputs[:, col]:
             if value != 0 and value != 1:
@@ -92,7 +92,7 @@ def get_validation_set(inputs, targets, validation_size = 0.2):
     test_targets = []
     validation_inputs = []
     validation_targets = []
-    for row in range(len(inputs)):
+    for row in xrange(len(inputs)):
         if random() > validation_size:
             test_inputs.append(inputs[row])
             test_targets.append(targets[row])

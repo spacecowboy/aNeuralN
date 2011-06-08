@@ -4,7 +4,7 @@ Some utility methods that SHOULD exist in numpy...
 
 def indexOf(array, item):
     j = None
-    for i in range(len(array)):
+    for i in xrange(len(array)):
         #Search inside nested arrays
         if len(array.shape) > 1:
             j = indexOf(array[i], item)

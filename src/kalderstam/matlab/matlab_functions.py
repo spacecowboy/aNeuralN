@@ -121,7 +121,7 @@ def boundary(net, P, cut = 0.5):
         max_X1 = P[0, 0]
         min_X2 = P[0, 1]
         max_X2 = P[0, 1]
-        for num in range(0, len(P)):
+        for num in xrange(0, len(P)):
             if (P[num, 1] > max_X2):
                 max_X2 = P[num, 1]
             elif (P[num, 1] < min_X2):
@@ -303,7 +303,7 @@ def plot_network_weights(net, figure = None):
         for node in (list(reversed(net.hidden_nodes)) + net.output_nodes):
             nweights = []
             #First check input nodes
-            for i in range(net.num_of_inputs):
+            for i in xrange(net.num_of_inputs):
                 if i in node.weights:
                     if max is None:
                         max = node.weights[i]

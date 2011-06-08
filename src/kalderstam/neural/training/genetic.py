@@ -16,12 +16,12 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
     #Create a population of 50 networks
     best = None
     best_error = None
-    population = [build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes)) for each in range(int(population_size))]
+    population = [build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes)) for each in xrange(int(population_size))]
     #For each generation
-    for generation in range(int(epochs)):
+    for generation in xrange(int(epochs)):
         try: # I want to catch keyboard interrupt if the user wants to cancel training
             error = {} #reset errors
-            top_networks = [None for each in range(int(top_number))] #reset top five
+            top_networks = [None for each in xrange(int(top_number))] #reset top five
             #For all networks, simulate, measure their error, and save the best network so far
             #sim_results = mp_nets_sim(population, input_array)
             sim_results = [net.sim(input_array) for net in population]
@@ -33,7 +33,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                     best_error = error[member]
                 #compare with five best this generation
                 comp_net = member
-                for i in range(0, len(top_networks)):
+                for i in xrange(0, len(top_networks)):
                     if top_networks[i] and error[comp_net] < error[top_networks[i]]:
                         old = top_networks[i]
                         top_networks[i] = comp_net
@@ -43,7 +43,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                         break
 
             #Select the best 5 networks, mate them randomly and create 50 new networks
-            for child_index in range(len(population)):
+            for child_index in xrange(len(population)):
                 [mother, father] = sample(top_networks, 2)
 
                 population[child_index] = network()
@@ -53,7 +53,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 for mother_node, father_node in zip(mother.hidden_nodes, father.hidden_nodes):
                     hidden = node(mother_node.activation_function, random_range)
                     weights = {}
-                    for input_number in range(mother.num_of_inputs):
+                    for input_number in xrange(mother.num_of_inputs):
                         choice = sample([mother_node, father_node], 1)[0]
                         weights[input_number] = choice.weights[input_number]
                         if (random() < mutation_chance): # mutation chance
@@ -64,17 +64,17 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                     else:
                         hidden.bias = sample([mother_node, father_node], 1)[0].bias
 
-                    connect_nodes(hidden, range(mother.num_of_inputs), weights)
+                    connect_nodes(hidden, xrange(mother.num_of_inputs), weights)
                     population[child_index].hidden_nodes.append(hidden)
 
                 hidden_nodes = population[child_index].hidden_nodes
 
                 #Output nodes
                 #for mother_node, father_node in zip(mother.output_nodes, father.output_nodes):
-                for output_number in range(len(mother.output_nodes)):
+                for output_number in xrange(len(mother.output_nodes)):
                     output = node(mother.output_nodes[output_number].activation_function)
                     weights = {}
-                    for hidden_number in range(len(mother.hidden_nodes)):
+                    for hidden_number in xrange(len(mother.hidden_nodes)):
                         choice = sample([mother, father], 1)[0]
                         weights[hidden_nodes[hidden_number]] = choice.output_nodes[output_number].weights[choice.hidden_nodes[hidden_number]]
                         if (random() < mutation_chance): # mutation chance

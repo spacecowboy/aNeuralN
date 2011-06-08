@@ -20,7 +20,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
     else:
         pre_loop_kwargs = {}
 
-    for epoch in range(0, int(epochs)):
+    for epoch in xrange(0, int(epochs)):
         try: #Want to catch keyboard interrupt
             #Iterate over training data
             logger.info('Epoch ' + str(epoch))
@@ -34,7 +34,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
             if block_size < 1 or block_size > len(test_inputs): #if 0, then equivalent to batch. 1 is equivalent to online
                 block_size = len(test_inputs)
 
-            for block in range(int(len(test_inputs) / block_size)):
+            for block in xrange(int(len(test_inputs) / block_size)):
                 results = net.sim(test_inputs)
                 extra_kwargs.update(pre_loop_kwargs)
                 extra_kwargs.update(epoch_kwargs) #Add data from epoch function

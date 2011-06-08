@@ -68,9 +68,9 @@ def mp_train_committee(com, train_func, input_array, target_array, *train_args, 
     except TypeError: #In this case, it's an array of single values. we should do strat
         pass #Already true
     if do_strat:
-        data_sets = [get_stratified_validation_set(input_array, target_array, validation_size = 1 / len(com)) for times in range(len(com))]
+        data_sets = [get_stratified_validation_set(input_array, target_array, validation_size = 1 / len(com)) for times in xrange(len(com))]
     else:
-        data_sets = [get_validation_set(input_array, target_array, validation_size = 1 / len(com)) for times in range(len(com))]
+        data_sets = [get_validation_set(input_array, target_array, validation_size = 1 / len(com)) for times in xrange(len(com))]
 
     cmd_list = [(net, train_func, T, V, train_args, train_kwargs) for net, (T, V) in zip(com.nets, data_sets)]
     trained_nets = p.map(__train_net, cmd_list)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     print(len(Y))
     print(len(Y[0]))
 
-    netlist = [build_feedforward(2, 4, 1) for i in range(4)]
+    netlist = [build_feedforward(2, 4, 1) for i in xrange(4)]
     print("bim")
     Ys = benchmark(mp_nets_sim)(netlist, P)
     print("bam")

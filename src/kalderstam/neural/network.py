@@ -8,7 +8,7 @@ from kalderstam.neural.fast_network import Node as node
 logger = logging.getLogger('kalderstam.neural.network')
 
 def build_feedforward_committee(size = 8, input_number = 2, hidden_number = 2, output_number = 1, hidden_function = "tanh", output_function = "logsig"):
-    net_list = [build_feedforward(input_number, hidden_number, output_number, hidden_function, output_function) for n in range(size)]
+    net_list = [build_feedforward(input_number, hidden_number, output_number, hidden_function, output_function) for n in xrange(size)]
     return committee(net_list)
 
 def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = "tanh", output_function = "logsig"):
@@ -17,13 +17,13 @@ def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hi
     inputs = range(input_number)
 
     #Hidden layer
-    for i in range(int(hidden_number)):
+    for i in xrange(int(hidden_number)):
         hidden = node(hidden_function)
         connect_nodes(hidden, inputs)
         net.hidden_nodes.append(hidden)
 
     #Output nodes
-    for i in range(int(output_number)):
+    for i in xrange(int(output_number)):
         output = node(output_function)
         connect_nodes(output, net.hidden_nodes)
         net.output_nodes.append(output)

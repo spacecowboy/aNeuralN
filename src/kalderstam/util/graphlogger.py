@@ -121,12 +121,12 @@ if __name__ == '__main__':
     logger = getGraphLogger('TestLogging', 'b-')
     setLoggingLevel(debug)
     #logger.interactive()
-    for x in range(100):
+    for x in xrange(100):
         y = 0.2 * np.sin(x)
         logger.infoPlot(y_val = y)
     logger.show()
 
-    for x in range(100):
+    for x in xrange(100):
         y = np.sin(x) * np.exp(-x / 20)
         debugPlot('Another way to graph', y, style = 'r-')
     show()
