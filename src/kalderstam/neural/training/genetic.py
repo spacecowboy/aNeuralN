@@ -10,7 +10,7 @@ logger = logging.getLogger('kalderstam.neural.training_functions')
 
 numpy.seterr(all = 'raise') #I want errors!
 
-def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 3, top_number = 5, error_function = sum_squares.total_error, *args): #@UnusedVariable
+def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 1, top_number = 5, error_function = sum_squares.total_error, *args): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Does NOT use any validation set..."""
     #Create a population of 50 networks
@@ -89,7 +89,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                     population[child_index].output_nodes.append(output)
 
             logger.info("Generation " + str(generation) + ", best so far: " + str(best_error))
-            glogger.debugPlot('Test Error', best_error, 'r-')
+            glogger.debugPlot('Test Error', best_error, style = 'r-')
         except KeyboardInterrupt:
             logger.info("Interrupt received, returning best net so far...")
             break
