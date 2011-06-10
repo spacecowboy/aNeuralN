@@ -14,11 +14,17 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
     It should return a dict which will be passed as keyword arguments to the other functions.
     Same for epoch_func and block_func."""
 
+    block_size = int(block_size)
+    if block_size < 1 or block_size > len(test_inputs): #if 0, then equivalent to batch. 1 is equivalent to online
+        block_size = len(test_inputs)
+
     extra_kwargs = {}
     if hasattr(error_module, 'pre_loop_func'):
         pre_loop_kwargs = error_module.pre_loop_func(net, test_inputs, test_targets, block_size)
     else:
         pre_loop_kwargs = {}
+
+    pre_error, error = None, None
 
     for epoch in xrange(0, int(epochs)):
         try: #Want to catch keyboard interrupt
@@ -29,10 +35,22 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                 epoch_kwargs = error_module.epoch_func(net, test_inputs, test_targets, block_size, **pre_loop_kwargs)
             else:
                 epoch_kwargs = {}
-            #error_sum = 0
-            block_size = int(block_size)
-            if block_size < 1 or block_size > len(test_inputs): #if 0, then equivalent to batch. 1 is equivalent to online
-                block_size = len(test_inputs)
+
+            #For varying learning rate, calculate if the last step improved. Use only for batch.
+            if block_size == len(test_inputs):
+                results = net.sim(test_inputs)
+                error = error_module.total_error(test_targets, results, **epoch_kwargs)
+                if not pre_error:
+                    pre_error = error
+                elif error <= pre_error: #accept changes, increase learning rate
+                    learning_rate *= 1.1
+                    logger.debug('Error %1.4f <= %1.4f, learning rate set to %2.4f ', error, pre_error, learning_rate)
+                    pre_error = error
+                else: #Roll back
+                    apply_weight_corrections(net, -learning_rate, weight_corrections) #Negative rate to reverse the changes
+                    learning_rate *= 0.5 #Try with smaller learning rate
+                    logger.debug('Error %1.4f > %1.4f, learning rate set to %2.4f ', error, pre_error, learning_rate)
+
 
             for block in xrange(int(len(test_inputs) / block_size)):
                 results = net.sim(test_inputs)
