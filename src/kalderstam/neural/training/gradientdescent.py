@@ -32,7 +32,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
             logger.info('Epoch ' + str(epoch))
 
             if hasattr(error_module, 'epoch_func'):
-                epoch_kwargs = error_module.epoch_func(net, test_inputs, test_targets, block_size, **pre_loop_kwargs)
+                epoch_kwargs = error_module.epoch_func(net, test_inputs, test_targets, block_size, epoch, **pre_loop_kwargs)
             else:
                 epoch_kwargs = {}
 
