@@ -60,7 +60,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                             weights[input_number] += uniform(-random_range, random_range)
                     #Don't forget bias
                     if (random() < mutation_chance): # mutation chance
-                        hidden.bias = uniform(-random_range, random_range)
+                        hidden.bias += uniform(-random_range, random_range)
                     else:
                         hidden.bias = sample([mother_node, father_node], 1)[0].bias
 
@@ -89,7 +89,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                     population[child_index].output_nodes.append(output)
 
             logger.info("Generation " + str(generation) + ", best so far: " + str(best_error))
-            glogger.debugPlot('Test Error', best_error, style = 'r-')
+            glogger.debugPlot('Test Error\nMutation rate: ' + str(mutation_chance), best_error, style = 'r-')
         except KeyboardInterrupt:
             logger.info("Interrupt received, returning best net so far...")
             break
