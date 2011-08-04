@@ -11,6 +11,30 @@ def build_feedforward_committee(size = 8, input_number = 2, hidden_number = 2, o
     net_list = [build_feedforward(input_number, hidden_number, output_number, hidden_function, output_function) for n in xrange(size)]
     return committee(net_list)
 
+def build_feedforward_multilayered(input_number = 2, hidden_numbers = [2], output_number = 1, hidden_function = "tanh", output_function = "logsig"):
+    net = network()
+    net.num_of_inputs = input_number
+    inputs = range(input_number)
+
+    #Hidden layers
+    prev_layer = inputs
+    for hidden_number in hidden_numbers:
+        current_layer = []
+        for i in xrange(int(hidden_number)):
+            hidden = node(hidden_function)
+            connect_nodes(hidden, prev_layer)
+            net.hidden_nodes.append(hidden)
+            current_layer.append(hidden)
+        prev_layer = current_layer
+
+    #Output nodes
+    for i in xrange(int(output_number)):
+        output = node(output_function)
+        connect_nodes(output, prev_layer)
+        net.output_nodes.append(output)
+
+    return net
+
 def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = "tanh", output_function = "logsig"):
     net = network()
     net.num_of_inputs = input_number
