@@ -15,22 +15,22 @@ info = 2
 debug = 3
 logging_level = nothing
 
-def getGraphLogger(name = None, style = 'gs'):
+def getGraphLogger(name = None):
     if name not in loggers:
-        loggers[name] = graphlogger(name, style)
+        loggers[name] = graphlogger(name)
     return loggers[name]
 
 def setLoggingLevel(level):
     global logging_level
     logging_level = level
 
-def debugPlot(name, y, x = None, style = 'b'):
+def debugPlot(name, y, x = None, style = 'b', subset = None):
     '''Name of the graph to plot to, the y value, and an optional x value'''
-    getGraphLogger(name, style).debugPlot(y, x)
+    getGraphLogger(name).debugPlot(y, x, subset, style)
 
-def infoPlot(name, y, x = None, style = 'b'):
+def infoPlot(name, y, x = None, style = 'b', subset = None):
     '''Name of the graph to plot to, the y value, and an optional x value'''
-    getGraphLogger(name, style).infoPlot(y, x)
+    getGraphLogger(name).infoPlot(y, x, subset, style)
 
 def setup():
     for name in loggers:
@@ -40,16 +40,21 @@ def show():
     setup()
     plt.show()
 
-class graphlogger():
-    def __init__(self, name, style):
-        self.name = name
+class Subset():
+    def __init__(self, style):
         self.x_values = []
         self.y_values = []
+        self.style = style
+
+class graphlogger():
+    def __init__(self, name):
+        self.name = name
+        self.subsets = {}
+
         self.ymin = -0.0001
         self.ymax = 0.0001
         self.xmin = 0
         self.xmax = 1
-        self.style = style
 
         self.ready = False
 
@@ -68,14 +73,15 @@ class graphlogger():
                 self.fig = plt.figure()
                 self.ax = self.fig.add_subplot(111)
                 self.ax.set_title(str(self.name))
-                self.line, = self.ax.plot([], [], self.style)
                 self.ax.grid()
                 self.clean_background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
-
                 self.ax.set_xlim(self.xmin, self.xmax)
                 self.ax.set_ylim(self.ymin, self.ymax)
 
-                self.line.set_data(self.x_values, self.y_values)
+                for subset in self.subsets.values():
+                    subset.line, = self.ax.plot([], [], subset.style)
+                    subset.line.set_data(subset.x_values, subset.y_values)
+
             self.ready = True
 
     def show(self):
@@ -83,20 +89,23 @@ class graphlogger():
         if plt:
             plt.show()
 
-    def plot(self, y_val, x_val = None):
+    def plot(self, y_val, x_val = None, subset = None, style = 'g-'):
         if plt:
             self.ready = False #Forces a new figure to be drawn next time since we've added data
             if x_val is None:
-                if len(self.x_values) == 0:
+                if not self.subsets.has_key(subset):
+                    self.subsets[subset] = Subset(style)
+
+                if len(self.subsets[subset].x_values) == 0:
                     x_val = 0
                 else:
-                    x_val = self.x_values[len(self.x_values) - 1] + 1
+                    x_val = self.subsets[subset].x_values[len(self.subsets[subset].x_values) - 1] + 1
 
             x = float(x_val)
             y = float(y_val)
 
-            self.x_values.append(x)
-            self.y_values.append(y)
+            self.subsets[subset].x_values.append(x)
+            self.subsets[subset].y_values.append(y)
 
             # Change limits if needed
 
