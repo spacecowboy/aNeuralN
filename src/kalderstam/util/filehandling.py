@@ -68,6 +68,25 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
 
     return inputs, targets
 
+def print_output(filename, outputs):
+    inputs = read_data_file(filename)
+    outputs = outputs.tolist()
+    while len(inputs) > len(outputs):
+        outputs.insert(0, ["net_output"])
+
+    if len(inputs) < len(outputs):
+        raise TypeError('Input is smaller than output!')
+
+    for rawline in zip(inputs, outputs):
+        line = ''
+        for col in rawline[0]:
+            line += str(col)
+            line += ', '
+        for col in rawline[1]:
+            line += str(col)
+
+        print(line)
+
 def normalizeArray(array):
     '''Returns a new array, will not modify existing array.'''
     inputs = numpy.copy(array)
