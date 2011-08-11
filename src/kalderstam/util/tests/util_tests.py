@@ -7,6 +7,17 @@ import unittest
 
 class Test(unittest.TestCase):
 
+    def testNumpyParseDataInputs(self):
+        from ..filehandling import parse_data
+
+        failed = False
+        try:
+            parse_data([[0, 1], [2, 3]])
+        except TypeError as e:
+            #We want an error here!
+            failed = True
+        assert(failed)
+
     def testNumpyHelp(self):
         from ..numpyhelp import indexOf
         import numpy as np
