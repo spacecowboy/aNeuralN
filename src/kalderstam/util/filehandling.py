@@ -5,10 +5,13 @@ from os import path
 from random import random
 from kalderstam.neural.network import connect_node
 
-def read_data_file(filename):
+def read_data_file(filename, separator = None):
     """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
     with open(filename, 'r') as f:
-        inputs = [line.split() for line in f.readlines()]
+        if not separator:
+            inputs = [line.split() for line in f]
+        else:
+            inputs = [line.split(separator) for line in f]
 
     return inputs
 
@@ -27,6 +30,12 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
     except TypeError:
         #targetcols is already a list
         pass
+
+    try:
+        inputs[:, 0]
+    except TypeError as e:
+        #Slicing failed, inputs is not a numpy array. Alert user
+        raise TypeError('Slicing of inputs failed, it is probably not a numpy array.')
 
     if not inputcols:
         inputcols = range(len(inputs[0]))
@@ -81,7 +90,7 @@ def print_output(filename, outputs):
         line = ''
         for col in rawline[0]:
             line += str(col)
-            line += ', '
+            line += ','
         for col in rawline[1]:
             line += str(col)
 
