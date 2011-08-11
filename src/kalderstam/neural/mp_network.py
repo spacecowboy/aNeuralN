@@ -82,10 +82,10 @@ def mp_train_committee(com, train_func, input_array, target_array, *train_args, 
     vald_errors = {}
     for net, (T, V) in zip(com.nets, data_sets):
         outputs = net.sim(T[0])
-        test_errors[net] = train_kwargs['error_function'](T[1], outputs)
+        test_errors[net] = train_kwargs['error_function'](T[1], outputs) / len(outputs)
 
         outputs = net.sim(V[0])
-        vald_errors[net] = train_kwargs['error_function'](V[1], outputs)
+        vald_errors[net] = train_kwargs['error_function'](V[1], outputs) / len(outputs)
 
     return test_errors, vald_errors
 
