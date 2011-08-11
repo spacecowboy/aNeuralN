@@ -60,6 +60,7 @@ def mp_committee_sim(com, inputs):
     return com.__average__(results)
 
 def mp_train_committee(com, train_func, input_array, target_array, *train_args, **train_kwargs):
+    '''Returns error on test set, validation set. Saves network "inplace".'''
     #Do stratified or not?
     do_strat = True
     try:
@@ -68,13 +69,25 @@ def mp_train_committee(com, train_func, input_array, target_array, *train_args, 
     except TypeError: #In this case, it's an array of single values. we should do strat
         pass #Already true
     if do_strat:
-        data_sets = [get_stratified_validation_set(input_array, target_array, validation_size = 1 / len(com)) for times in xrange(len(com))]
+        data_sets = [get_stratified_validation_set(input_array, target_array, validation_size = 1.0 / len(com)) for times in xrange(len(com))]
     else:
-        data_sets = [get_validation_set(input_array, target_array, validation_size = 1 / len(com)) for times in xrange(len(com))]
+        data_sets = [get_validation_set(input_array, target_array, validation_size = 1.0 / len(com)) for times in xrange(len(com))]
 
     cmd_list = [(net, train_func, T, V, train_args, train_kwargs) for net, (T, V) in zip(com.nets, data_sets)]
     trained_nets = p.map(__train_net, cmd_list)
     com.nets = trained_nets
+
+    #Get  errors
+    test_errors = {}
+    vald_errors = {}
+    for net, (T, V) in zip(com.nets, data_sets):
+        outputs = net.sim(T[0])
+        test_errors[net] = train_kwargs['error_function'](T[1], outputs)
+
+        outputs = net.sim(V[0])
+        vald_errors[net] = train_kwargs['error_function'](V[1], outputs)
+
+    return test_errors, vald_errors
 
 def __train_net((net, train_func, T, V, train_args, train_kwargs)):
     return train_func(net, T, V, *train_args, **train_kwargs)
