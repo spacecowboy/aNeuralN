@@ -95,7 +95,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
         try: # I want to catch keyboard interrupt if the user wants to cancel training
             #Select two networks, mate them to create a new network. Repeat population-times.
             for child_index in xrange(len(top_networks)):
-                [mother, father] = sample(top_networks, 2)
+                [mother, father] = sample(top_networks[0:int(population_size * 0.65)], 2)
 
                 child = crossover_node(mother, father)
 
@@ -109,7 +109,9 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                         error.pop(top_networks.pop()) #Removes last from both lists
                         break #If child was worse than all, then nothing to be done.
 
-                parent = sample(top_networks, 1)[0]
+                glogger.debugPlot('Genetic breeding results for training set\nCrossover Green, Mutation red', cerror, style = 'g-', subset = 'crossover')
+
+                parent = sample(top_networks[0:int(population_size * 0.65)], 1)[0]
 
                 child = mutate_biased(parent, mutation_chance, random_range)
 
@@ -123,14 +125,15 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                         error.pop(top_networks.pop()) #Removes last from both lists
                         break #If child was worse than all, then nothing to be done.
 
+                glogger.debugPlot('Genetic breeding results for training set\nCrossover Green, Mutation red', cerror, style = 'r-', subset = 'mutation')
 
             if validation_inputs is not None and validation_targets is not None:
-                verror = error_function(validation_targets, child.sim(validation_inputs)) / len(validation_targets)
+                verror = error_function(validation_targets, top_networks[0].sim(validation_inputs)) / len(validation_targets)
             else:
                 verror = 0
             logger.info("Generation " + str(generation) + ", best: " + str(error[top_networks[0]]) + " validation: " + str(verror))
-            glogger.debugPlot('Test Error\nSize: ' + str(len(top_networks[0].hidden_nodes)), error[top_networks[0]], style = 'g-', subset = 'training')
-            glogger.debugPlot('Test Error\nSize: ' + str(len(top_networks[0].hidden_nodes)), verror, style = 'r-', subset = 'validation')
+            glogger.debugPlot('Test Error\nTraining Green, Validation red\nSize: ' + str(len(top_networks[0].hidden_nodes)), error[top_networks[0]], style = 'g-', subset = 'training')
+            glogger.debugPlot('Test Error\nTraining Green, Validation red\nSize: ' + str(len(top_networks[0].hidden_nodes)), verror, style = 'r-', subset = 'validation')
         except KeyboardInterrupt:
             logger.info("Interrupt received, returning best net so far...")
             break
