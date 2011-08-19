@@ -113,60 +113,68 @@ def normalizeArray(array):
 
     return inputs
 
-def get_validation_set(inputs, targets, validation_size = 0.2):
+def get_validation_set(inputs, targets, validation_size = 0.2, binary_column = None):
+    '''
+    Use binary column to specify a column of the targets which is binary, and can be used for
+    stratified division of the dataset.
+    '''
+
     if validation_size < 0 or validation_size > 1:
         raise TypeError('validation_size not between 0 and 1')
     test_inputs = []
     test_targets = []
     validation_inputs = []
     validation_targets = []
-    for row in xrange(len(inputs)):
-        if random() > validation_size:
-            test_inputs.append(inputs[row])
-            test_targets.append(targets[row])
-        else:
-            validation_inputs.append(inputs[row])
-            validation_targets.append(targets[row])
+
+    #if the target has two values, assume one is a binary indicator. we want an equal share of both
+    #matching the diversity of the dataset
+    if binary_column is not None:
+        zeros = targets[:, binary_column] == 0
+        ones = targets[:, binary_column] == 1
+    else:
+        zeros = [True for x in xrange(len(targets))]
+        ones = []
+
+    #First zeros
+    if len(zeros) > 0:
+        inputs_zero = inputs[zeros]
+        targets_zero = targets[zeros]
+        for row in xrange(len(inputs_zero)):
+            if random() > validation_size:
+                test_inputs.append(inputs_zero[row])
+                test_targets.append(targets_zero[row])
+            else:
+                validation_inputs.append(inputs_zero[row])
+                validation_targets.append(targets_zero[row])
+    #Then ones
+    if len(ones) > 0:
+        inputs_ones = inputs[ones]
+        targets_ones = targets[ones]
+        for row in xrange(len(inputs_ones)):
+            if random() > validation_size:
+                test_inputs.append(inputs_ones[row])
+                test_targets.append(targets_ones[row])
+            else:
+                validation_inputs.append(inputs_ones[row])
+                validation_targets.append(targets_ones[row])
 
     test_inputs = numpy.array(test_inputs, dtype = 'float64')
     test_targets = numpy.array(test_targets, dtype = 'float64')
     validation_inputs = numpy.array(validation_inputs, dtype = 'float64')
     validation_targets = numpy.array(validation_targets, dtype = 'float64')
+
+    #shuffle the lists
+    numpy.random.shuffle(test_inputs)
+    numpy.random.shuffle(test_targets)
+    numpy.random.shuffle(validation_inputs)
+    numpy.random.shuffle(validation_targets)
 
     return ((test_inputs, test_targets), (validation_inputs, validation_targets))
 
 def get_stratified_validation_set(inputs, targets, validation_size = 0.2):
-    """Will sort on 0-1 for targets. Only valid for classification sets."""
-    zero_inputs, zero_targets = [], []
-    one_inputs, one_targets = [], []
-    for input, target in zip(inputs, targets):
-        target = numpy.append(numpy.array([]), target) #Support both [0, 1] and [[0], [1]]
-        if target[0] < 1: #Array of output values, in this case only one output node exists
-            zero_inputs.append(input)
-            zero_targets.append(target)
-        else:
-            one_inputs.append(input)
-            one_targets.append(target)
-    #Values are now divided up. Now, choose a validation set by dividing up each set randomly
-    (zero_test_inputs, zero_test_targets), (zero_validation_inputs, zero_validation_targets) = get_validation_set(zero_inputs, zero_targets, validation_size)
-    (one_test_inputs, one_test_targets), (one_validation_inputs, one_validation_targets) = get_validation_set(one_inputs, one_targets, validation_size)
-    #Numpy is crap at appending data
-    test_inputs = list(zero_test_inputs)
-    test_targets = list(zero_test_targets)
-    validation_inputs = list(zero_validation_inputs)
-    validation_targets = list(zero_validation_targets)
-    #now we add the two sets together
-    test_inputs.extend(one_test_inputs)
-    test_targets.extend(one_test_targets)
-    validation_inputs.extend(one_validation_inputs)
-    validation_targets.extend(one_validation_targets)
-    #Finally, convert back to numpy arrays and return
-    test_inputs = numpy.array(test_inputs, dtype = 'float64')
-    test_targets = numpy.array(test_targets, dtype = 'float64')
-    validation_inputs = numpy.array(validation_inputs, dtype = 'float64')
-    validation_targets = numpy.array(validation_targets, dtype = 'float64')
+    '''Deprecated. use get_validation_set with a binary column instead.'''
 
-    return ((test_inputs, test_targets), (validation_inputs, validation_targets))
+    return get_validation_set(inputs, targets, validation_size, binary_column = 0)
 
 def save_committee(com, filename = None):
     """If Filename is None, create a new as net_#hashnumber.ann and save in home dir"""

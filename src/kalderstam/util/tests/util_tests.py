@@ -113,7 +113,7 @@ class Test(unittest.TestCase):
         assert(len(validation[0]) > 0)
         assert(len(validation[1]) > 0)
         print("Now we test a stratified set...")
-        test, validation = get_stratified_validation_set(inputs, targets, validation_size = 0.5)
+        test, validation = get_validation_set(inputs, targets, validation_size = 0.5, binary_column = 0)
         print(len(test[0]))
         print(len(test[1]))
         print(len(validation[0]))
