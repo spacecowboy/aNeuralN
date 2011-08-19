@@ -6,6 +6,8 @@ try:
     import matplotlib.pyplot as plt
 except ImportError:
     plt = None #This makes matplotlib optional
+except RuntimeError:
+    plt = None
 import numpy as np
 
 loggers = {}
