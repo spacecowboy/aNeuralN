@@ -59,19 +59,12 @@ def mp_committee_sim(com, inputs):
     results = mp_nets_sim(com.nets, inputs)
     return com.__average__(results)
 
-def mp_train_committee(com, train_func, input_array, target_array, *train_args, **train_kwargs):
-    '''Returns error on test set, validation set. Saves network "inplace".'''
-    #Do stratified or not?
-    do_strat = True
-    try:
-        if len(target_array[0]) > 1:
-            do_strat = False
-    except TypeError: #In this case, it's an array of single values. we should do strat
-        pass #Already true
-    if do_strat:
-        data_sets = [get_stratified_validation_set(input_array, target_array, validation_size = 1.0 / len(com)) for times in xrange(len(com))]
-    else:
-        data_sets = [get_validation_set(input_array, target_array, validation_size = 1.0 / len(com)) for times in xrange(len(com))]
+def mp_train_committee(com, train_func, input_array, target_array, binary_target = None, *train_args, **train_kwargs):
+    '''Returns error on test set, validation set. Saves network "inplace".
+    binary_target is the column number in the target_array which is binary, and should be used for getting a 
+    stratified validation set (proportional number of ones and zeros in the validation set and training set).'''
+
+    data_sets = [get_validation_set(input_array, target_array, validation_size = 1.0 / len(com), binary_column = binary_target) for times in xrange(len(com))]
 
     cmd_list = [(net, train_func, T, V, train_args, train_kwargs) for net, (T, V) in zip(com.nets, data_sets)]
     trained_nets = p.map(__train_net, cmd_list)
