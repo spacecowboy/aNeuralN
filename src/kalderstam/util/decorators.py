@@ -28,11 +28,12 @@ def benchmark_adv(func):
         prev_name, prev_time = _bench_name, _bench_time
         #If not None
         if _bench_run:
-            _bench_run[prev_name] += time.time() - _prev_time
+            _bench_run[prev_name] += time.time() - prev_time
         else:
             _bench_run = {}
-        #Add this function to run
-        _bench_run[func.__name__] = 0
+        #Add this function to run, as long as it doesn't exist yet
+	if func.__name__ not in _bench_run:
+        	_bench_run[func.__name__] = 0
         #Set as current
         _bench_name, _bench_time = func.__name__, time.time()
         #Execute

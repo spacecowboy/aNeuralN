@@ -6,10 +6,13 @@ from kalderstam.neural.network import build_feedforward, node, network, \
 from kalderstam.neural.error_functions import sum_squares
 import kalderstam.util.graphlogger as glogger
 
+from kalderstam.util.decorators import benchmark_adv
+
 logger = logging.getLogger('kalderstam.neural.training_functions')
 
 numpy.seterr(all = 'raise') #I want errors!
 
+@benchmark_adv
 def crossover_node(mother, father):
     child = network()
     child.num_of_inputs = mother.num_of_inputs
@@ -50,6 +53,7 @@ def crossover_node(mother, father):
 
     return child
 
+@benchmark_adv
 def mutate_biased(parent, mutation_chance, random_range):
     child = crossover_node(parent, parent)
 
@@ -62,7 +66,7 @@ def mutate_biased(parent, mutation_chance, random_range):
 
     return child
 
-
+@benchmark_adv
 def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 1, error_function = sum_squares.total_error, *args): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Uses validation set only for plotting.
