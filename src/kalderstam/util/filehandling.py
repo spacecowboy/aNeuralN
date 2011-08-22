@@ -235,7 +235,12 @@ def get_cross_validation_sets(inputs, targets, pieces, binary_column = None):
         numpy.random.shuffle(validation_input_sets[set])
         numpy.random.shuffle(validation_target_sets[set])
 
-    return training_input_sets, training_target_sets, validation_input_sets, validation_target_sets
+    # Return a list of tuple, (Training, Validation)
+
+    training = zip(training_input_sets, training_target_sets)
+    validation = zip(validation_input_sets, validation_target_sets)
+
+    return zip(training, validation)
 
 
 def save_committee(com, filename = None):
