@@ -4,6 +4,7 @@ Created on Apr 5, 2011
 @author: jonask
 '''
 import unittest
+from kalderstam.util.filehandling import get_cross_validation_sets
 
 class Test(unittest.TestCase):
 
@@ -133,6 +134,29 @@ class Test(unittest.TestCase):
         assert((inputs.size) == 0)
 
         print("All tests completed successfully!")
+
+    def testCrossValidationSplitting(self):
+        import numpy
+        inputs = numpy.array([[x] for x in xrange(100)])
+        targets = inputs + 0.5
+        tis, tts, vis, vts = get_cross_validation_sets(inputs, targets, 9)
+
+        for ti, tt, vi, vt in zip(tis, tts, vis, vts):
+            #Verify that validation does not occur in test and vice versa
+            for i, t in zip(ti, tt):
+                assert(i[0] not in vi)
+                assert(t[0] not in vt)
+
+        for set in xrange(len(tis)):
+            ti1, tt1, vi1, vt1 = tis[set], tts[set], vis[set], vts[set]
+            for set2 in xrange(len(tis)):
+                if set == set2:
+                    continue
+                ti2, tt2, vi2, vt2 = tis[set2], tts[set2], vis[set2], vts[set2]
+                #Verify that validation does occur in test set and so on
+                for i, t in zip(vi1, vt1):
+                    assert(i[0] not in vi2)
+                    assert(t[0] not in vt2)
 
 
 if __name__ == "__main__":
