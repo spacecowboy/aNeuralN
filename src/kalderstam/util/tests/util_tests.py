@@ -9,7 +9,7 @@ from kalderstam.util.filehandling import get_cross_validation_sets
 class Test(unittest.TestCase):
 
     def testNumpyParseDataInputs(self):
-        from ..filehandling import parse_data
+        from kalderstam.util.filehandling import parse_data
 
         failed = False
         try:
@@ -20,7 +20,7 @@ class Test(unittest.TestCase):
         assert(failed)
 
     def testNumpyHelp(self):
-        from ..numpyhelp import indexOf
+        from kalderstam.util.numpyhelp import indexOf
         import numpy as np
         outputs = np.random.random((100))
         idx = (56)
@@ -133,9 +133,8 @@ class Test(unittest.TestCase):
         assert((targets.size) > 0)
         assert((inputs.size) == 0)
 
-        print("All tests completed successfully!")
-
     def testCrossValidationSplitting(self):
+        print("Testing crossvalidation splitting")
         import numpy
         inputs = numpy.array([[x] for x in xrange(100)])
         targets = inputs + 0.5
@@ -157,6 +156,38 @@ class Test(unittest.TestCase):
                 for i, t in zip(vi1, vt1):
                     assert(i[0] not in vi2)
                     assert(t[0] not in vt2)
+
+        #shuffling test, make sure we don't scramble the data
+        print("Testing cross shuffling")
+        inputs = numpy.zeros((1000, 2), dtype = numpy.float64)
+        inputs[:, 0] = numpy.linspace(100, 400, 1000)
+        inputs[:, 1] = numpy.linspace(0, 200, 1000)
+
+        def formula1(a, b):
+            return a * b
+        def formula2(a, b):
+            return a + b
+
+        targets = numpy.zeros((1000, 2), dtype = numpy.float64)
+        targets[:, 0] = formula1(inputs[:, 0], inputs[:, 1])
+        targets[:, 1] = formula2(inputs[:, 0], inputs[:, 1])
+
+        data_sets = get_cross_validation_sets(inputs, targets, 4)
+
+        for (ti, tt), (vi, vt) in data_sets:
+            #Verify length
+            assert(len(ti) == 3.0 / 4.0 * len(targets))
+            assert(len(tt) == 3.0 / 4.0 * len(targets))
+            assert(len(vi) == 1.0 / 4.0 * len(targets))
+            assert(len(vt) == 1.0 / 4.0 * len(targets))
+            #Verify that formulas are still correct
+            for i, t in zip(ti, tt):
+                assert(t[0] == formula1(i[0], i[1]))
+                assert(t[1] == formula2(i[0], i[1]))
+            for i, t in zip(vi, vt):
+                assert(t[0] == formula1(i[0], i[1]))
+                assert(t[1] == formula2(i[0], i[1]))
+
 
 
 if __name__ == "__main__":
