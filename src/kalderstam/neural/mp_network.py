@@ -1,7 +1,6 @@
 import numpy
 from multiprocessing import cpu_count, Pool
-from kalderstam.util.filehandling import get_stratified_validation_set, \
-    get_validation_set, get_cross_validation_sets
+from kalderstam.util.filehandling import get_validation_set, get_cross_validation_sets
 import pickle
 
 def __split_inputs(inputs, number_of_pieces):
