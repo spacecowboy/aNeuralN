@@ -180,11 +180,6 @@ def get_validation_set(inputs, targets, validation_size = 0.2, binary_column = N
 
     return ((test_inputs, test_targets), (validation_inputs, validation_targets))
 
-def get_stratified_validation_set(inputs, targets, validation_size = 0.2):
-    '''Deprecated. use get_validation_set with a binary column instead.'''
-
-    return get_validation_set(inputs, targets, validation_size, binary_column = None)
-
 def get_cross_validation_sets(inputs, targets, pieces, binary_column = None):
     '''
     pieces is the number of validation sets that the data set should be divided into.
