@@ -198,47 +198,51 @@ def get_cross_validation_sets(inputs, targets, pieces, binary_column = None):
     validation_input_sets = []
     validation_target_sets = []
 
-    if (pieces < 2): #No validation set can be divided, return empty set
-        training_indices_sets[0].extend(range(totalrows))
+    #if (pieces < 2): #No validation set can be divided, return empty set
+    #    training_indices_sets[0].extend(range(totalrows))
+    #else:
+
+    #if the target has two values, assume one is a binary indicator. we want an equal share of both
+    #matching the diversity of the dataset
+    all = numpy.arange(len(targets))
+
+    if binary_column is not None:
+        zeros = all[targets[:, binary_column] == 0]
+        ones = all[targets[:, binary_column] == 1]
     else:
+        zeros = all
+        ones = []
 
-        #if the target has two values, assume one is a binary indicator. we want an equal share of both
-        #matching the diversity of the dataset
-        all = numpy.arange(len(targets))
+    #Make sure to randomize them before division
+    numpy.random.shuffle(zeros)
+    numpy.random.shuffle(ones)
 
-        if binary_column is not None:
-            zeros = all[targets[:, binary_column] == 0]
-            ones = all[targets[:, binary_column] == 1]
-        else:
-            zeros = all
-            ones = []
-
-        def divide_sets(indices):
-            sets = numpy.array_split(indices, pieces)
-            k = 0
-            for set in xrange(len(sets)):
-                validation_indices_sets[set].extend(sets[k])
-                #validation_input_sets[set].extend(inputs[sets[k]])
-                #validation_target_sets[set].extend(targets[sets[k]])
+    def divide_sets(indices):
+        sets = numpy.array_split(indices, pieces)
+        k = 0
+        for set in xrange(len(sets)):
+            validation_indices_sets[set].extend(sets[k])
+            #validation_input_sets[set].extend(inputs[sets[k]])
+            #validation_target_sets[set].extend(targets[sets[k]])
+            k += 1
+            k %= pieces
+            for piece in xrange(pieces - 1):
+                training_indices_sets[set].extend(sets[k])
+                #training_input_sets[set].extend(inputs[sets[k]])
+                #raining_target_sets[set].extend(targets[sets[k]])
                 k += 1
                 k %= pieces
-                for piece in xrange(pieces - 1):
-                    training_indices_sets[set].extend(sets[k])
-                    #training_input_sets[set].extend(inputs[sets[k]])
-                    #raining_target_sets[set].extend(targets[sets[k]])
-                    k += 1
-                    k %= pieces
-                #Do one final incrase, to make validation start at +1 next round
-                k += 1
-                k %= pieces
+            #Do one final incrase, to make validation start at +1 next round
+            k += 1
+            k %= pieces
 
-        #First zeros
-        if len(zeros) > 0:
-            divide_sets(zeros)
+    #First zeros
+    if len(zeros) > 0:
+        divide_sets(zeros)
 
-        #Then ones
-        if len(ones) > 0:
-            divide_sets(ones)
+    #Then ones
+    if len(ones) > 0:
+        divide_sets(ones)
 
     #convert types
     for set in xrange(len(training_indices_sets)):

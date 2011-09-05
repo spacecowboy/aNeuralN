@@ -39,9 +39,7 @@ class Test(unittest.TestCase):
         print("Testing network saving/loading")
         from kalderstam.neural.network import build_feedforward, build_feedforward_committee
         from os import path
-        from kalderstam.util.filehandling import (save_network, load_network,
-        save_committee, load_committee, parse_file, get_validation_set,
-        get_stratified_validation_set)
+        from kalderstam.util.filehandling import (save_network, load_network, save_committee, load_committee, parse_file, get_validation_set)
         net = build_feedforward()
 
         results1 = net.update([1, 2])
