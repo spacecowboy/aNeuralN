@@ -24,6 +24,7 @@ typedef struct {
 
 static int _Node_input_sum(Node *self, PyObject *inputs, double *sum);
 static int _Node_output(Node *self, PyObject *inputs, double *val);
+static PyTypeObject BiasNodeType;
 
 /**
 Public members
@@ -170,6 +171,10 @@ static int _Node_input_sum(Node *self, PyObject *inputs, double *sum)
 				else
 					result = FALSE;
 			}
+			else if (PyObject_IsInstance(key, (PyObject*) &BiasNodeType))
+			{
+				*sum += weight * 1;
+			}
 			else if (PyInt_Check(key))// It's an input index
 			{
 				Py_ssize_t index = PyInt_AsSsize_t(key);
@@ -258,7 +263,7 @@ static PyObject* Node_output(Node *self, PyObject *inputs)
 	{
 		double val;
 		if (_Node_output(self, inputs, &val)) {
-			return Py_BuildValue("d", val);
+                        return Py_BuildValue("d", val);
 		}
 		else
 			return NULL;
@@ -294,7 +299,7 @@ Specify the accessible methods in a list
 static PyMethodDef NodeMethods[] = 
 {
 	{"output_derivative", (PyCFunction) Node_output_derivative, METH_O, "The derivative of the activation function, given the inputs"},
-	{"output", (PyCFunction) Node_output, METH_O, "The derivative of the activation function, given the inputs"},
+	{"output", (PyCFunction) Node_output, METH_O, "The result of the activation function, given the inputs."},
 	{"__reduce__", (PyCFunction) Node_reduce, METH_NOARGS, "Needed for pickling. Specifices how to reconstruct the object."},
 	{"__getnewargs__", (PyCFunction) Node_getnewargs, METH_NOARGS, "Needed for pickling. Specifices what args to give new()."},
 	{NULL}, // So that we can iterate safely below
@@ -348,13 +353,156 @@ NodeType = {
 };
 
 
+/* Bias Node here */
+
+/**
+Bias Node class
+*/
+typedef struct {
+	Node node; // Inherits from Node
+} BiasNode;
+
+/**
+Constructor//Initializer//Destructor.
+*/
+static PyObject *
+BiasNode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	BiasNode *self;
+
+	self = (BiasNode *)type->tp_alloc(type, 0);
+	if (self != NULL) {
+		// Default values
+		self->node.random_range = 1;
+		self->node.cached_output = 0;
+		
+		// Weights
+		self->node.weights = PyDict_New();
+		
+		self->node.activation_function = (PyStringObject*) PyString_FromString("linear");
+		self->node.function = linear;
+		self->node.derivative = linear_derivative;
+	} //if !self null
+
+	return (PyObject *)self;
+}
+
+static int
+BiasNode_init(BiasNode *self, PyObject *args, PyObject *kwds)
+{
+	return 0;
+}
+
+/*
+static void
+BiasNode_dealloc(BiasNode *self)
+{
+	Py_XDECREF(self->weights);
+	Py_XDECREF(self->activation_function);
+	self->ob_type->tp_free((PyObject*)self);
+}*/
+
+static PyObject* BiasNode_output_derivative(BiasNode *self, PyObject *inputs)
+{
+	return Py_BuildValue("d", 0);
+}
+
+static PyObject* BiasNode_output(BiasNode *self, PyObject *inputs)
+{
+    double one = 1.0;
+    return Py_BuildValue("d", one);
+}
+
+/**
+Used in pickling
+Returns the arguments necessary to reconstruct this object.
+*/
+static PyObject* BiasNode_getnewargs(BiasNode* self)
+{
+	// Nothing is actually needed, but not sure how to specify this. Just take the normal. It won't be used in the constructor anyway.
+	return Py_BuildValue("(SdO)", self->node.activation_function, self->node.random_range, self->node.weights);
+}
+
+/**
+This method is responsible for telling the pickler how to reconstruct this object.
+It returns a constructer (Py_Type(self)) and the arguments that accepts to reconstruct this object.
+*/
+static PyObject* BiasNode_reduce(BiasNode* self)
+{
+	PyObject *args = BiasNode_getnewargs(self);
+	if (args == NULL)
+		return NULL; // Error, an exception should have been set
+	return Py_BuildValue("(OO)", Py_TYPE(self), args);
+}
+
+/**
+Specify the accessible methods in a list
+*/
+
+static PyMethodDef BiasNodeMethods[] = 
+{
+	{"output_derivative", (PyCFunction) BiasNode_output_derivative, METH_O, "The derivative of a bias node is always 0"},
+	{"output", (PyCFunction) BiasNode_output, METH_O, "The output of a bias node is always 1"},
+	{"__reduce__", (PyCFunction) BiasNode_reduce, METH_NOARGS, "Needed for pickling. Specifices how to reconstruct the object."},
+	{"__getnewargs__", (PyCFunction) BiasNode_getnewargs, METH_NOARGS, "Needed for pickling. Specifices what args to give new()."},
+	{NULL}, // So that we can iterate safely below
+};
+
+/**
+Specify the type of this class
+*/
+
+static PyTypeObject
+BiasNodeType = {
+	PyObject_HEAD_INIT(NULL)
+	0,						/* ob_size */
+	"kalderstam.neural.fast_network.BiasNode",	/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
+	sizeof(BiasNode),				/* tp_basicsize */
+	0,						/* tp_itemsize */
+	0,						/* tp_dealloc */
+	0,						/* tp_print */
+	0,						/* tp_getattr */
+	0,						/* tp_setattr */
+	0,						/* tp_compare */
+	0,						/* tp_repr */
+	0,						/* tp_as_number */
+	0,						/* tp_as_sequence */
+	0,						/* tp_as_mapping */
+	0,						/* tp_hash */
+	0,						/* tp_call */
+	0,						/* tp_str */
+	0,						/* tp_getattro */
+	0,						/* tp_setattro */
+	0,						/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, 	/* tp_flags*/
+	"A bias node in a neural network.",		/* tp_doc */
+	0,						/* tp_traverse */
+	0,			 			/* tp_clear */
+	0,			 			/* tp_richcompare */
+	0,			 			/* tp_weaklistoffset */
+	0,			 			/* tp_iter */
+	0,			 			/* tp_iternext */
+	BiasNodeMethods,				/* tp_methods */
+	0,						/* tp_members */
+	0,			 			/* tp_getset */
+	0,			 			/* tp_base */
+	0,			 			/* tp_dict */
+	0,			 			/* tp_descr_get */
+	0,			 			/* tp_descr_set */
+	0,			 			/* tp_dictoffset */
+	(initproc)BiasNode_init,				/* tp_init */
+	0,			 			/* tp_alloc */
+	BiasNode_new,			 		/* tp_new */
+};
+
+/* Module wide stuff here */
 void
 initfast_network(void)
 {
 	PyObject* mod;
 
 	// Create the module
-	mod = Py_InitModule3("fast_network", NULL, "C implementation of the neural network node.");
+	mod = Py_InitModule3("fast_network", NULL, "C implementation of the neural network nodes.");
 	if (mod == NULL) {
 		return;
 	}
@@ -367,4 +515,13 @@ initfast_network(void)
 	// Add the type to the module.
 	Py_INCREF(&NodeType);
 	PyModule_AddObject(mod, "Node", (PyObject*)&NodeType);
+
+	// Make it ready
+	if (PyType_Ready(&BiasNodeType) < 0) {
+		return;
+	}
+
+	// Add the type to the module.
+	Py_INCREF(&BiasNodeType);
+	PyModule_AddObject(mod, "BiasNode", (PyObject*)&BiasNodeType);
 }
