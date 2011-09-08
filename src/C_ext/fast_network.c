@@ -79,7 +79,7 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 		static char *kwlist[] = {"active", "random_range", "weights", NULL};
 
-		if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SddO", kwlist,
+		if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SdO", kwlist,
 							&self->activation_function,
 							&self->random_range,
 							&weights))
@@ -276,7 +276,7 @@ Returns the arguments necessary to reconstruct this object.
 */
 static PyObject* Node_getnewargs(Node* self)
 {
-	//"active", "bias", "random_range", "weights"
+	//"active", "random_range", "weights"
 	return Py_BuildValue("(SdO)", self->activation_function, self->random_range, self->weights);
 }
 
