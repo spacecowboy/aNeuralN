@@ -97,13 +97,17 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                                 index = int(back_node)
                                 weight_corrections[node][back_node].append(gradients[node] * input[index])
                             except TypeError:
-                                gradients[back_node] += back_weight * gradients[node]
+                                try:
+                                    gradients[back_node] += back_weight * gradients[node]
+                                except KeyError:
+                                    #Can happen if it's a bias node back there
+                                    pass
                                 weight_corrections[node][back_node].append(gradients[node] * back_node.output(input))
 
                         #Finally, correct the bias
-                        if "bias" not in weight_corrections[node]:
-                            weight_corrections[node]["bias"] = []
-                        weight_corrections[node]["bias"].append(gradients[node])
+                        #if "bias" not in weight_corrections[node]:
+                        #    weight_corrections[node]["bias"] = []
+                        #weight_corrections[node]["bias"].append(gradients[node])
 
                 apply_weight_corrections(net, learning_rate, weight_corrections)
 
@@ -135,5 +139,3 @@ def apply_weight_corrections(net, learning_rate, weight_corrections):
         #Calculate weight update
         for back_node, back_weight in node.weights.items():
             node.weights[back_node] = back_weight - learning_rate * sum(weight_corrections[node][back_node]) / len(weight_corrections[node][back_node])
-        #Don't forget bias
-        node.bias = node.bias - learning_rate * sum(weight_corrections[node]["bias"]) / len(weight_corrections[node]["bias"])

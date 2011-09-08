@@ -46,6 +46,9 @@ def crossover_node(mother, father):
     for i in xrange(mother.num_of_inputs):
         tr[i] = i
 
+    for bias in (mother.bias_node, father.bias_node):
+        tr[bias] = child.bias_node
+
     for mother_node, father_node in zip(mother.hidden_nodes, father.hidden_nodes):
         child_node = node(mother_node.activation_function, 1)
         tr[mother_node] = child_node
@@ -57,7 +60,6 @@ def crossover_node(mother, father):
         #map the weights and bias of that node to the child node
         for keynode, weight in choice.weights.items():
             child_node.weights[tr[keynode]] = weight
-        child_node.bias = choice.bias
 
         child.hidden_nodes.append(child_node)
 
@@ -72,7 +74,6 @@ def crossover_node(mother, father):
         #map the weights and bias of that node to the child node
         for keynode, weight in choice.weights.items():
             child_node.weights[tr[keynode]] = weight
-        child_node.bias = choice.bias
 
         child.output_nodes.append(child_node)
 
@@ -99,15 +100,16 @@ def mutate_biased_inplace(child, random_mean, mutation_chance = 0.1):
             if (random() < mutation_chance): # mutation chance
                 #node.weights[keynode] += uniform(-random_range, random_range)
                 node.weights[keynode] += choice([-1, 1]) * numpy.random.exponential(random_mean)
-        if (random() < mutation_chance): # mutation chance
-            node.bias += choice([-1, 1]) * numpy.random.exponential(random_mean)
 
-def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_mean = 0.5, error_function = sum_squares.total_error, *args): #@UnusedVariable
+def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_mean = 0.5, error_function = sum_squares.total_error, loglevel = None, * args): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Uses validation set only for plotting.
     This version does not replace the entire population each generation. Two parents are selected at random to create a child. The two best are
     returned to the population for breeding, the worst is destroyed. One generation is considered to be the same number of matings as population size.
-    Networks to be mated are selected with the geometric distribution, probability of the top network to be chosen = mutation_chance"""
+    Networks to be mated are selected with the geometric distribution, probability of the top network to be chosen = 0.05
+    Mutation chance dictate the probability of every single weight being mutated."""
+    if loglevel is not None:
+        logging.basicConfig(level = loglevel)
     #Create a population of 50 networks
     #population = [build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes)) for each in xrange(int(population_size))]
     population = [mutate_biased(net, random_mean, mutation_chance = 1.0) for each in xrange(int(population_size) - 1)]
@@ -170,13 +172,32 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
         try: # I want to catch keyboard interrupt if the user wants to cancel training
             #Select two networks, mate them to create a new network. Repeat population-times.
             for child_index in xrange(len(top_networks)):
-                #[mother, father] = sample(top_networks[0:int(population_size * 0.65)], 2)
-                parents = select_parents(mutation_chance, population_size)
+
+                #First breed a new child, with slight defects. These will displace all others with time
+                parents = select_parents(0.05, population_size)
                 mother, father = top_networks[parents[0]], top_networks[parents[1]]
 
                 child = crossover_node(mother, father)
 
+                mutate_biased_inplace(child, random_mean, mutation_chance)
+
                 insert_child(child)
+
+                #Just mutation
+                #parent = top_networks[select_parent(0.05, population_size)]
+                #child = mutate_biased(parent, random_mean, mutation_chance)
+                #insert_child(child)
+
+                #To prevent this, we keep the lower half randomized.
+
+                #i = int(population_size / 2) + select_parent(0.05, int(population_size / 2))
+
+                #mutant = remove_child(i)
+                #mutate_biased_inplace(child, random_mean, mutation_chance = 1.0)
+
+                #insert_child(mutant)
+
+                #insert_child(child)
 
                 #glogger.debugPlot('Genetic breeding results for training set\nCrossover Green, Mutation red', sorted_errors[i], style = 'g-', subset = 'crossover')
 
@@ -185,11 +206,14 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 #remove_child(child = mutant)
 
                 #Greater chance to select top networks
-                i = select_parent(mutation_chance, population_size)
-                mutant = remove_child(index = i)
+                #i = select_parent(0.05, population_size)
 
-                mutate_biased_inplace(mutant, random_mean)
-                i = insert_child(mutant)
+                #child = remove_child(index = i)
+                #mutate_biased_inplace(child, random_mean, mutation_chance)
+
+                #child = mutate_biased(top_networks[i], random_mean, mutation_chance)
+
+                #i = insert_child(child)
 
                 #glogger.debugPlot('Genetic breeding results for training set\nCrossover Green, Mutation red', sorted_errors[i], style = 'r-', subset = 'mutation')
 

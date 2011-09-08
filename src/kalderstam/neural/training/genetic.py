@@ -1,7 +1,7 @@
 import logging
 import numpy
-from random import sample, random, uniform
-from kalderstam.neural.network import build_feedforward, node, network, \
+from random import sample, random, uniform, choice
+from kalderstam.neural.network import build_feedforward, node, bias, network, \
     connect_nodes
 from kalderstam.neural.error_functions import sum_squares
 import kalderstam.util.graphlogger as glogger
@@ -10,12 +10,29 @@ logger = logging.getLogger('kalderstam.neural.training_functions')
 
 numpy.seterr(all = 'raise') #I want errors!
 
-def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_range = 1, top_number = 5, error_function = sum_squares.total_error, *args): #@UnusedVariable
+def mutate_biased_inplace(child, random_mean = 0.2, mutation_chance = 0.25):
+    '''
+    Random mean decides the mean of the exponential distribution where weight
+    adjustments are chosen from.
+    '''
+    for node in child.get_all_nodes():
+        for keynode, weight in node.weights.items():
+            if (random() < mutation_chance): # mutation chance
+                #node.weights[keynode] += uniform(-random_range, random_range)
+                node.weights[keynode] += choice([-1, 1]) * numpy.random.exponential(random_mean)
+
+def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 1, population_size = 100, mutation_chance = 0.25, random_range = 1.0, top_number = 25, error_function = sum_squares.total_error, loglevel = None, *args, **kwargs): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Does NOT use any validation set..."""
+    if top_number > population_size:
+        raise ValueError('Top_number({0}) can not be larger than population size({1})!'.format(top_number, population_size))
+
+    if loglevel is not None:
+        logging.basicConfig(level = loglevel)
     #Create a population of 50 networks
     best = None
     best_error = None
+    best_val_error = None
     population = [build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes)) for each in xrange(int(population_size))]
     #For each generation
     for generation in xrange(int(epochs)):
@@ -31,6 +48,11 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 if not best or error[member] < best_error:
                     best = member
                     best_error = error[member]
+                    if validation_inputs is not None and len(validation_inputs) > 0:
+                        val_sim_results = best.sim(validation_inputs)
+                        best_val_error = error_function(validation_targets, val_sim_results) / len(validation_targets)
+                    else:
+                        best_val_error = -1
                 #compare with five best this generation
                 comp_net = member
                 for i in xrange(0, len(top_networks)):
@@ -42,13 +64,19 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                         top_networks[i] = comp_net
                         break
 
+            logger.info("Generation {0}, best trn: {1} val: {2}, top trn: {3}".format(generation, best_error, best_val_error, error[top_networks[0]]))
+            glogger.debugPlot('Test Error\nMutation rate: ' + str(mutation_chance), best_error, style = 'r-')
+
             #Select the best 5 networks, mate them randomly and create 50 new networks
-            for child_index in xrange(len(population)):
+            population = []
+            for child_index in xrange(population_size):
                 [mother, father] = sample(top_networks, 2)
+                if random() < 0.5:
+                    father = mother #Will create full mutation, no cross-over
 
-                population[child_index] = network()
+                population.append(network())
                 population[child_index].num_of_inputs = mother.num_of_inputs
-
+                bias_child = population[child_index].bias_node
                 #Hidden layer
                 for mother_node, father_node in zip(mother.hidden_nodes, father.hidden_nodes):
                     hidden = node(mother_node.activation_function, random_range)
@@ -56,15 +84,12 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                     for input_number in xrange(mother.num_of_inputs):
                         choice = sample([mother_node, father_node], 1)[0]
                         weights[input_number] = choice.weights[input_number]
-                        if (random() < mutation_chance): # mutation chance
-                            weights[input_number] += uniform(-random_range, random_range)
-                    #Don't forget bias
-                    if (random() < mutation_chance): # mutation chance
-                        hidden.bias += uniform(-random_range, random_range)
-                    else:
-                        hidden.bias = sample([mother_node, father_node], 1)[0].bias
-
-                    connect_nodes(hidden, xrange(mother.num_of_inputs), weights)
+                    choice = sample([(mother, mother_node), (father, father_node)], 1)[0]
+                    weights[bias_child] = choice[1].weights[choice[0].bias_node]
+                    
+                    _all = range(mother.num_of_inputs)
+                    _all.append(bias_child)
+                    connect_nodes(hidden, _all, weights)
                     population[child_index].hidden_nodes.append(hidden)
 
                 hidden_nodes = population[child_index].hidden_nodes
@@ -77,22 +102,22 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                     for hidden_number in xrange(len(mother.hidden_nodes)):
                         choice = sample([mother, father], 1)[0]
                         weights[hidden_nodes[hidden_number]] = choice.output_nodes[output_number].weights[choice.hidden_nodes[hidden_number]]
-                        if (random() < mutation_chance): # mutation chance
-                            weights[hidden_nodes[hidden_number]] += uniform(-random_range, random_range)
-                    #Don't forget bias
-                    if (random() < mutation_chance): # mutation chance
-                        output.bias += uniform(-random_range, random_range)
-                    else:
-                        output.bias = sample([mother, father], 1)[0].output_nodes[output_number].bias
+                    choice = sample([mother, father], 1)[0]
+                    weights[bias_child] = choice.output_nodes[output_number].weights[choice.bias_node]
 
-                    connect_nodes(output, hidden_nodes, weights)
+                    _all = [] + hidden_nodes
+                    _all.append(bias_child)
+                    connect_nodes(output, _all, weights)
+
                     population[child_index].output_nodes.append(output)
 
-            logger.info("Generation " + str(generation) + ", best so far: " + str(best_error))
-            glogger.debugPlot('Test Error\nMutation rate: ' + str(mutation_chance), best_error, style = 'r-')
+                #Mutate it
+                mutate_biased_inplace(population[child_index], 0.2, mutation_chance)
+
         except KeyboardInterrupt:
             logger.info("Interrupt received, returning best net so far...")
             break
 
+    logger.debug([error[mem] for mem in top_networks])
     #finally, return the best network
     return best

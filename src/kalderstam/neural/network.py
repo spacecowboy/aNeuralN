@@ -3,7 +3,7 @@ from random import uniform
 import numpy
 import logging
 from kalderstam.util.decorators import benchmark
-from kalderstam.neural.fast_network import Node as node
+from kalderstam.neural.fast_network import Node as node, BiasNode as bias
 
 logger = logging.getLogger('kalderstam.neural.network')
 
@@ -16,12 +16,15 @@ def build_feedforward_multilayered(input_number = 2, hidden_numbers = [2], outpu
     net.num_of_inputs = input_number
     inputs = range(input_number)
 
+    biasnode = net.bias_node
+
     #Hidden layers
     prev_layer = inputs
     for hidden_number in hidden_numbers:
         current_layer = []
         for i in xrange(int(hidden_number)):
             hidden = node(hidden_function)
+            connect_node(hidden, biasnode)
             connect_nodes(hidden, prev_layer)
             net.hidden_nodes.append(hidden)
             current_layer.append(hidden)
@@ -30,29 +33,34 @@ def build_feedforward_multilayered(input_number = 2, hidden_numbers = [2], outpu
     #Output nodes
     for i in xrange(int(output_number)):
         output = node(output_function)
+        connect_node(output, biasnode)
         connect_nodes(output, prev_layer)
         net.output_nodes.append(output)
 
     return net
 
 def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = "tanh", output_function = "logsig"):
-    net = network()
-    net.num_of_inputs = input_number
-    inputs = range(input_number)
+    
+    return build_feedforward_multilayered(input_number, [hidden_number],
+            output_number, hidden_function, output_function)
+    
+    #net = network()
+    #net.num_of_inputs = input_number
+    #inputs = range(input_number)
 
     #Hidden layer
-    for i in xrange(int(hidden_number)):
-        hidden = node(hidden_function)
-        connect_nodes(hidden, inputs)
-        net.hidden_nodes.append(hidden)
+    #for i in xrange(int(hidden_number)):
+    #    hidden = node(hidden_function)
+    #    connect_nodes(hidden, inputs)
+    #    net.hidden_nodes.append(hidden)
 
     #Output nodes
-    for i in xrange(int(output_number)):
-        output = node(output_function)
-        connect_nodes(output, net.hidden_nodes)
-        net.output_nodes.append(output)
+    #for i in xrange(int(output_number)):
+    #    output = node(output_function)
+    #    connect_nodes(output, net.hidden_nodes)
+    #    net.output_nodes.append(output)
 
-    return net
+    #return net
 
 def connect_node(node_self, node, weight = None):
     if not weight:
@@ -98,6 +106,7 @@ class network:
         self.num_of_inputs = 0
         self.hidden_nodes = []
         self.output_nodes = []
+        self.bias_node = bias()
 
     def get_all_nodes(self):
         """Returns all nodes."""
