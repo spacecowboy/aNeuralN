@@ -14,7 +14,6 @@ Node class
 typedef struct {
 	PyObject_HEAD // Inherits from object
 	double random_range;
-	double bias;
 	PyObject *weights; // A dictionary of nodes and weight values
 	PyStringObject *activation_function; // The string representation of the activation function!
 	double (*function)(double); // Function pointer, the activation function
@@ -30,8 +29,6 @@ static int _Node_output(Node *self, PyObject *inputs, double *val);
 Public members
 */
 static PyMemberDef NodeMembers[] = {
-	{"bias", T_DOUBLE, offsetof(Node, bias), 0,
-	 "Bias value"},
 	{"weights", T_OBJECT_EX, offsetof(Node, weights), 0,
 	 "The weights dict of {node, weight}"},
 	{"activation_function", T_OBJECT_EX, offsetof(Node, activation_function), 0,
@@ -79,29 +76,17 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		self->activation_function = NULL;
 		self->cached_output = 0;
 
-		double bias = RAND_MAX; // Dummy value that will never occur in real life
-
-		static char *kwlist[] = {"active", "bias", "random_range", "weights", NULL};
+		static char *kwlist[] = {"active", "random_range", "weights", NULL};
 
 		if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SddO", kwlist,
-							&self->activation_function, &bias,
+							&self->activation_function,
 							&self->random_range,
 							&weights))
 		{
-			PyErr_Format(PyExc_ValueError, "Arguments should be (all optional): string active, double bias, double random_range, dict weights");
+			PyErr_Format(PyExc_ValueError, "Arguments should be (all optional): string active, double random_range, dict weights");
 			return NULL;
 		}
 		
-		// Set bias
-		if (bias != RAND_MAX) {
-			self->bias = bias;
-		}
-		else {
-	 		// Assign random value based on random range
-	 		srand((unsigned)time(NULL)); // Seed it
-			self->bias = self->random_range * ((double)rand()/(double)RAND_MAX);
-		}
-
 		// Weights
 		if (weights == NULL) 
 		{
@@ -166,7 +151,7 @@ static int _Node_input_sum(Node *self, PyObject *inputs, double *sum)
 	double weight, value = 0, recursive_val;
 	Py_ssize_t pos = 0;
 	int result = TRUE;
-	*sum = self->bias;
+	*sum = 0;
 
 	while (PyDict_Next(self->weights, &pos, &key, &pyweight)) {
 		// First verify that the weight is a float
@@ -287,7 +272,7 @@ Returns the arguments necessary to reconstruct this object.
 static PyObject* Node_getnewargs(Node* self)
 {
 	//"active", "bias", "random_range", "weights"
-	return Py_BuildValue("(SddO)", self->activation_function, self->bias, self->random_range, self->weights);
+	return Py_BuildValue("(SdO)", self->activation_function, self->random_range, self->weights);
 }
 
 /**
