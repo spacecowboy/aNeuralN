@@ -7,15 +7,19 @@ import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import numpy as np
 
-def plot_input(data):
+def plot_input(data, header = ""):
     plt.figure()
-    plt.title("Mean: " + str(np.mean(data)) + " Std: " + str(np.std(data)))
-    n, bins, patches = plt.hist(data, 50, normed = 1, facecolor = 'green', alpha = 0.75)
+    plt.title("\nMean: " + str(np.mean(data)) + " Std: " + str(np.std(data)))
+    n, bins, patches = plt.hist(data, 50, normed = False, facecolor = 'green', alpha = 0.75)
     # add a 'best fit' line
     y = mlab.normpdf(bins, np.mean(data), np.std(data))
     l = plt.plot(bins, y, 'r--', linewidth = 1)
 
-def plot_all_inputs(P):
+    plt.xlabel(header + " total: " + str(len(data)))
+    plt.ylabel('Number of data points')
+
+def plot_all_inputs(P, headers = None):
     for var in xrange(len(P[0, :])):
-        plot_input(P[:, var])
+        header = headers[var] if headers is not None else ""
+        plot_input(P[:, var], header)
     plt.show()

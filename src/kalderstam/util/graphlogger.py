@@ -129,7 +129,7 @@ class graphlogger():
 
 
 if __name__ == '__main__':
-    logger = getGraphLogger('TestLogging', 'b-')
+    logger = getGraphLogger('TestLogging')
     setLoggingLevel(debug)
     #logger.interactive()
     for x in xrange(100):

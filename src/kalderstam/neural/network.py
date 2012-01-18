@@ -40,10 +40,10 @@ def build_feedforward_multilayered(input_number = 2, hidden_numbers = [2], outpu
     return net
 
 def build_feedforward(input_number = 2, hidden_number = 2, output_number = 1, hidden_function = "tanh", output_function = "logsig"):
-    
+
     return build_feedforward_multilayered(input_number, [hidden_number],
             output_number, hidden_function, output_function)
-    
+
     #net = network()
     #net.num_of_inputs = input_number
     #inputs = range(input_number)

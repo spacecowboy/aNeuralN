@@ -1,3 +1,4 @@
+from __future__ import division
 from kalderstam.neural.error_functions import sum_squares
 from kalderstam.neural.network import node
 from random import sample
@@ -44,12 +45,12 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
                     pre_error = error
                 elif error <= pre_error: #accept changes, increase learning rate
                     learning_rate *= 1.1
-                    logger.debug('Error %1.4f <= %1.4f, learning rate set to %2.4f ', error, pre_error, learning_rate)
+                    logger.debug('Error %1.4f <= %1.4f, learning rate set to %2.4f ', error / len(results), pre_error / len(results), learning_rate)
                     pre_error = error
                 else: #Roll back
                     apply_weight_corrections(net, -learning_rate, weight_corrections) #Negative rate to reverse the changes
                     learning_rate *= 0.5 #Try with smaller learning rate
-                    logger.debug('Error %1.4f > %1.4f, learning rate set to %2.4f ', error, pre_error, learning_rate)
+                    logger.debug('Error %1.4f > %1.4f, learning rate set to %2.4f ', error / len(results), pre_error / len(results), learning_rate)
 
 
             for block in xrange(int(len(test_inputs) / block_size)):

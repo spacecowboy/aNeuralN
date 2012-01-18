@@ -2,8 +2,16 @@ import numpy
 from kalderstam.neural import network
 import re
 from os import path
-from random import random
+from random import random, sample
 from kalderstam.neural.network import connect_node
+
+def parse_header(headers):
+    header_names = {}
+    idx = 0
+    for name in headers:
+        header_names[name] = idx
+        idx += 1
+    return header_names
 
 def read_data_file(filename, separator = None):
     """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
@@ -11,20 +19,45 @@ def read_data_file(filename, separator = None):
         if not separator:
             inputs = [line.split() for line in f]
         else:
-            inputs = [line.split(separator) for line in f]
+            #Strip chomps away newlines which will mess things up otherwise
+            inputs = []
+            for line in f:
+                inputs.append([col.strip() for col in line.split(separator)])
 
     return inputs
 
-def parse_file(filename, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
-    return parse_data(numpy.array(read_data_file(filename)), targetcols, inputcols, ignorecols, ignorerows, normalize)
+def parse_file(filename, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True, separator = None, use_header = False, fill_average = True):
+    return parse_data(numpy.array(read_data_file(filename, separator = separator)), targetcols, inputcols, ignorecols, ignorerows, normalize, use_header, fill_average)
 
-def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True):
+def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True, use_header = False, fill_average = True):
     """inputs is an array of data columns. targetcols is either an int describing which column is a the targets or it's a list of several ints pointing to multiple target columns.
     Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
     Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs.
-    Ignorerows specify which, if any, rows should be skipped."""
+    Ignorerows specify which, if any, rows should be skipped.
+    
+    if useHeader is True, the first line is taken to be the header containing column names. This will be parsed and inputcols and targetcols must now specify the columns with names instead.
+    The first line (the header) is subsequently ignored from the dataset so this doesn't have to be specified seperately."""
+
     if targetcols is None:
         targetcols = []
+
+    if use_header:
+        #Parse the header line, get a hash where the keys are the names and the values are the column numbers.
+        col_names = parse_header(inputs[0])
+        #If not present in ignore list, add it
+        if 0 not in ignorerows:
+            ignorerows.append(0)
+        #Also verify that the names specified are indeed valid column names, otherwise throw an exception about it.
+        for cols in (targetcols, inputcols):
+            for name in cols:
+                if name not in col_names:
+                    raise ValueError(str(name) + ' is not a column name.')
+
+        #Now use a translated array from names to numbers. Carry on as before
+        named_targetcols, named_inputcols = targetcols, inputcols
+        targetcols = [col_names[name] for name in named_targetcols]
+        inputcols = [col_names[name] for name in named_inputcols]
+
     try:
         targetcols = [int(targetcols)]
     except TypeError:
@@ -33,9 +66,11 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
 
     try:
         inputs[:, 0]
-    except TypeError as e:
+        #print("Shape: " + str(inputs.shape))
+    except (TypeError, IndexError):
         #Slicing failed, inputs is not a numpy array. Alert user
-        raise TypeError('Slicing of inputs failed, it is probably not a numpy array.')
+        print("Shape: " + str(inputs.shape))
+        raise TypeError('Slicing of inputs failed, it is probably not a numpy array: ' + str(inputs))
 
     if not inputcols:
         inputcols = range(len(inputs[0]))
@@ -51,6 +86,8 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
 
         inputcols = numpy.delete(inputcols, destroycols, 0)
 
+    if fill_average:
+        replace_empty_with_avg(inputs, inputcols)
     for line in xrange(len(inputs)):
         if len(targetcols) == 0:
             all_cols = inputs[line, inputcols]
@@ -58,12 +95,7 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
             all_cols = inputs[line, targetcols]
         else:
             all_cols = inputs[line, numpy.append(inputcols, targetcols)]
-        for col in all_cols: #check only valid columns
-            try:
-                float(col)
-            except ValueError: #This row contains crap, get rid of it
-                ignorerows.append(line)
-                break #skip to next line
+        keep_only_numbers(line, all_cols, ignorerows)
 
     inputs = numpy.delete(inputs, ignorerows, 0)
 
@@ -76,6 +108,43 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
     #Now divide the input into test and validation parts
 
     return inputs, targets
+
+def keep_only_numbers(line, all_cols, ignorerows):
+    for col in all_cols: #check only valid columns
+        try:
+            float(col)
+        except ValueError: #This row contains crap, get rid of it
+            ignorerows.append(line)
+            break #skip to next line
+
+def replace_empty_with_avg(inputs, inputcols):
+    for col in inputcols:
+        valid_inputs = numpy.array([], dtype = 'float64')
+        for val in inputs[:, col]:
+            try:
+                valid_inputs = numpy.append(valid_inputs, float(val))
+            except ValueError:
+                pass
+        avg_val = valid_inputs.mean()
+        for i in xrange(len(inputs)):
+            try:
+                float(inputs[i, col])
+            except ValueError:
+                inputs[i, col] = avg_val
+
+def replace_empty_with_random(inputs, inputcols):
+    for col in inputcols:
+        valid_inputs = numpy.array([], dtype = 'float64')
+        for val in inputs[:, col]:
+            try:
+                valid_inputs = numpy.append(valid_inputs, float(val))
+            except ValueError:
+                pass
+        for i in xrange(len(inputs)):
+            try:
+                float(inputs[i, col])
+            except ValueError:
+                inputs[i, col] = sample(valid_inputs, 1)[0] #Sample returns a list, access first and only element
 
 def print_output(outfile, net, filename, targetcols, inputcols, ignorerows, normalize):
     '''
@@ -180,7 +249,7 @@ def get_validation_set(inputs, targets, validation_size = 0.2, binary_column = N
 
     return ((test_inputs, test_targets), (validation_inputs, validation_targets))
 
-def get_cross_validation_sets(inputs, targets, pieces, binary_column = None):
+def get_cross_validation_sets(inputs, targets, pieces, binary_column = None, return_indices = False):
     '''
     pieces is the number of validation sets that the data set should be divided into.
     '''
@@ -258,9 +327,9 @@ def get_cross_validation_sets(inputs, targets, pieces, binary_column = None):
         validation_sets[set][:, 0:len(inputs[0, :])] = inputs[vrows]
         validation_sets[set][:, len(inputs[0, :]):totalcols] = targets[vrows]
 
-        #shuffle the lists
-        numpy.random.shuffle(training_sets[set])
-        numpy.random.shuffle(validation_sets[set])
+        #don't shuffle again, we need the indices
+        #numpy.random.shuffle(training_sets[set])
+        #numpy.random.shuffle(validation_sets[set])
 
         #Make return slices
         training_input_sets.append(training_sets[set][:, 0:len(inputs[0, :])])
@@ -272,8 +341,18 @@ def get_cross_validation_sets(inputs, targets, pieces, binary_column = None):
     training = zip(training_input_sets, training_target_sets)
     validation = zip(validation_input_sets, validation_target_sets)
 
-    return zip(training, validation)
+    if pieces == 1:
+        #There will be nothing in training, and everything in validaiton. Swap them before return.
+        training, validation = validation, training
+        training_indices_sets, validation_indices_sets = validation_indices_sets, training_indices_sets
 
+    if not return_indices:
+        return zip(training, validation)
+    else:
+        # Return indices if they are of interest
+        indices = zip(training_indices_sets, validation_indices_sets)
+        data_sets = zip(training, validation)
+        return (data_sets, indices)
 
 def save_committee(com, filename = None):
     """If Filename is None, create a new as net_#hashnumber.ann and save in home dir"""

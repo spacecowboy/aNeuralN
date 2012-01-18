@@ -104,8 +104,9 @@ def mutate_biased_inplace(child, random_mean, mutation_chance = 0.1):
 def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_mean = 0.5, error_function = sum_squares.total_error, loglevel = None, * args): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Uses validation set only for plotting.
-    This version does not replace the entire population each generation. Two parents are selected at random to create a child. The two best are
-    returned to the population for breeding, the worst is destroyed. One generation is considered to be the same number of matings as population size.
+    This version does not replace the entire population each generation. Two parents are selected at random to create a child.
+    This child is inserted into the list sorted on error. The worst network is destroyed if population exceeds limit.
+    One generation is considered to be the same number of matings as population size.
     Networks to be mated are selected with the geometric distribution, probability of the top network to be chosen = 0.05
     Mutation chance dictate the probability of every single weight being mutated."""
     if loglevel is not None:
