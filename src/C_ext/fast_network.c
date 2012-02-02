@@ -222,11 +222,11 @@ static PyObject* Node_output_derivative(Node *self, PyObject *inputs)
 	}
 	else
 	{
-		if (inputs != self->cached_input) {
+		//if (inputs != self->cached_input) { // Disable caching for now
 			double output;
 			if (!_Node_output(self, inputs, &output))
 				return NULL;
-		}
+		//}
 		return Py_BuildValue("d", self->derivative(self->cached_output));
 	}
 }
@@ -235,9 +235,11 @@ static int _Node_output(Node *self, PyObject *inputs, double *val)
 {
 	int result = TRUE;
 	double inputsum;
+	/* Disable caching for now
 	if (inputs == self->cached_input) {
 		*val = self->cached_output;
-	} else if (_Node_input_sum(self, inputs, &inputsum)) {
+	} else  */
+	if (_Node_input_sum(self, inputs, &inputsum)) {
 		*val = self->function(inputsum);
 		self->cached_output = *val;
 		self->cached_input = inputs;

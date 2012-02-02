@@ -1,3 +1,8 @@
 /build
-/build
-/build
+*.pyc
+.coverage
+.project
+.pydevproject
+*.class
+*.so
+*.html
