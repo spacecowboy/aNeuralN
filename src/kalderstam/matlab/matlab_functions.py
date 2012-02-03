@@ -6,8 +6,10 @@ import logging
 
 try:
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
 except ImportError:
     plt = None #This makes matplotlib optional
+    MaxNLocator = None
 
 logger = logging.getLogger('kalderstam.neural.matlab')
 
@@ -331,6 +333,8 @@ def plot_network_weights(net, figure = None):
         
         #Plot it
         hinton(weights)
+        
+        plt.xaxis.set_major_locator(MaxNLocator(11))
         # Set ticks so we know what we are looking at
         plt.yticks(range(len(net) + 1),
                    ["O{0}".format(x) for x in reversed(xrange(len(net.output_nodes)))] +
