@@ -359,7 +359,7 @@ def plot_network_weights(net, figure = None):
         
         #Make sure stuff don't overlap
         #plt.tight_layout()
-        fig.subplots_adjust(bottom=0.15, top=0.8)
+        fig.subplots_adjust(bottom=0.04, top=0.93, left=0.0, right=1.0)
 
 def _blob(x, y, area, colour):
     """
