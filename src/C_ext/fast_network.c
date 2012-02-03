@@ -364,6 +364,7 @@ typedef struct {
 	Node node; // Inherits from Node
 } BiasNode;
 
+
 /**
 Constructor//Initializer//Destructor.
 */
@@ -485,7 +486,7 @@ BiasNodeType = {
 	0,			 			/* tp_iter */
 	0,			 			/* tp_iternext */
 	BiasNodeMethods,				/* tp_methods */
-	0,						/* tp_members */
+	NodeMembers,						/* tp_members */
 	0,			 			/* tp_getset */
 	0,			 			/* tp_base */
 	0,			 			/* tp_dict */

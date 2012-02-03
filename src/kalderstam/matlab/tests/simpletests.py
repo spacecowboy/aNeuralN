@@ -1,5 +1,5 @@
 import logging
-from ..matlab_functions import loadsyn1, loadsyn2, loadsyn3, plot2d2c, plot_network_weights, plotroc, stat
+from kalderstam.matlab.matlab_functions import loadsyn1, loadsyn2, loadsyn3, plot2d2c, plot_network_weights, plotroc, stat
 
 import unittest
 

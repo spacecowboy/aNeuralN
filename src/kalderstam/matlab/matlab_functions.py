@@ -300,7 +300,7 @@ def plot_network_weights(net, figure = None):
         max = None
         #Get a weight matrix for the network
         weights = []
-        for node in (list(net.hidden_nodes) + net.output_nodes):
+        for node in ([net.bias_node] + list(net.hidden_nodes) + net.output_nodes):
             nweights = []
             #First check input nodes
             for i in xrange(net.num_of_inputs):
@@ -313,13 +313,7 @@ def plot_network_weights(net, figure = None):
                 else:
                     nweights.append(0)
             for lnode in (list(net.hidden_nodes) + net.output_nodes):
-                if lnode == node:
-                    if max is None:
-                        max = node.bias
-                    if abs(node.bias) > abs(max):
-                        max = node.bias
-                    nweights.append(node.bias)
-                elif lnode in node.weights:
+                if lnode in node.weights:
                     if max is None:
                         max = node.weights[lnode]
                     if abs(node.weights[lnode]) > abs(max):
