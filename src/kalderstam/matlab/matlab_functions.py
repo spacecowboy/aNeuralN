@@ -337,18 +337,29 @@ def plot_network_weights(net, figure = None):
         plt.xticks(numpy.arange(1 + len(net.hidden_nodes) + len(net.output_nodes))+0.5,
                    ["Hidden {0}".format(x) for x in xrange(len(net.hidden_nodes))] +
                    ["Output {0}".format(x) for x in xrange(len(net.output_nodes))])
+                   
+        for tick in fig.get_axes()[0].yaxis.get_major_ticks():
+            #tick.label1On = False
+            tick.label2On = True
+        for tick in fig.get_axes()[0].xaxis.get_major_ticks():
+            tick.label1On = False
+            tick.label2On = True
 
         #Rotate the ticks on the X-axis                   
-        plt.setp( plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
+        plt.setp( plt.gca().get_xticklabels(), rotation=45, horizontalalignment='left')
         
         plt.ylabel("Weights")
-        plt.xlabel("Nodes")
+        plt.xlabel("Nodes\nBiggest absolute weight = " + str(max))
                    
         #This might put the graph of center, limit the axes
         plt.ylim(0, len(net) + 1)
         plt.xlim(0, len(net.hidden_nodes) + len(net.output_nodes))
         #Say what the max value is
-        plt.title("Biggest absolute weight = " + str(max))
+        #plt.title("Biggest absolute weight = " + str(max))
+        
+        #Make sure stuff don't overlap
+        #plt.tight_layout()
+        fig.subplots_adjust(bottom=0.15, top=0.8)
 
 def _blob(x, y, area, colour):
     """
