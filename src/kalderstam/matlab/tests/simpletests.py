@@ -1,5 +1,6 @@
 import logging
 from kalderstam.matlab.matlab_functions import loadsyn1, loadsyn2, loadsyn3, plot2d2c, plot_network_weights, plotroc, stat
+import matplotlib.pyplot as plt
 
 import unittest
 
@@ -26,6 +27,7 @@ class Test(unittest.TestCase):
 
         plotroc(Y, T)
         plot2d2c(net, P, T, figure = 2)
+        plt.show()
 
 
 if __name__ == "__main__":

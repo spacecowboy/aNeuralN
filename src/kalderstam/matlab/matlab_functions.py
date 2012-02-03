@@ -300,7 +300,7 @@ def plot_network_weights(net, figure = None):
         max = None
         #Get a weight matrix for the network
         weights = []
-        for node in ([net.bias_node] + list(net.hidden_nodes) + net.output_nodes):
+        for node in (list(net.hidden_nodes) + net.output_nodes):
             nweights = []
             #First check input nodes
             for i in xrange(net.num_of_inputs):
@@ -312,7 +312,7 @@ def plot_network_weights(net, figure = None):
                     nweights.append(node.weights[i])
                 else:
                     nweights.append(0)
-            for lnode in (list(net.hidden_nodes) + net.output_nodes):
+            for lnode in ([net.bias_node] + list(net.hidden_nodes) + net.output_nodes):
                 if lnode in node.weights:
                     if max is None:
                         max = node.weights[lnode]
@@ -323,9 +323,23 @@ def plot_network_weights(net, figure = None):
                     nweights.append(0)
             weights.append(nweights)
 
+        print("Weights first: {0}".format(weights))
         weights = numpy.matrix(weights).T
+        print("Length of all nodes: {0}".format(len([net.bias_node] + list(net.hidden_nodes) + net.output_nodes)))
+        print("Weights: {0}".format(weights))
+        print("Weights shape: {0}".format(weights.shape))
+        
         #Plot it
         hinton(weights)
+        # Set ticks so we know what we are looking at
+        plt.yticks(range(len(net) + 1),
+                   ["O{0}".format(x) for x in reversed(xrange(len(net.output_nodes)))] +
+                   ["H{0}".format(x) for x in reversed(xrange(len(net.hidden_nodes)))] +
+                   ["B"] +
+                   ["i{0}".format(x) for x in reversed(xrange(net.num_of_inputs))])
+        plt.xticks(range(1 + len(net.hidden_nodes) + len(net.output_nodes)),
+                   ["H{0}".format(x) for x in xrange(len(net.hidden_nodes))] +
+                   ["O{0}".format(x) for x in xrange(len(net.output_nodes))])
         #Say what the max value is
         plt.title("Biggest absolute weight = " + str(max))
 
@@ -351,7 +365,7 @@ def hinton(W, maxWeight = None):
             maxWeight = 2 ** numpy.ceil(numpy.log(numpy.max(numpy.abs(W))) / numpy.log(2))
 
         plt.fill(numpy.array([0, width, width, 0]), numpy.array([0, 0, height, height]), 'gray')
-        plt.axis('off')
+        #plt.axis('off')
         plt.axis('scaled')
         for x in xrange(width):
             for y in xrange(height):
