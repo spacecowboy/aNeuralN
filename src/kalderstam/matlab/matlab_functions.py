@@ -323,11 +323,7 @@ def plot_network_weights(net, figure = None):
                     nweights.append(0)
             weights.append(nweights)
 
-        print("Weights first: {0}".format(weights))
         weights = numpy.matrix(weights).T
-        print("Length of all nodes: {0}".format(len([net.bias_node] + list(net.hidden_nodes) + net.output_nodes)))
-        print("Weights: {0}".format(weights))
-        print("Weights shape: {0}".format(weights.shape))
         
         #Plot it
         hinton(weights)
