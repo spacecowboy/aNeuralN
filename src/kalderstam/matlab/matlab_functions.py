@@ -6,10 +6,8 @@ import logging
 
 try:
     import matplotlib.pyplot as plt
-    from matplotlib.ticker import MaxNLocator
 except ImportError:
     plt = None #This makes matplotlib optional
-    MaxNLocator = None
 
 logger = logging.getLogger('kalderstam.neural.matlab')
 
@@ -298,7 +296,7 @@ def stat(Y, T, cut = 0.5):
 
 def plot_network_weights(net, figure = None):
     if plt:
-        plt.figure(figure)
+        fig = plt.figure(figure)
         max = None
         #Get a weight matrix for the network
         weights = []
@@ -334,16 +332,25 @@ def plot_network_weights(net, figure = None):
         #Plot it
         hinton(weights)
         
-        plt.xaxis.set_major_locator(MaxNLocator(11))
         # Set ticks so we know what we are looking at
-        plt.yticks(range(len(net) + 1),
-                   ["O{0}".format(x) for x in reversed(xrange(len(net.output_nodes)))] +
-                   ["H{0}".format(x) for x in reversed(xrange(len(net.hidden_nodes)))] +
-                   ["B"] +
-                   ["i{0}".format(x) for x in reversed(xrange(net.num_of_inputs))])
-        plt.xticks(range(1 + len(net.hidden_nodes) + len(net.output_nodes)),
-                   ["H{0}".format(x) for x in xrange(len(net.hidden_nodes))] +
-                   ["O{0}".format(x) for x in xrange(len(net.output_nodes))])
+        plt.yticks(numpy.arange(len(net) + 1)+0.5,
+                   ["Output {0}".format(x) for x in reversed(xrange(len(net.output_nodes)))] +
+                   ["Hidden {0}".format(x) for x in reversed(xrange(len(net.hidden_nodes)))] +
+                   ["Bias"] +
+                   ["Input {0}".format(x) for x in reversed(xrange(net.num_of_inputs))])
+        plt.xticks(numpy.arange(1 + len(net.hidden_nodes) + len(net.output_nodes))+0.5,
+                   ["Hidden {0}".format(x) for x in xrange(len(net.hidden_nodes))] +
+                   ["Output {0}".format(x) for x in xrange(len(net.output_nodes))])
+
+        #Rotate the ticks on the X-axis                   
+        plt.setp( plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
+        
+        plt.ylabel("Weights")
+        plt.xlabel("Nodes")
+                   
+        #This might put the graph of center, limit the axes
+        plt.ylim(0, len(net) + 1)
+        plt.xlim(0, len(net.hidden_nodes) + len(net.output_nodes))
         #Say what the max value is
         plt.title("Biggest absolute weight = " + str(max))
 
