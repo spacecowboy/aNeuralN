@@ -11,6 +11,16 @@ logger = logging.getLogger('kalderstam.neural.training_functions')
 
 numpy.seterr(all = 'raise') #I want errors!
 
+def get_limited_range(mutation_range, half_point, epoch):
+    '''
+    initial mutation_range, desired half_point, current epoch
+    Returns a limited mutation range specified by the logsig function.
+    The user specifies where he wants range to assume half of the initial value.
+    If half_point = total_number_of_epochs / 2, then it will basically zero close to the end of training.
+    Less will make it decrease faster, bigger will make it decrease slower.
+    '''
+    return mutation_range / (1 + numpy.exp(epoch - half_point))
+
 def select_parents(mutation_chance, pop_size):
     '''
     Using the geometric distrubution, select two networks to mate.
@@ -101,7 +111,7 @@ def mutate_biased_inplace(child, random_mean, mutation_chance = 0.1):
                 #node.weights[keynode] += uniform(-random_range, random_range)
                 node.weights[keynode] += choice([-1, 1]) * numpy.random.exponential(random_mean)
 
-def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_mean = 0.5, error_function = sum_squares.total_error, loglevel = None, *args, **kwargs): #@UnusedVariable
+def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_mean = 0.5, mutation_half_point = 9999, error_function = sum_squares.total_error, loglevel = None, *args, **kwargs): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Uses validation set only for plotting.
     This version does not replace the entire population each generation. Two parents are selected at random to create a child.
@@ -180,7 +190,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
 
                 child = crossover_node(mother, father)
 
-                mutate_biased_inplace(child, random_mean, mutation_chance)
+                mutate_biased_inplace(child, get_limited_range(random_range, mutation_half_point, generation), mutation_chance)
 
                 insert_child(child)
 
