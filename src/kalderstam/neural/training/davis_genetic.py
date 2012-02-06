@@ -190,7 +190,7 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
 
                 child = crossover_node(mother, father)
 
-                mutate_biased_inplace(child, get_limited_range(random_range, mutation_half_point, generation), mutation_chance)
+                mutate_biased_inplace(child, get_limited_range(random_mean, mutation_half_point, generation), mutation_chance)
 
                 insert_child(child)
 
