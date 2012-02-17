@@ -110,6 +110,9 @@ def mutate_biased_inplace(child, random_mean, mutation_chance = 0.1):
             if (random() < mutation_chance): # mutation chance
                 #node.weights[keynode] += uniform(-random_range, random_range)
                 node.weights[keynode] += choice([-1, 1]) * numpy.random.exponential(random_mean)
+                #if (random() < 0.25): # even less chance of this happening
+                    # Reverse the sign
+                #    node.weights[keynode] *= -1
 
 def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_mean = 0.5, mutation_half_point = 9999, error_function = sum_squares.total_error, loglevel = None, *args, **kwargs): #@UnusedVariable
     """Creates more networks and evolves the best it can.

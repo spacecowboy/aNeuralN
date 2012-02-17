@@ -4,6 +4,7 @@ import re
 from os import path
 from random import random, sample
 from kalderstam.neural.network import connect_node
+from kalderstam.util.normalizer import normalizeArray
 
 def parse_header(headers):
     header_names = {}
@@ -69,7 +70,6 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
         #print("Shape: " + str(inputs.shape))
     except (TypeError, IndexError):
         #Slicing failed, inputs is not a numpy array. Alert user
-        print("Shape: " + str(inputs.shape))
         raise TypeError('Slicing of inputs failed, it is probably not a numpy array: ' + str(inputs))
 
     if not inputcols:
@@ -172,23 +172,6 @@ def print_output(outfile, net, filename, targetcols, inputcols, ignorerows, norm
 
     with open(outfile, 'w') as f:
         f.writelines(lines)
-
-def normalizeArray(array):
-    '''Returns a new array, will not modify existing array.'''
-    inputs = numpy.copy(array)
-    #First we must determine which columns have real values in them
-    #Basically, we if it isn't a binary value by comparing to 0 and 1
-    for col in xrange(len(inputs[0])):
-        real = False
-        for value in inputs[:, col]:
-            if value != 0 and value != 1:
-                real = True
-                break #No point in continuing now that we know they're real
-        if real:
-            #Subtract the mean and divide by the standard deviation
-            inputs[:, col] = (inputs[:, col] - numpy.mean(inputs[:, col])) / numpy.std(inputs[:, col])
-
-    return inputs
 
 def get_validation_set(inputs, targets, validation_size = 0.2, binary_column = None):
     '''
@@ -378,8 +361,8 @@ def save_committee(com, filename = None):
                 f.write("[" + node_type + str(node_index) + "]\n")
                 """Write its activation activation_function"""
                 f.write("activation_function=" + str(node.activation_function) + "\n")
-                """Write its bias"""
-                f.write("bias=" + str(node.bias) + "\n")
+                #"""Write its bias"""
+                #f.write("bias=" + str(node.bias) + "\n")
                 """Now write its connections and weights"""
                 for back_node, back_weight in node.weights.iteritems():
                     """Assume its a hidden node, but check if its actually an output node"""
@@ -389,6 +372,9 @@ def save_committee(com, filename = None):
                         if back_node in net.output_nodes:
                             type = "output_"
                             type_index = net.output_nodes.index(back_node)
+                        elif back_node is net.bias_node:
+                            type = "bias"
+                            type_index = ""
                         else:
                             type_index = net.hidden_nodes.index(back_node)
                     except ValueError:
@@ -426,6 +412,7 @@ def load_committee(filename):
                     current_net = network.network()
                     com.nets.append(current_net)
                     nodes[current_net] = {}
+                    nodes[current_net]['bias'] = current_net.bias_node
                     node_weights[current_net] = {}
                     continue
 
@@ -442,20 +429,24 @@ def load_committee(filename):
                     continue
 
                 """check bias"""
-                m = re.search('bias\s*=\s*([-\d\.]*)', line)
+                m = re.search('bias\s*:\s*([-\d\.]*)', line)
                 if m:
+                    if (current_node not in nodes[current_net]):
+                        nodes[current_net][current_node] = network.node(active = function)
+                        node_weights[current_net][current_node] = {}
                     try:
                         value = float(m.group(1))
+                        node_weights[current_net][current_node]['bias'] = value
                     except:
                         value = None #Random value
-                    """ create node"""
-                    nodes[current_net][current_node] = network.node(active = function, bias = value)
-                    node_weights[current_net][current_node] = {}
                     continue
 
                 """check weights"""
                 m = re.search('(\w+_\d+):([-\d\.]*)', line)
                 if m:
+                    if (current_node not in nodes[current_net]):
+                        nodes[current_net][current_node] = network.node(active = function)
+                        node_weights[current_net][current_node] = {}
                     back_node = m.group(1)
                     try:
                         weight = float(m.group(2))
@@ -473,6 +464,9 @@ def load_committee(filename):
             """Not for inputs"""
             if node_name.startswith("input"):
                 net.num_of_inputs += 1
+            elif node_name.startswith("bias"):
+                #Already exsists in network
+                pass
             else:
                 for name, weight in node_weights[net][node_name].items():
                     connect_node(node, nodes[net][name], weight)
@@ -505,8 +499,6 @@ def save_network(net, filename = None):
             f.write("[" + node_type + str(node_index) + "]\n")
             """Write its activation activation_function"""
             f.write("activation_function=" + str(node.activation_function) + "\n")
-            """Write its bias"""
-            f.write("bias=" + str(node.bias) + "\n")
             """Now write its connections and weights"""
             for back_node, back_weight in node.weights.iteritems():
                 """Assume its a hidden node, but check if its actually an output node"""
@@ -516,6 +508,9 @@ def save_network(net, filename = None):
                     if back_node in net.output_nodes:
                         type = "output_"
                         type_index = net.output_nodes.index(back_node)
+                    elif back_node is net.bias_node:
+                        type = "bias"
+                        type_index = ""
                     else:
                         type_index = net.hidden_nodes.index(back_node)
                 except ValueError:
@@ -531,6 +526,7 @@ def load_network(filename):
     """Create a network"""
     net = network.network()
     nodes = {}
+    nodes['bias'] = net.bias_node
     node_weights = {}
 
     """Read file"""
@@ -555,22 +551,30 @@ def load_network(filename):
                     function = m.group(1) #Change this when C-node is ready, just remove get_function part and save the string directly
                     continue
 
+                print(line)
                 """check bias"""
-                m = re.search('bias\s*=\s*([-\d\.]*)', line)
+                m = re.search('bias:([-\d\.]*)', line)
                 if m:
+                    if (current_node not in nodes):
+                        nodes[current_node] = network.node(active = function)
+                        node_weights[current_node] = {}
+                    print("Found bias")
                     try:
                         value = float(m.group(1))
                         """ create node"""
-                        nodes[current_node] = network.node(active = function, bias = value)
+                        node_weights[current_node]['bias'] = value
                     except:
                         """ create node"""
-                        nodes[current_node] = network.node(active = function)
-                    node_weights[current_node] = {}
+                        pass
                     continue
 
                 """check weights"""
                 m = re.search('(\w+_\d+):([-\d\.]*)', line)
                 if m:
+                    if (current_node not in nodes):
+                        nodes[current_node] = network.node(active = function)
+                        node_weights[current_node] = {}
+                    print("Found node: " + m.group(1))
                     back_node = m.group(1)
                     try:
                         weight = float(m.group(2))
@@ -587,13 +591,16 @@ def load_network(filename):
         """Not for inputs"""
         if node_name.startswith("input"):
             net.num_of_inputs += 1
+        elif node_name.startswith("bias"):
+            #Doesn't connect to anything
+            pass
         else:
             for name, weight in node_weights[node_name].items():
                 connect_node(node, nodes[name], weight)
             """ add to network"""
             if node_name.startswith("hidden"):
                 net.hidden_nodes.append(nodes[node_name])
-            else:
+            elif node_name.startswith("output"):
                 net.output_nodes.append(nodes[node_name])
 
     """Done! return net!"""

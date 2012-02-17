@@ -5,8 +5,43 @@ Created on Apr 5, 2011
 '''
 import unittest
 from kalderstam.util.filehandling import get_cross_validation_sets
+from kalderstam.util.normalizer import normalizeArrayLike
+import numpy as np
 
 class Test(unittest.TestCase):
+    
+    def testNormalizeLike(self):
+        a = np.empty((10, 3))
+        a[:, 0] = np.random.random(10)
+        a[:, 1] = np.random.random(10)
+        a[:, 2] = np.random.random(10)
+        
+        b = np.empty((10, 3))
+        b[:, 0] = np.random.random(10)
+        b[:, 1] = np.random.random(10)
+        b[:, 2] = np.random.random(10)
+        b = b * 2;
+        
+        c = normalizeArrayLike(b, a)
+        
+        #Should be normalized like a
+        mean = []
+        std = []
+        mean.append(np.mean(a[:, 0]))
+        mean.append(np.mean(a[:, 1]))
+        mean.append(np.mean(a[:, 2]))
+        std.append(np.std(a[:, 0]))
+        std.append(np.std(a[:, 1]))
+        std.append(np.std(a[:, 2]))
+        
+        # Check all values
+        for col in xrange(b.shape[1]):
+            for bval, cval in zip(b[:, col].flat, c[:, col].flat):
+                print cval, (bval - mean[col]) / std[col]
+                print cval, bval
+                assert(cval == (bval - mean[col]) / std[col])
+        print("TestNormalizeLike success")
+        
 
     def testNumpyParseDataInputs(self):
         from kalderstam.util.filehandling import parse_data
@@ -54,6 +89,7 @@ class Test(unittest.TestCase):
         results2 = net.update([1, 2])
         print(results2)
 
+        print(abs(results1[0] - results2[0]))
         assert(abs(results1[0] - results2[0]) < 0.0001) #float doesn't handle absolutes so well
         print("Good, now testing committee...")
 
