@@ -114,7 +114,7 @@ def mutate_biased_inplace(child, random_mean, mutation_chance = 0.1):
                     # Reverse the sign
                 #    node.weights[keynode] *= -1
 
-def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50, mutation_chance = 0.05, random_mean = 0.5, mutation_half_point = 9999, error_function = sum_squares.total_error, loglevel = None, *args, **kwargs): #@UnusedVariable
+def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50.0, mutation_chance = 0.05, random_mean = 0.5, mutation_half_point = 499, error_function = sum_squares.total_error, loglevel = None, *args, **kwargs): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Uses validation set only for plotting.
     This version does not replace the entire population each generation. Two parents are selected at random to create a child.

@@ -24,7 +24,10 @@ def read_data_file(filename, separator = None):
             inputs = []
             for line in f:
                 inputs.append([col.strip() for col in line.split(separator)])
-
+    #Make sure it has a consistent structure
+    col_len = len(inputs[0])
+    for linenum, line in enumerate(inputs):
+        assert(len(line) == col_len)
     return inputs
 
 def parse_file(filename, targetcols = None, inputcols = None, ignorecols = [], ignorerows = [], normalize = True, separator = None, use_header = False, fill_average = True):
@@ -67,9 +70,9 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
 
     try:
         inputs[:, 0]
-        #print("Shape: " + str(inputs.shape))
     except (TypeError, IndexError):
         #Slicing failed, inputs is not a numpy array. Alert user
+        
         raise TypeError('Slicing of inputs failed, it is probably not a numpy array: ' + str(inputs))
 
     if not inputcols:
