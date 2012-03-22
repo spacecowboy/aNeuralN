@@ -6,7 +6,7 @@ import numpy
 numpy_include = numpy.get_include()
 
 network_ext = Extension('fast_network',
-          sources = ['src/C_ext/fast_network.c', 'src/C_ext/activation_functions.c'],
+          sources = ['C_ext/fast_network.c', 'C_ext/activation_functions.c'],
           include_dirs = [numpy_include],
           extra_compile_args = ['-std=c99'])
 
@@ -22,7 +22,7 @@ setup(name = 'aNeuralN',
                   'kalderstam.neural.gui', 'kalderstam.neural.training',
                   'kalderstam.neural.training.tests', 'kalderstam.util',
                   'kalderstam.util.tests'],
-      package_dir = {'': 'src'},
+      package_dir = {'': '.'},
       package_data = {'kalderstam.neural.gui': ['*.glade']},
       ext_package = 'kalderstam.neural',
       ext_modules = [network_ext],

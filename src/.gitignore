@@ -1,5 +1,0 @@
-# Can ignore specific files
-.coverage
-*error.html
-*.so
-*.prof
