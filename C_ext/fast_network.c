@@ -315,7 +315,7 @@ static PyTypeObject
 NodeType = {
 	PyObject_HEAD_INIT(NULL)
 	0,						/* ob_size */
-	"kalderstam.neural.fast_network.Node",		/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
+	"ann.fast_network.Node",		/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
 	sizeof(Node),					/* tp_basicsize */
 	0,						/* tp_itemsize */
 	(destructor)Node_dealloc,			/* tp_dealloc */
@@ -459,7 +459,7 @@ static PyTypeObject
 BiasNodeType = {
 	PyObject_HEAD_INIT(NULL)
 	0,						/* ob_size */
-	"kalderstam.neural.fast_network.BiasNode",	/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
+	"ann.fast_network.BiasNode",	/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
 	sizeof(BiasNode),				/* tp_basicsize */
 	0,						/* tp_itemsize */
 	0,						/* tp_dealloc */

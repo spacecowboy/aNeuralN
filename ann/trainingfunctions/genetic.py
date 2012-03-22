@@ -1,10 +1,10 @@
 import logging
 import numpy
-from random import sample, random, uniform, choice
-from kalderstam.neural.network import build_feedforward, node, bias, network, \
+from random import sample, random, choice
+from ann.network import build_feedforward, node, network, \
     connect_nodes
-from kalderstam.neural.error_functions import sum_squares
-import kalderstam.util.graphlogger as glogger
+from ann.errorfunctions import sumsquare_total
+#import kalderstam.util.graphlogger as glogger
 
 logger = logging.getLogger('kalderstam.neural.training_functions')
 
@@ -15,13 +15,13 @@ def mutate_biased_inplace(child, random_mean = 0.2, mutation_chance = 0.25):
     Random mean decides the mean of the exponential distribution where weight
     adjustments are chosen from.
     '''
-    for node in child.get_all_nodes():
-        for keynode, weight in node.weights.iteritems():
+    for _node in child.get_all_nodes():
+        for keynode, weight in _node.weights.iteritems():
             if (random() < mutation_chance): # mutation chance
                 #node.weights[keynode] += uniform(-random_range, random_range)
-                node.weights[keynode] += choice([-1, 1]) * numpy.random.exponential(random_mean)
+                _node.weights[keynode] += choice([-1, 1]) * numpy.random.exponential(random_mean)
 
-def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 1, population_size = 100, mutation_chance = 0.25, random_range = 1.0, random_mean = 0.2, top_number = 25, cross_over_chance = 0.5, error_function = sum_squares.total_error, loglevel = None, *args, **kwargs): #@UnusedVariable
+def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 1, population_size = 100, mutation_chance = 0.25, random_range = 1.0, random_mean = 0.2, top_number = 25, cross_over_chance = 0.5, error_function = sumsquare_total, loglevel = None, *args, **kwargs): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Does NOT use any validation set..."""
     if top_number > population_size:
@@ -31,7 +31,6 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
         logging.basicConfig(level = loglevel)
     #Create a population of 50 networks
     best = None
-    best_gen = 0
     best_error = None
     best_val_error = None
     population = [build_feedforward(net.num_of_inputs, len(net.hidden_nodes), len(net.output_nodes)) for each in xrange(int(population_size))]
@@ -48,7 +47,6 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                 #compare with best
                 if not best or error[member] < best_error:
                     best = member
-                    best_gen = generation
                     best_error = error[member]
                     if validation_inputs is not None and len(validation_inputs) > 0:
                         val_sim_results = best.sim(validation_inputs)
@@ -67,8 +65,8 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
                         break
 
             logger.info("Generation {0}, best trn: {1} val: {2}, top trn: {3}".format(generation, best_error, best_val_error, error[top_networks[0]]))
-            glogger.debugPlot('Test Error\nMutation rate: ' + str(mutation_chance), best_error, style = 'r-', subset='best')
-            glogger.debugPlot('Test Error\nMutation rate: ' + str(mutation_chance), error[top_networks[0]], style = 'b-', subset='top')
+            #glogger.debugPlot('Test Error\nMutation rate: ' + str(mutation_chance), best_error, style = 'r-', subset='best')
+            #glogger.debugPlot('Test Error\nMutation rate: ' + str(mutation_chance), error[top_networks[0]], style = 'b-', subset='top')
 
             #Select the best 5 networks, mate them randomly and create 50 new networks
             population = []

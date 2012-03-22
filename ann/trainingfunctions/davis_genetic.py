@@ -1,13 +1,12 @@
 import logging
 import numpy
-from random import sample, random, uniform, choice
-from kalderstam.neural.network import build_feedforward, node, network, \
-    connect_nodes
-from kalderstam.neural.error_functions import sum_squares
-import kalderstam.util.graphlogger as glogger
+from random import sample, random, choice
+from ann.network import node, network
+from ann.errorfunctions import sumsquare_total
+#import kalderstam.util.graphlogger as glogger
 
 
-logger = logging.getLogger('kalderstam.neural.training_functions')
+logger = logging.getLogger('ann.trainingfunctions')
 
 numpy.seterr(all = 'raise') #I want errors!
 
@@ -65,10 +64,10 @@ def crossover_node(mother, father):
         tr[father_node] = child_node
 
         #choose one node to pass on
-        choice = sample([mother_node, father_node], 1)[0]
+        _choice = sample([mother_node, father_node], 1)[0]
 
         #map the weights and bias of that node to the child node
-        for keynode, weight in choice.weights.items():
+        for keynode, weight in _choice.weights.items():
             child_node.weights[tr[keynode]] = weight
 
         child.hidden_nodes.append(child_node)
@@ -79,10 +78,10 @@ def crossover_node(mother, father):
         tr[father_node] = child_node
 
         #choose one node to pass on
-        choice = sample([mother_node, father_node], 1)[0]
+        _choice = sample([mother_node, father_node], 1)[0]
 
         #map the weights and bias of that node to the child node
-        for keynode, weight in choice.weights.items():
+        for keynode, weight in _choice.weights.items():
             child_node.weights[tr[keynode]] = weight
 
         child.output_nodes.append(child_node)
@@ -114,7 +113,7 @@ def mutate_biased_inplace(child, random_mean, mutation_chance = 0.1):
                     # Reverse the sign
                 #    node.weights[keynode] *= -1
 
-def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50.0, mutation_chance = 0.05, random_mean = 0.5, mutation_half_point = 499, error_function = sum_squares.total_error, loglevel = None, *args, **kwargs): #@UnusedVariable
+def train_evolutionary(net, (input_array, output_array), (validation_inputs, validation_targets), epochs = 300, population_size = 50.0, mutation_chance = 0.05, random_mean = 0.5, mutation_half_point = 499, error_function = sumsquare_total, loglevel = None, *args, **kwargs): #@UnusedVariable
     """Creates more networks and evolves the best it can.
     Uses validation set only for plotting.
     This version does not replace the entire population each generation. Two parents are selected at random to create a child.
@@ -237,8 +236,8 @@ def train_evolutionary(net, (input_array, output_array), (validation_inputs, val
             else:
                 verror = 0
             logger.info("Generation " + str(generation) + ", best: " + str(error[top_networks[0]]) + " validation: " + str(verror))
-            glogger.debugPlot('Test Error\nTraining Green, Validation red\nSize: ' + str(len(top_networks[0].hidden_nodes)), error[top_networks[0]], style = 'g-', subset = 'training')
-            glogger.debugPlot('Test Error\nTraining Green, Validation red\nSize: ' + str(len(top_networks[0].hidden_nodes)), verror, style = 'r-', subset = 'validation')
+            #glogger.debugPlot('Test Error\nTraining Green, Validation red\nSize: ' + str(len(top_networks[0].hidden_nodes)), error[top_networks[0]], style = 'g-', subset = 'training')
+            #glogger.debugPlot('Test Error\nTraining Green, Validation red\nSize: ' + str(len(top_networks[0].hidden_nodes)), verror, style = 'r-', subset = 'validation')
         except KeyboardInterrupt:
             logger.info("Interrupt received, returning best net so far...")
             break

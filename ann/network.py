@@ -2,8 +2,7 @@
 from random import uniform
 import numpy
 import logging
-from kalderstam.util.decorators import benchmark
-from kalderstam.neural.fast_network import Node as node, BiasNode as bias
+from ann.fast_network import Node as node, BiasNode as bias
 
 logger = logging.getLogger('kalderstam.neural.network')
 

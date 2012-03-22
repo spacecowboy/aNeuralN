@@ -4,8 +4,12 @@ Created on Apr 5, 2011
 @author: jonask
 '''
 import unittest
-from kalderstam.util.filehandling import get_cross_validation_sets
-from kalderstam.util.normalizer import normalizeArrayLike
+from ann.network import build_feedforward, build_feedforward_committee
+from os import path
+from ann.filehandling import (get_cross_validation_sets, 
+                                          normalizeArrayLike, parse_data, 
+                                          save_network, load_network, save_committee, 
+                                          load_committee, parse_file, get_validation_set)
 import numpy as np
 
 class Test(unittest.TestCase):
@@ -44,7 +48,6 @@ class Test(unittest.TestCase):
         
 
     def testNumpyParseDataInputs(self):
-        from kalderstam.util.filehandling import parse_data
 
         failed = False
         try:
@@ -54,27 +57,24 @@ class Test(unittest.TestCase):
             failed = True
         assert(failed)
 
-    def testNumpyHelp(self):
-        from kalderstam.util.numpyhelp import indexOf
-        import numpy as np
-        outputs = np.random.random((100))
-        idx = (56)
-        val = indexOf(outputs, outputs[idx])
-        assert(val == idx)
-        outputs = np.random.random((100, 1))
-        idx = (56, 0)
-        val = indexOf(outputs, outputs[idx])
-        assert(val == idx)
-        outputs = np.random.random((10, 5, 5))
-        idx = (7, 3, 2)
-        val = indexOf(outputs, outputs[idx])
-        assert(val == idx)
+#    def testNumpyHelp(self):
+#        from kalderstam.util.numpyhelp import indexOf
+#        import numpy as np
+#        outputs = np.random.random((100))
+#        idx = (56)
+#        val = indexOf(outputs, outputs[idx])
+#        assert(val == idx)
+#        outputs = np.random.random((100, 1))
+#        idx = (56, 0)
+#        val = indexOf(outputs, outputs[idx])
+#        assert(val == idx)
+#        outputs = np.random.random((10, 5, 5))
+#        idx = (7, 3, 2)
+#        val = indexOf(outputs, outputs[idx])
+#        assert(val == idx)
 
     def testFilehandling(self):
         print("Testing network saving/loading")
-        from kalderstam.neural.network import build_feedforward, build_feedforward_committee
-        from os import path
-        from kalderstam.util.filehandling import (save_network, load_network, save_committee, load_committee, parse_file, get_validation_set)
         net = build_feedforward()
 
         results1 = net.update([1, 2])

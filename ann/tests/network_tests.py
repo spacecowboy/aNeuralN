@@ -5,10 +5,10 @@ Created on Apr 12, 2011
 '''
 import unittest
 #from ..network import build_feedforward
-from kalderstam.neural.network import build_feedforward, connect_node, network
+from ann.network import build_feedforward, connect_node, network, node as Node
 #from ..network import build_feedforward_committee
-from kalderstam.neural.network import build_feedforward_committee
-from kalderstam.neural.fast_network import Node
+from ann.network import build_feedforward_committee
+#from kalderstam.neural.fast_network import Node
 
 
 class Test(unittest.TestCase):
