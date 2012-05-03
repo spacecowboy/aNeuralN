@@ -1,8 +1,0 @@
-[output_0]
-activation_function=linear
-bias=7
-input_0:-0.9
-input_1:-0.8
-input_2:-0.95
-input_3:-0.92
-

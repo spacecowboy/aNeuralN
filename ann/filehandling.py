@@ -12,6 +12,21 @@ def parse_header(headers):
         idx += 1
     return header_names
 
+def parse_headers_in_file(columns, filename):
+    '''Returns a dictionary where the header names
+    map to their indices. Assumes a "," separator and
+    that headers are on the first line.'''
+    with open(filename, 'r') as F:
+        headers = [col.strip() for col in F.readline().split(",")]
+    column_map = {}
+    i = 0
+    for header in headers:
+        if header in columns:
+            column_map[header] = i
+            i += 1
+
+    return column_map
+
 def read_data_file(filename, separator = None):
     """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
     with open(filename, 'r') as f:
@@ -36,7 +51,7 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
     Input columns follows the same pattern, but are not necessary if the inputs are all that's left when target columns are subtracted.
     Ignorecols can be used instead if it's easier to specify which columns to ignore instead of which are inputs.
     Ignorerows specify which, if any, rows should be skipped.
-    
+
     if useHeader is True, the first line is taken to be the header containing column names. This will be parsed and inputcols and targetcols must now specify the columns with names instead.
     The first line (the header) is subsequently ignored from the dataset so this doesn't have to be specified seperately."""
 
@@ -53,7 +68,7 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
         for cols in (targetcols, inputcols):
             for name in cols:
                 if name not in col_names:
-                    raise ValueError(str(name) + ' is not a column name.')
+                    raise ValueError(str(name) + ' is not a column name ({})'.format(col_names))
 
         #Now use a translated array from names to numbers. Carry on as before
         named_targetcols, named_inputcols = targetcols, inputcols
@@ -70,7 +85,7 @@ def parse_data(inputs, targetcols = None, inputcols = None, ignorecols = [], ign
         inputs[:, 0]
     except (TypeError, IndexError):
         #Slicing failed, inputs is not a numpy array. Alert user
-        
+
         raise TypeError('Slicing of inputs failed, it is probably not a numpy array: ' + str(inputs))
 
     if not inputcols:
@@ -146,7 +161,7 @@ def replace_empty_with_random(inputs, inputcols):
                 float(inputs[i, col])
             except ValueError:
                 inputs[i, col] = sample(valid_inputs, 1)[0] #Sample returns a list, access first and only element
-                
+
 def normalizeArray(array):
     '''Returns a new array, will not modify existing array.
     Normalization is simply subtracting the mean and dividing by the standard deviation (for non-binary arrays).'''
@@ -168,7 +183,7 @@ def normalizeArray(array):
 def normalizeArrayLike(test_array, norm_array):
     ''' Takes two arrays, the first is the test set you wish to have normalized as the second array is normalized.
     Normalization is simply subtracting the mean and dividing by the standard deviation (for non-binary arrays).
-    
+
     So what this method does is for every column in array1, subtract by the mean of array2 and divide by the STD of
     array2. Mean that both arrays have been subjected to the same transformation.'''
     if test_array.shape[1] != norm_array.shape[1] or len(test_array.shape) != 2 or len(norm_array.shape) != 2:
