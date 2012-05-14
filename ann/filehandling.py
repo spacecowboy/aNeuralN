@@ -12,7 +12,7 @@ def parse_header(headers):
         idx += 1
     return header_names
 
-def parse_headers_in_file(columns, filename):
+def parse_headers_in_file(filename, columns=None):
     '''Returns a dictionary where the header names
     map to their indices. Assumes a "," separator and
     that headers are on the first line.'''
@@ -20,6 +20,8 @@ def parse_headers_in_file(columns, filename):
         headers = [col.strip() for col in F.readline().split(",")]
     column_map = {}
     i = 0
+    # If no columns are specified, return map of all
+    columns = headers if columns is None else columns
     for header in headers:
         if header in columns:
             column_map[header] = i
