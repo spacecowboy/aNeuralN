@@ -12,23 +12,6 @@ def parse_header(headers):
         idx += 1
     return header_names
 
-def parse_headers_in_file(filename, columns=None):
-    '''Returns a dictionary where the header names
-    map to their indices. Assumes a "," separator and
-    that headers are on the first line.'''
-    with open(filename, 'r') as F:
-        headers = [col.strip() for col in F.readline().split(",")]
-    column_map = {}
-    i = 0
-    # If no columns are specified, return map of all
-    columns = headers if columns is None else columns
-    for header in headers:
-        if header in columns:
-            column_map[header] = i
-            i += 1
-
-    return column_map
-
 def read_data_file(filename, separator = None):
     """Columns are data dimensions, rows are sample data. Whitespace separates the columns. Returns a python list [[]]."""
     with open(filename, 'r') as f:
