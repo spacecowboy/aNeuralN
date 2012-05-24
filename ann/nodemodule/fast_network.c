@@ -87,9 +87,9 @@ Node_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			PyErr_Format(PyExc_ValueError, "Arguments should be (all optional): string active, double random_range, dict weights");
 			return NULL;
 		}
-		
+
 		// Weights
-		if (weights == NULL) 
+		if (weights == NULL)
 		{
 			self->weights = PyDict_New();
 		}
@@ -298,7 +298,7 @@ static PyObject* Node_reduce(Node* self)
 Specify the accessible methods in a list
 */
 
-static PyMethodDef NodeMethods[] = 
+static PyMethodDef NodeMethods[] =
 {
 	{"output_derivative", (PyCFunction) Node_output_derivative, METH_O, "The derivative of the activation function, given the inputs"},
 	{"output", (PyCFunction) Node_output, METH_O, "The result of the activation function, given the inputs."},
@@ -315,7 +315,7 @@ static PyTypeObject
 NodeType = {
 	PyObject_HEAD_INIT(NULL)
 	0,						/* ob_size */
-	"ann.fast_network.Node",		/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
+	"ann.nodemodule.Node",		/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
 	sizeof(Node),					/* tp_basicsize */
 	0,						/* tp_itemsize */
 	(destructor)Node_dealloc,			/* tp_dealloc */
@@ -378,10 +378,10 @@ BiasNode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		// Default values
 		self->node.random_range = 1;
 		self->node.cached_output = 0;
-		
+
 		// Weights
 		self->node.weights = PyDict_New();
-		
+
 		self->node.activation_function = (PyStringObject*) PyString_FromString("linear");
 		self->node.function = linear;
 		self->node.derivative = linear_derivative;
@@ -442,7 +442,7 @@ static PyObject* BiasNode_reduce(BiasNode* self)
 Specify the accessible methods in a list
 */
 
-static PyMethodDef BiasNodeMethods[] = 
+static PyMethodDef BiasNodeMethods[] =
 {
 	{"output_derivative", (PyCFunction) BiasNode_output_derivative, METH_O, "The derivative of a bias node is always 0"},
 	{"output", (PyCFunction) BiasNode_output, METH_O, "The output of a bias node is always 1"},
@@ -459,7 +459,7 @@ static PyTypeObject
 BiasNodeType = {
 	PyObject_HEAD_INIT(NULL)
 	0,						/* ob_size */
-	"ann.fast_network.BiasNode",	/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
+	"ann.nodemodule.BiasNode",	/* tp_name */ // VITAL THAT THIS IS CORRECT PACKAGE NAME FOR PICKLING!
 	sizeof(BiasNode),				/* tp_basicsize */
 	0,						/* tp_itemsize */
 	0,						/* tp_dealloc */

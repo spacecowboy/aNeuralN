@@ -39,7 +39,7 @@ def loadsyn3(n = 100):
     P = P.swapaxes(0, 1)
 
     return (P, T)
-    
+
 def stat(Y, T, cut = 0.5):
     """ Calculates the results for a single output classification
      problem. Y is the network output and T is the target output.
@@ -86,7 +86,7 @@ class Test(unittest.TestCase):
         test, validation = get_validation_set(P, T)
         net1 = build_feedforward(2, 6, 1)
 
-        epochs = 10
+        epochs = 100
 
         P, T = test
         Y = net1.sim(P)

@@ -2,7 +2,7 @@
 from random import uniform
 import numpy
 import logging
-from ann.fast_network import Node as node, BiasNode as bias
+from ann.nodemodule import Node as node, BiasNode as bias
 
 logger = logging.getLogger('kalderstam.neural.network')
 
