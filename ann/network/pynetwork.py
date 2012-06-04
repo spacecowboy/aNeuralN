@@ -6,7 +6,10 @@ from ann.nodemodule import Node as node, BiasNode as bias
 
 logger = logging.getLogger('kalderstam.neural.network')
 
-def build_feedforward_committee(size = 8, input_number = 2, hidden_number = 2, output_number = 1, hidden_function = "tanh", output_function = "logsig"):
+
+def build_feedforward_committee(size = 8, input_number = 2, hidden_number = 2,
+                                output_number = 1, hidden_function = "tanh",
+                                output_function = "logsig"):
     net_list = [build_feedforward(input_number, hidden_number, output_number, hidden_function, output_function) for n in xrange(size)]
     return committee(net_list)
 
