@@ -120,7 +120,7 @@ def keep_only_numbers(line, all_cols, ignorerows):
 
 def replace_empty_with_avg(inputs, inputcols):
     for col in inputcols:
-        binary = True
+        binary = False
         valid_inputs = np.array([], dtype = 'float64')
         for val in inputs[:, col]:
             try:
