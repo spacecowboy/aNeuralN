@@ -3,6 +3,7 @@ from random import uniform
 import numpy
 import logging
 from ann.nodemodule import Node as node, BiasNode as bias
+from ann.trainingfunctions.gradientdescent import traingd
 
 logger = logging.getLogger('kalderstam.neural.network')
 
@@ -100,12 +101,15 @@ class committee:
         return result #Returns an array of average values for each output node
 
 class network:
+    '''Network that is trained by gradient descent
+    '''
 
     def __init__(self):
         self.num_of_inputs = 0
         self.hidden_nodes = []
         self.output_nodes = []
         self.bias_node = bias()
+        self.train_func = traingd
 
     def get_all_nodes(self):
         """Returns all nodes."""
@@ -130,6 +134,9 @@ class network:
     def __len__(self):
         """The length of the network is defined as: input nodes + hidden nodes + output nodes."""
         return self.num_of_inputs + len(self.hidden_nodes) + len(self.output_nodes)
+    
+    def learn(self, trainingdata, *args, **kwargs):
+        self.train_func(self, trainingdata, *args, **kwargs)
 
     def sim(self, input_array):
         return numpy.array([self.update(input) for input in input_array])

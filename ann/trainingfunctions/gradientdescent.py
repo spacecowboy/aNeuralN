@@ -7,7 +7,7 @@ import numpy as np
 logger = logging.getLogger('kalderstam.neural.training.gradientdescent')
 np.seterr(all = 'raise') #I want errors!
 
-def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_targets), epochs = 300, learning_rate = 0.1, block_size = 1, error_function=sumsquare_total, errorderiv=sumsquare_derivative, *args, **kwargs):
+def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_targets) = (None, None), epochs = 300, learning_rate = 0.1, block_size = 1, error_function=sumsquare_total, errorderiv=sumsquare_derivative, *args, **kwargs):
     """Train using Gradient Descent.
     The pre_loop function calculcates possible values that are necessary for the error function later on (for performance reasons probably).
     It should return a dict which will be passed as keyword arguments to the other functions.
@@ -18,6 +18,7 @@ def traingd(net, (test_inputs, test_targets), (validation_inputs, validation_tar
         block_size = len(test_inputs)
 
     pre_error, error = None, None
+    weight_corrections = {}
 
     for epoch in xrange(0, int(epochs)):
         try: #Want to catch keyboard interrupt

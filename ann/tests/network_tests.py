@@ -154,6 +154,27 @@ class Test(unittest.TestCase):
         #So net output should be 2*3 + 1 = 7
         assert(one == 7.0)
 
+    def test6NetworkGDTrain(self):
+        import numpy as np
+        #Train on XOR
+        indata = np.array([[0, 0],
+                  [0, 1],
+                  [1, 0],
+                  [1, 1]])
+        outdata = np.array([[0],
+                   [1],
+                   [1],
+                   [0]])
+        
+        net = build_feedforward(2, 4, 1)
+        
+        net.learn((indata, outdata), epochs=500)
+        
+        print('network training xor results:')
+        for result, target in zip(net.sim(indata), outdata):
+            print(result[0], target[0])
+            assert(round(result[0]) == target[0])
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testMultiplication']
