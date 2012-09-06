@@ -101,5 +101,5 @@ def train_net((net, train_func, T, V, train_args, train_kwargs)):
     
 # This is a trick. It is very intentional and they must be last in this file
 # It IS supposed to run on imports
-
-__p = Pool(min(cpu_count() - 1, 3))
+# Will return at most 3 processes but at least 1
+__p = Pool(min(max(1, cpu_count() - 1), 3))
