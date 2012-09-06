@@ -48,7 +48,7 @@ class Node(object):
 
 class BiasNode(Node):
     def __init__(self):
-        super(Node, self).__init__()
+        super(BiasNode, self).__init__()
 
     def output(self, inputs):
         return 1
