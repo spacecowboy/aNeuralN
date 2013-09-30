@@ -168,7 +168,7 @@ class Test(unittest.TestCase):
         
         net = build_feedforward(2, 4, 1)
         
-        net.learn((indata, outdata), epochs=500)
+        net.learn(indata, outdata, epochs=500)
         
         print('network training xor results:')
         for result, target in zip(net.sim(indata), outdata):

@@ -3,7 +3,7 @@ from random import uniform
 import numpy
 import logging
 from ann.nodemodule import Node as node, BiasNode as bias
-from ann.trainingfunctions.gradientdescent import traingd
+from ann.trainingfunctions.rprop import train_rprop
 
 logger = logging.getLogger('kalderstam.neural.network')
 
@@ -101,7 +101,7 @@ class committee:
         return result #Returns an array of average values for each output node
 
 class network:
-    '''Network that is trained by gradient descent
+    '''Network that is trained by rprop
     '''
 
     def __init__(self):
@@ -109,7 +109,7 @@ class network:
         self.hidden_nodes = []
         self.output_nodes = []
         self.bias_node = bias()
-        self.train_func = traingd
+        self.train_func = train_rprop
 
     def get_all_nodes(self):
         """Returns all nodes."""
@@ -135,11 +135,14 @@ class network:
         """The length of the network is defined as: input nodes + hidden nodes + output nodes."""
         return self.num_of_inputs + len(self.hidden_nodes) + len(self.output_nodes)
     
-    def learn(self, trainingdata, *args, **kwargs):
-        self.train_func(self, trainingdata, *args, **kwargs)
+    def learn(self, trainingdata, targetdata, *args, **kwargs):
+        self.train_func(self, trainingdata, targetdata, *args, **kwargs)
 
     def sim(self, input_array):
         return numpy.array([self.update(input) for input in input_array])
+    
+    def output(self, inputs):
+        return self.update(inputs)
 
     #inputs is a list that must match in length with the number of input nodes
     def update(self, inputs):
